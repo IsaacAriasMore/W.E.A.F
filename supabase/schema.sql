@@ -24,6 +24,7 @@ create table public.profiles (
   discord_username text,
   global_role public.global_role not null default 'user',
   default_game_mode public.game_mode not null default 'both',
+  onboarding_completed boolean not null default false,
   is_suspended boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -439,6 +440,49 @@ $$;
 create trigger set_discord_webhooks_updated_at
 before update on private.tribe_discord_webhooks
 for each row execute function private.set_updated_at();
+
+create or replace function private.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  requested_name text;
+  requested_game public.game_mode;
+begin
+  requested_name := left(
+    coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(new.email, '@', 1), 'Survivor'),
+    60
+  );
+  if char_length(requested_name) < 2 then requested_name := 'Survivor'; end if;
+
+  requested_game := case new.raw_user_meta_data ->> 'default_game_mode'
+    when 'evolved' then 'evolved'::public.game_mode
+    when 'ascended' then 'ascended'::public.game_mode
+    else 'both'::public.game_mode
+  end;
+
+  insert into public.profiles (id, email, display_name, default_game_mode)
+  values (new.id, new.email, requested_name, requested_game)
+  on conflict (id) do nothing;
+
+  if new.raw_user_meta_data ->> 'terms_version' = '2026-07-draft'
+    and new.raw_user_meta_data ->> 'privacy_version' = '2026-07-draft' then
+    insert into public.legal_acceptances (user_id, terms_version, privacy_version, accepted_at)
+    values (new.id, '2026-07-draft', '2026-07-draft', coalesce(new.created_at, now()))
+    on conflict (user_id, terms_version, privacy_version) do nothing;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function private.handle_new_user();
+
+revoke all on function private.handle_new_user() from public, anon, authenticated;
 
 revoke all on schema private from public, anon, authenticated;
 revoke all on all tables in schema private from public, anon, authenticated;

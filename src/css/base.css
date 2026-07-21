@@ -13,6 +13,7 @@
   --line: oklch(0.30 0.024 252);
   --line-soft: oklch(0.23 0.022 252);
   --danger: oklch(0.67 0.16 25);
+  --success: oklch(0.73 0.12 155);
   --radius-card: 14px;
   --radius-control: 10px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -182,6 +183,12 @@ p {
   transform: translateY(1px) scale(0.98);
 }
 
+.button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+  transform: none;
+}
+
 .button-primary {
   background: var(--primary);
   color: var(--bg);
@@ -262,6 +269,10 @@ select:focus {
   border-color: var(--primary);
   outline: 2px solid oklch(0.70 0.13 60 / 0.3);
   outline-offset: 1px;
+}
+
+input:user-invalid {
+  border-color: var(--danger);
 }
 
 .section-kicker,

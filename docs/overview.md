@@ -7,7 +7,7 @@ La plataforma se divide en dos dominios:
 - Público: Home, INIs, Mapas & Bosses, criaturas, guías, servidores y páginas legales.
 - Privado: perfiles, tribus, breeding, mutaciones, propagators, Discord y administración.
 
-La Fase 1 implementa el dominio público inicial con datos locales de demostración. Supabase se conectará desde la Fase 2 sin cambiar la interfaz de servicios ni las rutas públicas.
+La Fase 1 implementa el dominio público inicial con datos locales de demostración. La Fase 2 incorpora Supabase Auth, perfiles y onboarding mediante una capa de servicios que no altera las rutas públicas.
 
 ## Principios no negociables
 

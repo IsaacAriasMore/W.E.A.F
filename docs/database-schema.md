@@ -4,7 +4,7 @@ La fuente SQL ejecutable de referencia está en `supabase/schema.sql`. No se apl
 
 ## Dominios
 
-- Identidad: `profiles`, `legal_acceptances`.
+- Identidad: `profiles`, `legal_acceptances`. `profiles.onboarding_completed` controla si el usuario terminó su configuración inicial.
 - Tribus: `tribes`, `tribe_members`, `tribe_invites`, `tribe_discord_webhooks`.
 - Breeding: `species`, `breeds`, `mutations`, `propagator_alerts`.
 - Contenido público: `ini_presets`, `maps`, `bosses`, `boss_requirements`.
@@ -31,5 +31,7 @@ tribes -> tribe_discord_webhooks
 species -> breeds
 species -> mutations
 ```
+
+La función privada `handle_new_user()` crea el perfil al registrarse. Solo acepta `display_name` y `default_game_mode` desde metadata editable; nunca deriva autorización desde `user_metadata`.
 
 Toda fila privada incluye `tribe_id`, incluso si puede derivarse de otra relación. Esta duplicación controlada facilita RLS, consultas y auditoría, y se protege con foreign keys compuestas o triggers en la implementación final.

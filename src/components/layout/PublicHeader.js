@@ -17,7 +17,9 @@ export function createPublicHeader() {
           ${navigation.map((item) => `<a href="${item.href}" data-link data-nav-link>${item.label}</a>`).join('')}
         </nav>
         <div class="header-actions">
-          <button class="button button-quiet header-login" type="button" data-coming-soon="El acceso privado estará disponible en la Fase 2.">Ingresar</button>
+          <div class="header-auth" data-header-auth>
+            <a class="button button-quiet header-login" href="/login" data-link>Ingresar</a>
+          </div>
           <button class="menu-button" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-button>
             <span class="sr-only">Abrir menú</span>
             <span></span><span></span>
@@ -26,10 +28,33 @@ export function createPublicHeader() {
       </div>
       <nav id="mobile-menu" class="mobile-menu" aria-label="Navegación móvil" hidden>
         ${navigation.map((item) => `<a href="${item.href}" data-link data-nav-link>${item.label}</a>`).join('')}
-        <button class="button button-primary" type="button" data-coming-soon="Crear tribu estará disponible en la Fase 2.">Crear tribu</button>
+        <a class="button button-primary" href="/register" data-link data-mobile-auth>Crear cuenta</a>
       </nav>
     </header>
   `;
+}
+
+export function updateHeaderAuth(session, pathname = window.location.pathname) {
+  const desktop = document.querySelector('[data-header-auth]');
+  const mobile = document.querySelector('[data-mobile-auth]');
+  if (!desktop || !mobile) return;
+
+  if (session?.user) {
+    desktop.innerHTML = `
+      <a class="button button-quiet header-login" href="/onboarding" data-link>Mi perfil</a>
+      <button class="button button-secondary button-small" type="button" data-sign-out>Salir</button>
+    `;
+    mobile.textContent = 'Mi perfil';
+    mobile.setAttribute('href', '/onboarding');
+    return;
+  }
+
+  const onLogin = pathname === '/login';
+  const href = onLogin ? '/register' : '/login';
+  const label = onLogin ? 'Crear cuenta' : 'Ingresar';
+  desktop.innerHTML = `<a class="button button-quiet header-login" href="${href}" data-link>${label}</a>`;
+  mobile.textContent = label;
+  mobile.setAttribute('href', href);
 }
 
 export function bindPublicHeader(navigate) {

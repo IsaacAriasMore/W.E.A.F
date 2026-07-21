@@ -155,7 +155,9 @@ grant select on public.species, public.ini_presets, public.maps, public.bosses,
   public.boss_requirements, public.server_listings, public.plans,
   public.ads_settings, public.legal_documents to anon, authenticated;
 
-grant select, insert, update on public.profiles to authenticated;
+grant select on public.profiles to authenticated;
+grant update (display_name, avatar_url, discord_username, default_game_mode, onboarding_completed)
+  on public.profiles to authenticated;
 grant select, insert, update, delete on public.tribes, public.tribe_members,
   public.tribe_invites, public.breeds, public.mutations, public.propagator_alerts to authenticated;
 grant select, insert on public.legal_acceptances to authenticated;
@@ -165,14 +167,10 @@ create policy profiles_read_own
 on public.profiles for select to authenticated
 using ((select auth.uid()) = id or private.is_global_admin());
 
-create policy profiles_insert_own
-on public.profiles for insert to authenticated
-with check ((select auth.uid()) = id and global_role = 'user'::public.global_role);
-
 create policy profiles_update_own
 on public.profiles for update to authenticated
 using ((select auth.uid()) = id)
-with check ((select auth.uid()) = id and global_role = private.current_user_global_role());
+with check ((select auth.uid()) = id);
 
 create policy tribes_read_members
 on public.tribes for select to authenticated

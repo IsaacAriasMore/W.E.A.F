@@ -17,12 +17,14 @@ Las policies filtran las filas aunque exista el privilegio SQL.
 
 ## Acceso privado
 
-- Perfiles: el usuario lee y edita su propio perfil.
+- Perfiles: el usuario lee su perfil y solo edita `display_name`, `avatar_url`, `discord_username`, `default_game_mode` y `onboarding_completed`.
 - Tribus: un miembro activo puede leer su tribu.
 - Configuración de tribu: owner o admin según sensibilidad.
 - Breeds y mutaciones: solo miembros activos de la misma tribu.
 - Webhooks: ninguna lectura directa desde el frontend.
 - Admin global: validación desde `profiles.global_role`, nunca desde `user_metadata`.
+
+La inserción de perfiles no está concedida al navegador. Un trigger sobre `auth.users` la ejecuta como función privada. Esto evita que un cliente construya una fila inicial con columnas administrativas.
 
 ## Helpers
 

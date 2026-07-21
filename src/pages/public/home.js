@@ -9,7 +9,7 @@ export function render() {
           <h1>Convierte el progreso en un plan compartido.</h1>
           <p>Herramientas públicas y un espacio privado para preparar, criar y avanzar juntos.</p>
           <div class="hero-actions">
-            <button class="button button-primary" type="button" data-coming-soon="Crear tribu estará disponible en la Fase 2.">Crear tribu</button>
+            <a class="button button-primary" href="/register" data-link>Crear cuenta</a>
             <a class="button button-secondary" href="/inis" data-link>Explorar INIs</a>
           </div>
         </div>
@@ -83,8 +83,8 @@ export function render() {
     <section class="tribe-story section container">
       <div class="tribe-story-copy">
         <h2>Lo público ayuda. La tribu coordina.</h2>
-        <p>Cuando llegue el espacio privado, cada miembro verá solo breeds, mutaciones y actividad de sus tribus. Sin feed global.</p>
-        <button class="button button-primary" type="button" data-coming-soon="El onboarding de tribus estará disponible en la Fase 2.">Crear tribu</button>
+        <p>Tu perfil ya puede prepararse. En la Fase 3, cada miembro verá solo breeds, mutaciones y actividad de sus tribus. Sin feed global.</p>
+        <a class="button button-primary" href="/register" data-link>Preparar mi perfil</a>
       </div>
       <div class="privacy-ledger" aria-label="Principios del espacio privado">
         <div><strong>Privacidad por diseño</strong><span>Cada registro depende de <code>tribe_id</code> y RLS.</span></div>

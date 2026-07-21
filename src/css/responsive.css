@@ -139,6 +139,26 @@
   .legal-nav strong {
     grid-column: 1 / -1;
   }
+
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-context {
+    display: none;
+  }
+
+  .auth-card {
+    margin-inline: auto;
+  }
+
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-card > span {
+    min-height: 8.5rem;
+  }
 }
 
 @media (max-width: 620px) {
@@ -351,6 +371,44 @@
 
   .content-dialog > * {
     margin-inline: 1rem;
+  }
+
+  body[data-route-kind='auth'] .menu-button {
+    display: none;
+  }
+
+  .auth-shell {
+    width: min(100% - 28px, 35rem);
+    align-items: start;
+    padding-block: 2.75rem 4rem;
+  }
+
+  .auth-heading h1,
+  .auth-success h1 {
+    font-size: clamp(2.5rem, 12vw, 3.5rem);
+  }
+
+  .game-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .game-selector label > span {
+    min-height: auto;
+  }
+
+  .onboarding-shell {
+    width: min(100% - 28px, 940px);
+  }
+
+  .onboarding-heading h1 {
+    font-size: clamp(2.8rem, 14vw, 4.2rem);
+  }
+
+  .onboarding-actions,
+  .onboarding-actions .button,
+  .completion-actions,
+  .completion-actions .button {
+    width: 100%;
   }
 }
 

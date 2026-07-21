@@ -1,0 +1,448 @@
+body[data-route-kind='auth'] .desktop-nav,
+body[data-route-kind='auth'] .site-footer {
+  display: none;
+}
+
+body[data-route-kind='auth'] main {
+  min-height: calc(100dvh - 70px);
+}
+
+.auth-shell {
+  display: grid;
+  min-height: calc(100dvh - 70px);
+  grid-template-columns: minmax(280px, 0.8fr) minmax(420px, 1fr);
+  gap: clamp(3rem, 8vw, 9rem);
+  align-items: center;
+  padding-block: clamp(3rem, 7vw, 6rem);
+}
+
+.auth-context {
+  position: relative;
+  min-height: 31rem;
+  padding: clamp(2rem, 4vw, 3.5rem);
+  border: 1px solid var(--line-soft);
+  background:
+    linear-gradient(160deg, oklch(0.23 0.055 255 / 0.7), oklch(0.12 0.02 250 / 0.25)),
+    repeating-linear-gradient(90deg, transparent 0 51px, oklch(0.7 0.13 60 / 0.05) 52px);
+  overflow: hidden;
+}
+
+.auth-context::after {
+  position: absolute;
+  width: 22rem;
+  height: 22rem;
+  right: -9rem;
+  bottom: -12rem;
+  border: 1px solid oklch(0.7 0.13 60 / 0.35);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3rem oklch(0.7 0.13 60 / 0.025), 0 0 0 6rem oklch(0.7 0.13 60 / 0.02);
+  content: '';
+}
+
+.auth-coordinate {
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.auth-mark-frame {
+  display: grid;
+  width: 11rem;
+  height: 11rem;
+  margin-top: 5rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+
+.auth-mark-frame img {
+  transform: rotate(-45deg);
+}
+
+.auth-context > p {
+  position: absolute;
+  z-index: 1;
+  bottom: 2.5rem;
+  max-width: 28ch;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.auth-card {
+  width: min(100%, 35rem);
+}
+
+.auth-heading h1,
+.auth-success h1 {
+  margin-top: 0.8rem;
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+}
+
+.auth-heading > p:last-child {
+  margin-top: 1rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1.15rem;
+  margin-top: 2rem;
+}
+
+.password-control {
+  position: relative;
+}
+
+.password-control input {
+  padding-right: 5.5rem;
+}
+
+.password-control button {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  min-height: 36px;
+  padding-inline: 0.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transform: translateY(-50%);
+}
+
+.field-help {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--subtle);
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.auth-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+  font-size: 0.92rem;
+}
+
+.config-notice {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid oklch(0.7 0.13 60 / 0.32);
+  border-radius: var(--radius-control);
+  background: oklch(0.7 0.13 60 / 0.08);
+}
+
+.config-notice strong {
+  font-size: 0.85rem;
+}
+
+.config-notice p {
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+}
+
+.config-notice code {
+  color: var(--ink);
+}
+
+.game-selector,
+.mode-grid {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.game-selector legend {
+  margin-bottom: 0.65rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.game-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.55rem;
+}
+
+.game-selector legend {
+  grid-column: 1 / -1;
+}
+
+.game-selector label {
+  position: relative;
+  cursor: pointer;
+}
+
+.game-selector input,
+.mode-card input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.game-selector label > span {
+  min-height: 5.2rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--bg-raised);
+  color: var(--ink);
+}
+
+.game-selector label small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--subtle);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.game-selector input:checked + span,
+.game-selector input:focus-visible + span {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.legal-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: start;
+  cursor: pointer;
+}
+
+.legal-check input {
+  width: 19px;
+  min-height: 19px;
+  margin-top: 0.15rem;
+  accent-color: var(--primary);
+}
+
+.legal-check > span {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.legal-check a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.form-status {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid oklch(0.67 0.16 25 / 0.48);
+  border-radius: var(--radius-control);
+  background: oklch(0.67 0.16 25 / 0.1);
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.form-status-success {
+  border-color: oklch(0.73 0.12 155 / 0.48);
+  background: oklch(0.73 0.12 155 / 0.1);
+}
+
+.auth-success {
+  display: grid;
+  justify-items: start;
+}
+
+.auth-success > p:not(.section-kicker) {
+  max-width: 43ch;
+  margin-top: 1.2rem;
+}
+
+.auth-success .button {
+  margin-top: 2rem;
+}
+
+.success-mark {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--success);
+  color: var(--bg);
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.onboarding-shell {
+  width: min(100% - 40px, 940px);
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+}
+
+.onboarding-progress {
+  display: grid;
+  grid-template-columns: auto minmax(6rem, 14rem) auto;
+  gap: 0.75rem;
+  align-items: center;
+  width: fit-content;
+  color: var(--subtle);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onboarding-progress div {
+  height: 3px;
+  background: var(--surface-strong);
+}
+
+.onboarding-progress i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary);
+}
+
+.onboarding-progress strong {
+  color: var(--ink);
+}
+
+.onboarding-heading {
+  margin-top: clamp(2.5rem, 7vw, 5rem);
+}
+
+.onboarding-heading h1 {
+  max-width: 12ch;
+  margin-top: 0.8rem;
+  font-size: clamp(3rem, 8vw, 6.5rem);
+}
+
+.onboarding-heading > p:last-child {
+  max-width: 55ch;
+  margin-top: 1.25rem;
+}
+
+.onboarding-form {
+  display: grid;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.profile-name {
+  max-width: 32rem;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.mode-card {
+  position: relative;
+  cursor: pointer;
+}
+
+.mode-card > span {
+  display: grid;
+  min-height: 12rem;
+  align-content: end;
+  margin: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: linear-gradient(150deg, var(--surface), var(--bg-raised));
+  transition: border-color 180ms ease, transform 180ms var(--ease-out);
+}
+
+.mode-card:hover > span {
+  transform: translateY(-3px);
+}
+
+.mode-card input:checked + span,
+.mode-card input:focus-visible + span {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.mode-card small {
+  color: var(--primary);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+}
+
+.mode-card strong {
+  margin-top: 0.55rem;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.mode-card em {
+  margin-top: 0.45rem;
+  color: var(--subtle);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.onboarding-actions,
+.completion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.onboarding-complete {
+  display: grid;
+  min-height: calc(100dvh - 70px);
+  align-content: center;
+  justify-items: start;
+  padding-block: 5rem;
+}
+
+.completion-seal {
+  display: grid;
+  width: 5.5rem;
+  height: 5.5rem;
+  margin-bottom: 2rem;
+  place-items: center;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  transform: rotate(45deg);
+}
+
+.onboarding-complete h1 {
+  max-width: 14ch;
+  margin-top: 1rem;
+}
+
+.onboarding-complete > p:not(.section-kicker) {
+  max-width: 52ch;
+  margin-top: 1.5rem;
+}
+
+.completion-actions {
+  margin-top: 2rem;
+}
+
+.session-dialog {
+  width: min(32rem, calc(100% - 2rem));
+}
+
+.session-dialog > p {
+  margin-bottom: 1.5rem;
+}

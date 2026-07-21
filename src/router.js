@@ -3,6 +3,9 @@ const routeLoaders = {
   '/inis': () => import('./pages/public/inis.js'),
   '/maps-bosses': () => import('./pages/public/mapsBosses.js'),
   '/creatures': () => import('./pages/public/creatures.js'),
+  '/login': () => import('./pages/auth/login.js'),
+  '/register': () => import('./pages/auth/register.js'),
+  '/onboarding': () => import('./pages/auth/onboarding.js'),
   '/terms': () => import('./pages/public/legal.js'),
   '/privacy': () => import('./pages/public/legal.js'),
   '/cookies': () => import('./pages/public/legal.js'),
@@ -18,6 +21,9 @@ const titles = {
   '/inis': 'INIs públicas | W.E.A.F',
   '/maps-bosses': 'Mapas & Bosses | W.E.A.F',
   '/creatures': 'Biblioteca de criaturas | W.E.A.F',
+  '/login': 'Ingresar | W.E.A.F',
+  '/register': 'Crear cuenta | W.E.A.F',
+  '/onboarding': 'Configurar perfil | W.E.A.F',
   '/terms': 'Términos | W.E.A.F',
   '/privacy': 'Privacidad | W.E.A.F',
   '/cookies': 'Cookies | W.E.A.F',
@@ -33,12 +39,28 @@ function normalizePath(pathname) {
   return pathname.replace(/\/+$/, '') || '/';
 }
 
-export function createRouter({ outlet, onRouteChange }) {
+const guestOnlyRoutes = new Set(['/login', '/register']);
+const protectedRoutes = new Set(['/onboarding']);
+
+export function createRouter({ outlet, onRouteChange, getContext }) {
   let cleanup = null;
   let navigationId = 0;
 
   async function render(pathname) {
     const path = normalizePath(pathname);
+    const context = getContext();
+
+    if (protectedRoutes.has(path) && !context.state.session) {
+      const next = encodeURIComponent(path);
+      replace(`/login?next=${next}`);
+      return;
+    }
+
+    if (guestOnlyRoutes.has(path) && context.state.session) {
+      replace('/onboarding');
+      return;
+    }
+
     const currentNavigation = ++navigationId;
     cleanup?.();
     cleanup = null;
@@ -69,8 +91,8 @@ export function createRouter({ outlet, onRouteChange }) {
     try {
       const page = await loader();
       if (currentNavigation !== navigationId) return;
-      outlet.innerHTML = page.render({ path });
-      cleanup = page.bind?.({ path, navigate }) || null;
+      outlet.innerHTML = page.render({ path, ...context });
+      cleanup = page.bind?.({ path, navigate, ...context }) || null;
       document.title = titles[path];
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
@@ -87,11 +109,18 @@ export function createRouter({ outlet, onRouteChange }) {
     }
   }
 
-  function navigate(pathname) {
-    const path = normalizePath(pathname);
-    if (path === normalizePath(window.location.pathname)) return;
-    window.history.pushState({}, '', path);
+  function navigate(destination) {
+    const url = new URL(destination, window.location.origin);
+    const path = normalizePath(url.pathname);
+    if (`${path}${url.search}` === `${normalizePath(window.location.pathname)}${window.location.search}`) return;
+    window.history.pushState({}, '', `${path}${url.search}`);
     render(path);
+  }
+
+  function replace(destination) {
+    const url = new URL(destination, window.location.origin);
+    window.history.replaceState({}, '', `${normalizePath(url.pathname)}${url.search}`);
+    render(url.pathname);
   }
 
   function start() {
@@ -99,5 +128,5 @@ export function createRouter({ outlet, onRouteChange }) {
     render(window.location.pathname);
   }
 
-  return { navigate, start };
+  return { navigate, replace, refresh: () => render(window.location.pathname), start };
 }

@@ -10,7 +10,7 @@ test('home loads without errors and renders its primary actions', async ({ page 
   await page.goto('/');
   await expect(page).toHaveTitle(/W\.E\.A\.F/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Convierte el progreso');
-  await expect(page.getByRole('button', { name: 'Crear tribu' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Crear cuenta' }).first()).toBeVisible();
   await expect(page.locator('.vite-error-overlay')).toHaveCount(0);
   expect((await page.locator('body').innerText()).length).toBeGreaterThan(600);
   expect(errors).toEqual([]);
