@@ -38,6 +38,14 @@ test('tribe dashboard is protected and preserves the requested destination', asy
   await expect(page.locator('#main-content').getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register?next=%2Fapp%3Finvite%3Done-time-token');
 });
 
+for (const path of ['/app/breeds', '/app/mutations', '/app/tribe-settings']) {
+  test(`${path} protects the private tribe workspace`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page).toHaveURL(new RegExp(`/login\\?next=${encodeURIComponent(path).replaceAll('%', '%')}$`));
+    await expect(page.getByRole('heading', { name: 'Ingresa a la forja' })).toBeVisible();
+  });
+}
+
 test('auth layouts remain contained on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/register');

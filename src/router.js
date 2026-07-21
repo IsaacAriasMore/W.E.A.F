@@ -9,6 +9,9 @@ const routeLoaders = {
   '/register': () => import('./pages/auth/register.js'),
   '/onboarding': () => import('./pages/auth/onboarding.js'),
   '/app': () => import('./pages/app/tribeDashboard.js'),
+  '/app/breeds': () => import('./pages/app/breedingWorkspace.js'),
+  '/app/mutations': () => import('./pages/app/breedingWorkspace.js'),
+  '/app/tribe-settings': () => import('./pages/app/tribeSettings.js'),
   '/terms': () => import('./pages/public/legal.js'),
   '/privacy': () => import('./pages/public/legal.js'),
   '/cookies': () => import('./pages/public/legal.js'),
@@ -28,6 +31,9 @@ const titles = {
   '/register': 'Crear cuenta | W.E.A.F',
   '/onboarding': 'Configurar perfil | W.E.A.F',
   '/app': 'Centro de tribu | W.E.A.F',
+  '/app/breeds': 'Breeding privado | W.E.A.F',
+  '/app/mutations': 'Mutaciones | W.E.A.F',
+  '/app/tribe-settings': 'Configuración de tribu | W.E.A.F',
   '/terms': 'Términos | W.E.A.F',
   '/privacy': 'Privacidad | W.E.A.F',
   '/cookies': 'Cookies | W.E.A.F',
@@ -44,7 +50,9 @@ function normalizePath(pathname) {
 }
 
 const guestOnlyRoutes = new Set(['/login', '/register']);
-const protectedRoutes = new Set(['/onboarding', '/app']);
+const protectedRoutes = new Set([
+  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
+]);
 
 export function createRouter({ outlet, onRouteChange, getContext }) {
   let cleanup = null;
@@ -67,7 +75,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       return;
     }
 
-    if (path === '/app' && context.state.profile && !context.state.profile.onboarding_completed) {
+    if (path.startsWith('/app') && context.state.profile && !context.state.profile.onboarding_completed) {
       replace('/onboarding');
       return;
     }

@@ -65,6 +65,23 @@
     grid-template-columns: 1fr;
   }
 
+  .breeding-layout,
+  .mutation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .breed-create-panel,
+  .cooldown-rail {
+    max-width: 40rem;
+  }
+
+  .cooldown-rail {
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+    padding-top: 2rem;
+  }
+
   .invite-section {
     max-width: 36rem;
   }
@@ -193,7 +210,7 @@
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
     border-top: 1px solid var(--line);
     background: oklch(0.105 0.012 252 / 0.96);
@@ -241,6 +258,23 @@
 
   .tribe-switcher {
     width: 100%;
+  }
+
+  .snapshot-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .snapshot-columns > div {
+    min-height: auto;
+  }
+
+  .snapshot-columns > div + div {
+    border-top: 1px solid var(--line-soft);
+    border-left: 0;
+  }
+
+  .settings-section {
+    grid-template-columns: 1fr;
   }
 
   .incoming-invite form {
@@ -546,6 +580,29 @@
 
   .invite-inline {
     grid-template-columns: 1fr;
+  }
+
+  .breed-stat-columns,
+  .stat-entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .breed-row {
+    grid-template-columns: 1fr;
+  }
+
+  .breed-species-mark,
+  .breed-row-actions {
+    grid-column: auto;
+  }
+
+  .mutation-timeline > article {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-policy dl > div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
   }
 
   .incoming-invite form {

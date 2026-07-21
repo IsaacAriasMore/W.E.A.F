@@ -11,7 +11,7 @@ export function createProfileService(client) {
       if (!client || !userId) return { profile: null, error: null };
       const { data, error } = await client
         .from('profiles')
-        .select('id, display_name, avatar_url, discord_username, default_game_mode, onboarding_completed')
+        .select('id, display_name, avatar_url, discord_username, default_game_mode, global_role, onboarding_completed, is_suspended')
         .eq('id', userId)
         .maybeSingle();
       return { profile: data, error: databaseError(error) };
@@ -27,7 +27,7 @@ export function createProfileService(client) {
           onboarding_completed: true,
         })
         .eq('id', userId)
-        .select('id, display_name, avatar_url, discord_username, default_game_mode, onboarding_completed')
+        .select('id, display_name, avatar_url, discord_username, default_game_mode, global_role, onboarding_completed, is_suspended')
         .single();
       return { profile: data, error: databaseError(error) };
     },

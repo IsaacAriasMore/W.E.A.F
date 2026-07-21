@@ -16,16 +16,21 @@ test('tribe creation goes through the transactional RPC with scoped fields', asy
     gameMode: 'ascended',
     characterName: 'Isaac',
     steamId: '76561190000000000',
+    usesPropagators: true,
+    cooldownHours: '12',
   });
 
   assert.equal(result.data, 'tribe-id');
   assert.deepEqual(call, {
-    name: 'create_tribe',
+    name: 'create_tribe_with_breeding',
     params: {
       p_name: 'Northern Forge',
       p_game_mode: 'ascended',
       p_character_name: 'Isaac',
       p_steam_id: '76561190000000000',
+      p_uses_propagators: true,
+      p_cooldown_hours: 12,
+      p_breeding_multiplier: null,
     },
   });
 });

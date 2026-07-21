@@ -3,6 +3,8 @@ const tribeErrors = {
   invalid_tribe_name: 'El nombre de la tribu debe tener entre 2 y 80 caracteres.',
   invalid_character_name: 'El nombre del personaje debe tener entre 2 y 80 caracteres.',
   invalid_steam_id: 'El Steam ID no tiene un formato válido.',
+  invalid_propagator_cooldown: 'El cooldown debe estar entre 0.25 y 720 horas.',
+  invalid_breeding_multiplier: 'El multiplicador debe estar entre 0.001 y 1000.',
   tribe_creation_rate_limit: 'Alcanzaste el límite temporal de creación de tribus.',
   not_authorized: 'Tu rol no permite realizar esta acción.',
   invite_requires_one_target: 'Indica un correo o un Steam ID para la invitación.',
@@ -35,7 +37,7 @@ export function createTribeService(client) {
         .from('tribe_members')
         .select(`
           id, tribe_id, role, character_name, steam_id, joined_at,
-          tribe:tribes!inner(id, name, slug, game_mode, uses_propagators, is_active)
+          tribe:tribes!inner(id, name, slug, game_mode, uses_propagators, propagator_cooldown_hours, breeding_speed_multiplier, is_active)
         `)
         .eq('user_id', userId)
         .eq('status', 'active')
@@ -62,13 +64,19 @@ export function createTribeService(client) {
       return { data: data || [], error: friendlyError(error, 'No pudimos cargar las invitaciones.') };
     },
 
-    async createTribe({ name, gameMode, characterName, steamId }) {
+    async createTribe({
+      name, gameMode, characterName, steamId, usesPropagators = false,
+      cooldownHours = null, breedingMultiplier = 1,
+    }) {
       if (!client) return unavailable;
-      const { data, error } = await client.rpc('create_tribe', {
+      const { data, error } = await client.rpc('create_tribe_with_breeding', {
         p_name: name,
         p_game_mode: gameMode,
         p_character_name: characterName,
         p_steam_id: steamId || null,
+        p_uses_propagators: usesPropagators,
+        p_cooldown_hours: usesPropagators ? Number(cooldownHours) : null,
+        p_breeding_multiplier: usesPropagators ? null : Number(breedingMultiplier),
       });
       return { data, error: friendlyError(error) };
     },

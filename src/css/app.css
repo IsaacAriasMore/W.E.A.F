@@ -109,6 +109,19 @@ body[data-route-kind='app'] {
   font-weight: 700;
 }
 
+.app-admin-link {
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid var(--line-soft);
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.app-admin-link + .app-profile-link {
+  margin-top: 0;
+}
+
 .app-profile-link:hover {
   color: var(--primary);
 }
@@ -505,4 +518,56 @@ body[data-route-kind='app'] {
 
 .app-error .button {
   margin-top: 1.5rem;
+}
+
+.dashboard-breeding-snapshot {
+  margin-top: clamp(3rem, 6vw, 5rem);
+}
+
+.dashboard-breeding-snapshot .workspace-heading .section-kicker {
+  margin-bottom: 0.45rem;
+}
+
+.snapshot-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+
+.snapshot-columns > div {
+  display: grid;
+  align-content: start;
+  min-height: 12rem;
+  padding: 1.3rem 1.1rem;
+}
+
+.snapshot-columns > div + div {
+  border-left: 1px solid var(--line-soft);
+}
+
+.snapshot-columns > div > strong {
+  margin-bottom: 0.8rem;
+  color: var(--subtle);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.snapshot-columns a {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding-block: 0.55rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.78rem;
+}
+
+.snapshot-columns a:hover span {
+  color: var(--primary);
+}
+
+.snapshot-columns small,
+.snapshot-columns p {
+  color: var(--subtle);
+  font-size: 0.7rem;
 }

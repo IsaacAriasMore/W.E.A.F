@@ -1,8 +1,10 @@
 import { createAppNavigation } from '../../components/layout/AppNavigation.js';
 import { createTribeService } from '../../services/tribeService.js';
+import { createBreedService } from '../../services/breedService.js';
 import { createTribeStore } from '../../stores/tribeStore.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
+import { formatRelativeTime } from '../../utils/dates.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 
 const roleLabels = { owner: 'Propietario', admin: 'Admin de tribu', member: 'Miembro' };
@@ -37,6 +39,12 @@ function gatewayView(inviteToken = '', profile = null) {
           </select></label>
           <label><span>Nombre de personaje</span><input name="characterName" required minlength="2" maxlength="80" autocomplete="nickname" /></label>
           <label><span>Steam ID <small>Opcional</small></span><input name="steamId" maxlength="40" inputmode="numeric" /></label>
+          <label><span>Ritmo del servidor</span><select name="breedingMode" data-new-tribe-breeding-mode>
+            <option value="multiplier">Multiplicador de breeding</option>
+            <option value="propagators">Usa propagators</option>
+          </select></label>
+          <label data-new-tribe-multiplier><span>Multiplicador</span><input name="breedingMultiplier" type="number" min="0.001" max="1000" step="0.001" value="1" required /></label>
+          <label data-new-tribe-cooldown hidden><span>Cooldown del propagator <small>Horas</small></span><input name="cooldownHours" type="number" min="0.25" max="720" step="0.25" value="12" /></label>
           <p class="form-status" data-form-status role="alert" hidden></p>
           <button class="button button-primary" type="submit">Crear mi tribu</button>
         </form>
@@ -91,7 +99,32 @@ function incomingInviteView(inviteToken) {
   `;
 }
 
-function dashboardView({ memberships, activeMembership, members, invites, currentUserId, inviteToken }) {
+function breedingSnapshot(summary, tribeId) {
+  return `
+    <section class="dashboard-breeding-snapshot">
+      <div class="workspace-heading">
+        <div><p class="section-kicker">Pulso genético</p><h2>Breeding de la tribu</h2></div>
+        <a class="text-link" href="/app/breeds?tribe=${tribeId}" data-link>Abrir workspace</a>
+      </div>
+      <div class="snapshot-columns">
+        <div>
+          <strong>Líneas activas</strong>
+          ${summary.activeBreeds.length ? summary.activeBreeds.map((breed) => `<a href="/app/breeds?tribe=${tribeId}" data-link><span>${escapeHtml(breed.species.name)}</span><small>${escapeHtml(breed.title)}</small></a>`).join('') : '<p>Define la primera línea de breeding.</p>'}
+        </div>
+        <div>
+          <strong>Últimas mutaciones</strong>
+          ${summary.mutations.length ? summary.mutations.map((mutation) => `<a href="/app/mutations?tribe=${tribeId}" data-link><span>${escapeHtml(mutation.species.name)}</span><small>${formatRelativeTime(mutation.created_at)}</small></a>`).join('') : '<p>Aún no hay actividad genética.</p>'}
+        </div>
+        <div>
+          <strong>Próximas ventanas</strong>
+          ${summary.alerts.length ? summary.alerts.map((alert) => `<a href="/app/mutations?tribe=${tribeId}" data-link><span>${escapeHtml(alert.breed.species.name)}</span><small>${formatRelativeTime(alert.available_at)}</small></a>`).join('') : '<p>No hay cooldowns pendientes.</p>'}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function dashboardView({ memberships, activeMembership, members, invites, currentUserId, inviteToken, breedingSummary }) {
   const tribe = activeMembership.tribe;
   const canInvite = ['owner', 'admin'].includes(activeMembership.role);
   return `
@@ -110,8 +143,9 @@ function dashboardView({ memberships, activeMembership, members, invites, curren
       <div class="tribe-metrics" aria-label="Resumen de tribu">
         <div><span>Miembros activos</span><strong>${members.length}</strong></div>
         <div><span>Universo</span><strong>${gameLabels[tribe.game_mode]}</strong></div>
-        <div><span>Breeds activos</span><strong>0</strong><small>Disponible en Fase 4</small></div>
+        <div><span>Breeds activos</span><strong>${breedingSummary.activeCount}</strong><small>Workspace privado</small></div>
       </div>
+      ${breedingSnapshot(breedingSummary, tribe.id)}
       <div class="tribe-workgrid">
         <section class="member-section">
           <div class="workspace-heading"><div><h2>Miembros</h2><p>Roles separados de la administración global.</p></div></div>
@@ -163,6 +197,7 @@ export function render({ state }) {
 export function bind({ state, authService, navigate }) {
   const view = document.querySelector('[data-tribe-view]');
   const service = createTribeService(authService.getClient());
+  const breedService = createBreedService(authService.getClient());
   const tribeStore = createTribeStore();
 
   async function load() {
@@ -185,9 +220,10 @@ export function bind({ state, authService, navigate }) {
       || membershipsResult.data.find((item) => item.tribe_id === storedId)
       || membershipsResult.data[0];
     tribeStore.selectTribe(activeMembership.tribe_id);
-    const [membersResult, invitesResult] = await Promise.all([
+    const [membersResult, invitesResult, breedingResult] = await Promise.all([
       service.getMembers(activeMembership.tribe_id),
       ['owner', 'admin'].includes(activeMembership.role) ? service.getInvites(activeMembership.tribe_id) : Promise.resolve({ data: [] }),
+      breedService.getDashboardSummary(activeMembership.tribe_id),
     ]);
     if (membersResult.error) {
       view.innerHTML = `<section class="app-error"><h1>No pudimos leer esta tribu.</h1><p>${escapeHtml(membersResult.error)}</p><button class="button button-primary" data-retry-tribes>Reintentar</button></section>`;
@@ -201,6 +237,7 @@ export function bind({ state, authService, navigate }) {
       invites: invitesResult.data || [],
       currentUserId: state.session.user.id,
       inviteToken,
+      breedingSummary: breedingResult.data || { activeCount: 0, activeBreeds: [], mutations: [], alerts: [] },
     });
   }
 
@@ -217,6 +254,9 @@ export function bind({ state, authService, navigate }) {
       const result = await service.createTribe({
         name: values.get('name').trim(), gameMode: values.get('gameMode'),
         characterName: values.get('characterName').trim(), steamId: values.get('steamId').trim(),
+        usesPropagators: values.get('breedingMode') === 'propagators',
+        cooldownHours: values.get('cooldownHours'),
+        breedingMultiplier: values.get('breedingMultiplier'),
       });
       if (result.error) { setFormStatus(form, result.error); setSubmitting(form, false, 'Crear mi tribu'); return; }
       navigate(`/app?tribe=${result.data}`);
@@ -255,6 +295,14 @@ export function bind({ state, authService, navigate }) {
       input.type = email ? 'email' : 'text';
       input.maxLength = email ? 320 : 40;
       document.querySelector('[data-invite-target-label]').textContent = email ? 'Correo del jugador' : 'Steam ID del jugador';
+    }
+    if (event.target.matches('[data-new-tribe-breeding-mode]')) {
+      const propagators = event.target.value === 'propagators';
+      const form = event.target.form;
+      form.querySelector('[data-new-tribe-cooldown]').hidden = !propagators;
+      form.querySelector('[data-new-tribe-multiplier]').hidden = propagators;
+      form.elements.cooldownHours.required = propagators;
+      form.elements.breedingMultiplier.required = !propagators;
     }
     if (event.target.matches('[data-member-role]')) {
       const result = await service.changeMemberRole({
