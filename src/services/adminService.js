@@ -8,6 +8,10 @@ const messages = {
   unsupported_content_entity: 'Ese tipo de contenido no está habilitado.',
   invalid_feature_flag: 'La clave del flag no es válida.',
   invalid_legal_document: 'El documento legal está incompleto.',
+  invalid_listing_payload: 'Revisa los datos obligatorios del servidor.',
+  invalid_listing_duration: 'La duración debe ser 1, 3, 9 o 12 meses.',
+  listing_slug_taken: 'Ese slug ya pertenece a otro servidor.',
+  server_not_found: 'El servidor ya no existe.',
 };
 
 function friendly(error, fallback = 'No pudimos completar la acción administrativa.') {
@@ -26,6 +30,7 @@ export function createAdminService(client) {
 
   return {
     getWorkspace: () => rpc('get_admin_workspace', {}, 'No pudimos cargar el centro de comando.'),
+    getServerWorkspace: () => rpc('get_admin_server_workspace', {}, 'No pudimos cargar la operación de servidores.'),
     setUserSuspension: (userId, suspended, reason) => rpc('admin_set_user_suspension', {
       p_user_id: userId, p_suspended: suspended, p_reason: reason || null,
     }),
@@ -51,5 +56,12 @@ export function createAdminService(client) {
     setServerStatus: ({ listingId, status, featured, verified }) => rpc('admin_set_server_status', {
       p_listing_id: listingId, p_status: status, p_featured: featured, p_verified: verified,
     }),
+    upsertServerListing: ({ listingId = null, payload, durationMonths = null }) => rpc('admin_upsert_server_listing', {
+      p_listing_id: listingId, p_payload: payload, p_duration_months: durationMonths,
+    }),
+    renewServerListing: (listingId, durationMonths) => rpc('admin_renew_server_listing', {
+      p_listing_id: listingId, p_duration_months: durationMonths,
+    }),
+    deleteServerListing: (listingId) => rpc('admin_delete_server_listing', { p_listing_id: listingId }),
   };
 }

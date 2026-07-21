@@ -99,8 +99,21 @@ function content(data) {
 }
 
 function operations(data) {
+  const workspace = data.serverOps || { listings: [], totals: {} };
+  const totals = workspace.totals || {};
   return `<div class="admin-stack">
-    <section><div class="admin-block-heading"><span>Marketplace</span><h2>Servidores</h2></div>${table(['Servidor', 'Región', 'Plan', 'Estado'], data.servers.map((item) => `<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.game)} · ${escapeHtml(item.server_type)}</small></td><td>${escapeHtml(item.region)}</td><td>${escapeHtml(item.plan)}</td><td><select data-server-status="${item.id}" data-featured="${item.is_featured}" data-verified="${item.is_verified}">${['pending_payment','active','paused','expired','canceled','rejected'].map((option) => `<option value="${option}" ${item.status === option ? 'selected' : ''}>${option}</option>`).join('')}</select></td></tr>`), 'Los listings se activarán en la Fase 6.')}</section>
+    <section class="admin-server-metrics"><div><span>Activos</span><strong>${totals.active || 0}</strong></div><div><span>Impresiones</span><strong>${totals.impressions || 0}</strong></div><div><span>Clics</span><strong>${totals.clicks || 0}</strong></div><div><span>Conversión</span><strong>${totals.conversion_rate || 0}%</strong></div></section>
+    <div class="admin-content-grid"><section class="admin-primary-list"><div class="admin-block-heading"><span>Marketplace</span><h2>Servidores</h2></div>${table(['Servidor', 'Plan', 'Alcance', 'Estado', 'Gestión'], workspace.listings.map((item) => `<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.game)} · ${escapeHtml(item.server_type)} · ${escapeHtml(item.region)}</small></td><td>${escapeHtml(item.plan)}<small>${item.expires_at ? `vence ${formatRelativeTime(item.expires_at)}` : 'sin vencimiento'}</small></td><td>${item.impression_count} vistas<small>${item.click_count} clics</small></td><td><select data-server-status="${item.id}" data-featured="${item.is_featured}" data-verified="${item.is_verified}">${['active','paused','expired','canceled','rejected'].map((option) => `<option value="${option}" ${item.status === option ? 'selected' : ''}>${option}</option>`).join('')}</select></td><td><select data-renew-duration="${item.id}"><option value="1">+1 mes</option><option value="3">+3 meses</option><option value="9">+9 meses</option><option value="12">+12 meses</option></select><button class="admin-action" data-renew-server="${item.id}">Renovar</button><button class="admin-action is-danger" data-delete-server="${item.id}">Eliminar</button></td></tr>`), 'No hay servidores publicados.')}</section>
+      <aside class="admin-editor"><div><span>Alta manual</span><h2>Publicar servidor</h2><p>El administrador puede otorgar una publicación temporal o indefinida sin pago.</p></div><form data-server-form>
+        <label><span>Título</span><input name="title" minlength="2" maxlength="100" required></label><label><span>Slug</span><input name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required></label>
+        <div class="admin-field-pair"><label><span>Juego</span><select name="game"><option value="ascended">ASA</option><option value="evolved">ASE</option></select></label><label><span>Modo</span><select name="server_type"><option value="pve">PvE</option><option value="pvp">PvP</option><option value="pvpve">PvPvE</option></select></label></div>
+        <div class="admin-field-pair"><label><span>Plan</span><select name="plan"><option value="manual">Normal manual</option><option value="plus">Destacado</option></select></label><label><span>Duración</span><select name="duration"><option value="1">1 mes</option><option value="3">3 meses</option><option value="9">9 meses</option><option value="12">12 meses</option><option value="">Indefinida</option></select></label></div>
+        <div class="admin-field-pair"><label><span>Región</span><input name="region" minlength="2" required></label><label><span>Idioma</span><input name="language" minlength="2" required></label></div>
+        <label><span>Plataformas, por coma</span><input name="platforms" placeholder="Steam, Crossplay" required></label><label><span>Mapas, por coma</span><input name="maps" placeholder="The Island, Scorched Earth" required></label><label><span>Mods, por coma</span><input name="mods"></label>
+        <div class="admin-field-pair"><label><span>Cluster</span><input name="cluster_name"></label><label><span>Último wipe</span><input name="wipe_date" type="date"></label></div>
+        <label><span>Rates (JSON)</span><input name="rates" value='{"XP":"3x","Taming":"5x"}' required></label><label><span>Discord</span><input name="discord" type="url" placeholder="https://discord.gg/..." required></label><label><span>Sitio web</span><input name="website" type="url"></label><label><span>Banner</span><input name="banner" type="url"></label><label><span>Descripción</span><textarea name="description" minlength="20" maxlength="4000" rows="5" required></textarea></label>
+        <label class="admin-check"><input name="verified" type="checkbox"><span>Servidor verificado</span></label><label class="admin-check"><input name="propagators" type="checkbox"><span>Usa propagadores</span></label><button class="button button-primary" type="submit">Publicar servidor</button>
+      </form></aside></div>
     <div class="admin-split"><section><div class="admin-block-heading"><span>Oferta</span><h2>Planes</h2></div>${data.plans.map((plan) => `<div class="admin-line"><p><strong>${escapeHtml(plan.name)}</strong><small>${escapeHtml(plan.code)}</small></p><span>$${(plan.price_usd_cents / 100).toFixed(2)}</span></div>`).join('') || empty('Los planes se configurarán antes de Stripe.')}</section>
     <section><div class="admin-block-heading"><span>Finanzas</span><h2>Pagos recientes</h2></div>${data.payments.map((payment) => `<div class="admin-line"><p><strong>${escapeHtml(payment.email)}</strong><small>${escapeHtml(payment.plan_name)}</small></p><span>$${(payment.amount_usd_cents / 100).toFixed(2)} · ${escapeHtml(payment.status)}</span></div>`).join('') || empty('Sin pagos; Stripe se activa en la Fase 7.')}</section></div>
   </div>`;
@@ -138,12 +151,13 @@ export function bind({ state, authService, navigate }) {
 
   async function load(section = currentSection()) {
     main.setAttribute('aria-busy', 'true');
-    const result = await service.getWorkspace();
+    const [result, serverResult] = await Promise.all([service.getWorkspace(), service.getServerWorkspace()]);
     if (result.error) {
       main.innerHTML = `<section class="admin-failure"><span>403</span><h1>Centro de comando bloqueado</h1><p>${escapeHtml(result.error)}</p><a class="button button-primary" href="/app" data-link>Volver a la tribu</a></section>`;
       return;
     }
     data = result.data;
+    data.serverOps = serverResult.data || { listings: [], totals: {} };
     const [title, description] = sectionNames[section];
     main.innerHTML = `<div class="admin-mobile-selector"><label><span>Área administrativa</span><select data-admin-mobile>${adminSectionOptions(section)}</select></label></div>
       <header class="admin-header"><div><p>W.E.A.F / Global</p><h1>${title}</h1><span>${description}</span></div><div class="admin-live"><i></i>Supabase conectado</div></header>
@@ -177,6 +191,10 @@ export function bind({ state, authService, navigate }) {
     if (tribe) await action(await service.setTribeActive(tribe.dataset.tribeActive, tribe.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado de la tribu actualizado.');
     const archive = event.target.closest('[data-archive-content]');
     if (archive && window.confirm('¿Archivar esta entrada del catálogo público?')) await action(await service.archiveContent(archive.dataset.archiveContent, archive.dataset.id), 'Contenido archivado.');
+    const renew = event.target.closest('[data-renew-server]');
+    if (renew) { const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value); await action(await service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.'); }
+    const remove = event.target.closest('[data-delete-server]');
+    if (remove && window.confirm('¿Eliminar definitivamente esta publicación y su analítica?')) await action(await service.deleteServerListing(remove.dataset.deleteServer), 'Publicación eliminada.');
   });
 
   main.addEventListener('submit', async (event) => {
@@ -195,6 +213,13 @@ export function bind({ state, authService, navigate }) {
     }
     if (event.target.matches('[data-flag-form]')) await action(await service.setFeatureFlag({ key: values.get('key').trim(), description: values.get('description').trim(), enabled: false }), 'Flag creado.');
     if (event.target.matches('[data-legal-form]')) await action(await service.publishLegal({ documentType: values.get('type').trim(), version: values.get('version').trim(), title: values.get('title').trim(), content: values.get('content'), publish: values.has('publish') }), 'Documento legal guardado.');
+    if (event.target.matches('[data-server-form]')) {
+      let rates;
+      try { rates = JSON.parse(values.get('rates')); } catch { showToast('Rates debe ser JSON válido.', 'error'); return; }
+      const split = (name) => values.get(name).split(',').map((item) => item.trim()).filter(Boolean);
+      const payload = { title: values.get('title').trim(), slug: values.get('slug').trim(), game: values.get('game'), server_type: values.get('server_type'), plan: values.get('plan'), region: values.get('region').trim(), language: values.get('language').trim(), platforms: split('platforms'), maps: split('maps'), mods: split('mods'), gallery_urls: [], rates, discord_invite_url: values.get('discord').trim(), website_url: values.get('website').trim(), banner_url: values.get('banner').trim(), description: values.get('description').trim(), cluster_name: values.get('cluster_name').trim(), wipe_date: values.get('wipe_date'), uses_propagators: values.has('propagators'), is_featured: values.get('plan') === 'plus', is_verified: values.has('verified') };
+      await action(await service.upsertServerListing({ payload, durationMonths: values.get('duration') ? Number(values.get('duration')) : null }), 'Servidor publicado.');
+    }
   });
 
   document.querySelector('.admin-sidebar')?.addEventListener('click', (event) => {

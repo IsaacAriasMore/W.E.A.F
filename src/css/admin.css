@@ -98,6 +98,13 @@ body[data-route-kind="admin"] #main-content { min-height: 100vh; }
 .admin-secondary-lists span, .admin-secondary-lists small { color: #707874; font-size: .68rem; }
 .admin-secondary-lists strong { margin: 8px 0 5px; font-size: 1.5rem; }
 .admin-stack, .admin-governance { display: grid; gap: 42px; }
+.admin-server-metrics { display: grid; grid-template-columns: repeat(4, 1fr); border-block: 1px solid var(--admin-line); }
+.admin-server-metrics > div { padding: 18px; border-right: 1px solid var(--admin-line); }
+.admin-server-metrics > div:last-child { border-right: 0; }
+.admin-server-metrics span, .admin-server-metrics strong { display: block; }
+.admin-server-metrics span { color: #717976; font-size: .66rem; text-transform: uppercase; }
+.admin-server-metrics strong { margin-top: 8px; font-size: 1.6rem; }
+.admin-action.is-danger { color: #d89582; margin-left: 5px; }
 .admin-split { display: grid; grid-template-columns: 1fr 1fr; gap: 42px; }
 .admin-line, .admin-toggle { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--admin-line); padding: 11px 0; }
 .admin-line p, .admin-line strong, .admin-line small, .admin-toggle strong, .admin-toggle small { display: block; margin: 0; }
@@ -143,5 +150,6 @@ body[data-route-kind="admin"] #main-content { min-height: 100vh; }
   .admin-secondary-lists { grid-template-columns: 1fr; }
   .admin-secondary-lists details { border-right: 0; border-bottom: 1px solid var(--admin-line); }
   .admin-inline-form { grid-template-columns: 1fr; }
+  .admin-server-metrics { grid-template-columns: 1fr 1fr; }
   .admin-legal-editor form > div { grid-template-columns: 1fr; }
 }

@@ -1,5 +1,3 @@
-import { featuredServers } from '../../data/publicData.js';
-
 export function render() {
   return `
     <section class="hero">
@@ -97,24 +95,11 @@ export function render() {
       <div class="container server-owner-layout">
         <div>
           <h2>Tu servidor frente a la comunidad correcta.</h2>
-          <p>Publicaciones discretas para dueños que buscan jugadores de ASE o ASA. Planes desde $3 al mes en la futura Fase 6.</p>
-          <button class="button button-secondary" type="button" data-coming-soon="El marketplace de servidores se implementará en la Fase 6.">Conocer planes</button>
+          <p>Explora publicaciones directas de comunidades ASE y ASA, o presenta tu servidor desde $3 al mes.</p>
+          <a class="button button-secondary" href="/servers/owners" data-link>Conocer planes</a>
         </div>
-        <div class="server-preview-list" aria-label="Ejemplos de servidores destacados">
-          ${featuredServers.map((server) => `
-            <article class="server-preview">
-              <div>
-                <span>${server.tag}</span>
-                <h3>${server.name}</h3>
-              </div>
-              <dl>
-                <div><dt>Juego</dt><dd>${server.game}</dd></div>
-                <div><dt>Modo</dt><dd>${server.type}</dd></div>
-                <div><dt>Región</dt><dd>${server.region}</dd></div>
-                <div><dt>Rates</dt><dd>${server.rate}</dd></div>
-              </dl>
-            </article>
-          `).join('')}
+        <div class="server-preview-list" aria-label="Acceso al directorio de servidores">
+          <article class="server-preview"><div><span>DIRECTORIO ACTIVO</span><h3>Filtra antes de unirte.</h3></div><dl><div><dt>Juegos</dt><dd>ASE + ASA</dd></div><div><dt>Modos</dt><dd>PvP · PvE · PvPvE</dd></div><div><dt>Señales</dt><dd>Rates, wipe, cluster y mods</dd></div></dl><a class="text-link" href="/servers" data-link>Abrir servidores</a></article>
         </div>
       </div>
     </section>

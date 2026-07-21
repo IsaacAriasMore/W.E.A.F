@@ -52,6 +52,16 @@ test('creature filters show a matching result and an empty state', async ({ page
   await expect(page.locator('.creature-card')).toHaveCount(8);
 });
 
+test('server directory and owner plans are public and responsive', async ({ page }) => {
+  await page.goto('/servers');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Encuentra un servidor');
+  await expect(page.getByRole('heading', { name: 'Servidores disponibles' })).toBeVisible();
+  await expect(page.locator('[data-server-empty]')).toBeVisible();
+  await page.goto('/servers/owners');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Publica primero');
+  await expect(page.locator('.owner-plan')).toHaveCount(2);
+});
+
 test('all legal routes render a document', async ({ page }) => {
   const routes = [
     '/terms', '/privacy', '/cookies', '/disclaimer', '/refund-policy',

@@ -5,6 +5,7 @@ const navigation = [
   { href: '/inis', label: 'INIs' },
   { href: '/maps-bosses', label: 'Mapas & Bosses' },
   { href: '/creatures', label: 'Criaturas' },
+  { href: '/servers', label: 'Servidores' },
 ];
 
 export function createPublicHeader() {
