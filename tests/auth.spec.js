@@ -46,6 +46,12 @@ for (const path of ['/app/breeds', '/app/mutations', '/app/tribe-settings']) {
   });
 }
 
+test('global administration is protected from guests', async ({ page }) => {
+  await page.goto('/admin');
+  await expect(page).toHaveURL(/\/login\?next=%2Fadmin$/);
+  await expect(page.getByRole('heading', { name: 'Ingresa a la forja' })).toBeVisible();
+});
+
 test('auth layouts remain contained on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/register');

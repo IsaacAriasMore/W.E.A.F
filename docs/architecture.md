@@ -6,7 +6,7 @@ Vite compila una SPA en JavaScript vanilla. `src/router.js` resuelve rutas, carg
 
 Los datos públicos de Fase 1 siguen siendo fixtures inmutables. La identidad usa `@supabase/supabase-js`, un store de sesión en memoria y servicios separados para Auth, perfiles, tribus y breeding. El store de tribus solo conserva el identificador activo en `localStorage`; permisos, membresías y datos privados siempre vuelven a consultarse en PostgreSQL.
 
-Las rutas `/login` y `/register` son exclusivas para visitantes. `/onboarding` requiere una sesión; `/app` requiere sesión y onboarding completo. El router conserva imports dinámicos por pantalla y redirige según el estado real del perfil.
+Las rutas `/login` y `/register` son exclusivas para visitantes. `/onboarding` requiere una sesión; `/app` requiere sesión y onboarding completo. `/admin` añade una comprobación independiente de `global_role` y nunca reutiliza los roles de tribu. El router conserva imports dinámicos por pantalla y redirige según el estado real del perfil.
 
 ## Backend
 
@@ -28,6 +28,7 @@ Supabase será el backend administrado:
 6. El cliente solo puede actualizar columnas editables del perfil; `global_role`, `is_suspended` y `email` no tienen privilegio de actualización.
 7. Crear tribus, emitir o aceptar invitaciones y cambiar membresías pasa por RPCs transaccionales; el navegador no escribe directamente en `tribe_members` ni `tribe_invites`.
 8. Los webhooks de Discord viven en Vault; solo una función de servicio puede obtenerlos durante una entrega autorizada.
+9. El workspace global se obtiene mediante un RPC administrativo; `auth.users` y `private.audit_logs` nunca se conceden al navegador.
 
 ## Sesión
 

@@ -2,7 +2,7 @@
 
 Wild Evolution & Ascension Forge es una plataforma comunitaria independiente para jugadores y tribus de ARK: Survival Evolved y ARK: Survival Ascended.
 
-Las Fases 0 a 4 están implementadas. La experiencia incluye el sitio público, registro e ingreso con Supabase Auth, onboarding, tribus multi-tenant y un espacio privado de breeding con mutaciones, cooldowns y avisos Discord protegidos por Vault y una Edge Function.
+Las Fases 0 a 5 están implementadas. La experiencia incluye el sitio público, registro e ingreso con Supabase Auth, onboarding, tribus multi-tenant, breeding privado y un centro de administración global con moderación, contenido, gobernanza, métricas y auditoría.
 
 ## Stack
 
@@ -54,6 +54,8 @@ Antes de activar Auth en producción, registra la URL de `/onboarding` entre las
 - [Fase 3: tribus y miembros](docs/phase-3-tribes.md)
 - [Fase 4: breeding privado](docs/phase-4-breeding.md)
 - [Guía de tribu](docs/tribe-user-guide.md)
+- [Fase 5: administración global](docs/phase-5-global-admin.md)
+- [Guía del centro de comando](docs/admin-guide.md)
 - [Arquitectura](docs/architecture.md)
 - [Esquema de datos](docs/database-schema.md)
 - [RLS](docs/rls-policies.md)

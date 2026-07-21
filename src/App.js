@@ -68,8 +68,10 @@ export async function startApp(root) {
     onRouteChange(pathname) {
       setActiveNavigation(pathname);
       updateHeaderAuth(store.getState().session, pathname);
-      document.body.dataset.routeKind = pathname === '/app'
-        ? 'app'
+      document.body.dataset.routeKind = pathname === '/admin'
+        ? 'admin'
+        : pathname.startsWith('/app')
+          ? 'app'
         : ['/login', '/register', '/onboarding'].includes(pathname) ? 'auth' : 'public';
       window.scrollTo({ top: 0, behavior: 'auto' });
     },

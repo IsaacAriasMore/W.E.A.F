@@ -25,6 +25,8 @@ Las policies filtran las filas aunque exista el privilegio SQL.
 - Webhooks: ninguna lectura directa desde el frontend.
 - Admin global: validación desde `profiles.global_role`, nunca desde `user_metadata`.
 
+La allowlist inicial vive en el esquema privado y solo influye durante el trigger de creación del perfil. Después, `private.is_global_admin()` exige además que el perfil no esté suspendido. Los RPCs de Fase 5 rechazan cualquier llamada que no cumpla ambas condiciones.
+
 La inserción de perfiles no está concedida al navegador. Un trigger sobre `auth.users` la ejecuta como función privada. Esto evita que un cliente construya una fila inicial con columnas administrativas.
 
 ## Helpers

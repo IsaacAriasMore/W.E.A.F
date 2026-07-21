@@ -10,6 +10,7 @@ La fuente SQL inicial está en `supabase/schema.sql`; la evolución aplicada al 
 - Contenido público: `ini_presets`, `maps`, `bosses`, `boss_requirements`.
 - Marketplace: `server_listings`, `server_listing_clicks`, `plans`, `payments`, `stripe_events`.
 - Plataforma: `ads_settings`, `legal_documents`, `reports`, `feature_flags`, `analytics_events`, `audit_logs`.
+- Autoridad: `private.global_admin_allowlist`, accesible solo desde funciones de base y operación privilegiada.
 
 ## Reglas estructurales
 
@@ -47,3 +48,7 @@ La Fase 3 añade RPCs autenticados para crear tribus, crear y aceptar invitacion
 ## Operaciones de breeding
 
 La Fase 4 añade RPCs para configurar reglas, crear y actualizar líneas, registrar mutaciones, cancelar alertas y administrar el secreto Discord. El registro de una mutación acumula stats y programa su cooldown de forma atómica. `private.discord_deliveries` conserva únicamente metadatos de entrega y nunca se expone a Data API.
+
+## Operaciones globales
+
+La Fase 5 concentra lecturas operativas en `get_admin_workspace()` y usa RPCs explícitos para usuarios, tribus, contenido, servidores, reportes, flags, anuncios y legales. Cada mutación escribe en `private.audit_logs`. No existe un RPC genérico de SQL ni nombres de tabla controlados libremente por el cliente.

@@ -12,6 +12,7 @@ const routeLoaders = {
   '/app/breeds': () => import('./pages/app/breedingWorkspace.js'),
   '/app/mutations': () => import('./pages/app/breedingWorkspace.js'),
   '/app/tribe-settings': () => import('./pages/app/tribeSettings.js'),
+  '/admin': () => import('./pages/admin/adminDashboard.js'),
   '/terms': () => import('./pages/public/legal.js'),
   '/privacy': () => import('./pages/public/legal.js'),
   '/cookies': () => import('./pages/public/legal.js'),
@@ -34,6 +35,7 @@ const titles = {
   '/app/breeds': 'Breeding privado | W.E.A.F',
   '/app/mutations': 'Mutaciones | W.E.A.F',
   '/app/tribe-settings': 'Configuración de tribu | W.E.A.F',
+  '/admin': 'Administración global | W.E.A.F',
   '/terms': 'Términos | W.E.A.F',
   '/privacy': 'Privacidad | W.E.A.F',
   '/cookies': 'Cookies | W.E.A.F',
@@ -51,7 +53,7 @@ function normalizePath(pathname) {
 
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
-  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
+  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings', '/admin',
 ]);
 
 export function createRouter({ outlet, onRouteChange, getContext }) {
@@ -77,6 +79,11 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
 
     if (path.startsWith('/app') && context.state.profile && !context.state.profile.onboarding_completed) {
       replace('/onboarding');
+      return;
+    }
+
+    if (path === '/admin' && context.state.profile?.global_role !== 'admin') {
+      replace('/app');
       return;
     }
 
