@@ -26,8 +26,8 @@ export function createServerService(client) {
     async listPlans() {
       if (!client) return { data: [], error: null };
       const { data, error } = await client
-        .from('server_listing_plans')
-        .select('code,name,description,price_usd_cents,features,is_active')
+        .from('plans')
+        .select('code,name,price_usd_cents,features,is_active')
         .in('code', ['normal', 'plus'])
         .order('price_usd_cents');
       return { data: data || [], error: friendly(error, 'No pudimos cargar los planes.') };
@@ -38,6 +38,30 @@ export function createServerService(client) {
         body: { listingId, eventType },
       });
       return { data, error: friendly(error, 'No pudimos registrar la interacción.') };
+    },
+    async startCheckout(planCode) {
+      if (!client) return { data: null, error: 'Supabase no está conectado.' };
+      const { data, error } = await client.functions.invoke('create-server-checkout', { body: { planCode } });
+      const code = data?.error || error?.message || '';
+      const paymentError = code.includes('payments_not_configured')
+        ? 'Stripe todavía necesita sus claves privadas en Supabase.'
+        : code.includes('checkout_rate_limit') ? 'Espera dos minutos antes de iniciar otro pago.' : 'No pudimos iniciar el checkout.';
+      return { data, error: error || data?.error ? paymentError : null };
+    },
+    async getMyBilling() {
+      if (!client) return { data: null, error: 'Supabase no está conectado.' };
+      const { data, error } = await client.rpc('get_my_server_billing');
+      return { data, error: friendly(error, 'No pudimos cargar tus publicaciones.') };
+    },
+    async createListing(subscriptionId, payload) {
+      if (!client) return { data: null, error: 'Supabase no está conectado.' };
+      const { data, error } = await client.rpc('create_paid_server_listing', { p_subscription_id: subscriptionId, p_payload: payload });
+      return { data, error: friendly(error, error?.message?.includes('listing_slug_taken') ? 'Ese slug ya está ocupado.' : 'No pudimos publicar el servidor.') };
+    },
+    async updateListing(listingId, payload) {
+      if (!client) return { data: null, error: 'Supabase no está conectado.' };
+      const { data, error } = await client.rpc('update_paid_server_listing', { p_listing_id: listingId, p_payload: payload });
+      return { data, error: friendly(error, error?.message?.includes('listing_slug_taken') ? 'Ese slug ya está ocupado.' : 'No pudimos guardar los cambios.') };
     },
   };
 }

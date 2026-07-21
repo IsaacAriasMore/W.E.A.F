@@ -7,6 +7,7 @@ const routeLoaders = {
   '/creatures': () => import('./pages/public/creatures.js'),
   '/servers': () => import('./pages/public/servers.js'),
   '/servers/owners': () => import('./pages/public/serverOwners.js'),
+  '/servers/publish': () => import('./pages/public/serverPublish.js'),
   '/login': () => import('./pages/auth/login.js'),
   '/register': () => import('./pages/auth/register.js'),
   '/onboarding': () => import('./pages/auth/onboarding.js'),
@@ -32,6 +33,7 @@ const titles = {
   '/creatures': 'Biblioteca de criaturas | W.E.A.F',
   '/servers': 'Servidores ASE y ASA | W.E.A.F',
   '/servers/owners': 'Publica tu servidor | W.E.A.F',
+  '/servers/publish': 'Gestiona tu servidor | W.E.A.F',
   '/login': 'Ingresar | W.E.A.F',
   '/register': 'Crear cuenta | W.E.A.F',
   '/onboarding': 'Configurar perfil | W.E.A.F',
@@ -57,7 +59,7 @@ function normalizePath(pathname) {
 
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
-  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings', '/admin',
+  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings', '/servers/publish', '/admin',
 ]);
 
 export function createRouter({ outlet, onRouteChange, getContext }) {

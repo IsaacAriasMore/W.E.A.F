@@ -24,3 +24,18 @@ test('server event tracking sends only the listing and event type', async () => 
   await service.track('listing-id', 'discord_click');
   assert.deepEqual(call, { name: 'track-server-event', options: { body: { listingId: 'listing-id', eventType: 'discord_click' } } });
 });
+
+test('checkout starts in a protected Edge Function without exposing Stripe keys', async () => {
+  let call;
+  const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { checkoutUrl: 'https://checkout.stripe.com/test' }, error: null }; } } });
+  const result = await service.startCheckout('plus');
+  assert.deepEqual(call, { name: 'create-server-checkout', options: { body: { planCode: 'plus' } } });
+  assert.equal(result.data.checkoutUrl, 'https://checkout.stripe.com/test');
+});
+
+test('paid listing creation uses the active subscription entitlement', async () => {
+  let call;
+  const service = createServerService({ async rpc(name, params) { call = { name, params }; return { data: 'listing-id', error: null }; } });
+  await service.createListing('subscription-id', { title: 'Servidor Norte' });
+  assert.deepEqual(call, { name: 'create_paid_server_listing', params: { p_subscription_id: 'subscription-id', p_payload: { title: 'Servidor Norte' } } });
+});

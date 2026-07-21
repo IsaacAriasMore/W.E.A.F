@@ -2,12 +2,12 @@ import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 
 const fallbackPlans = [
-  { code: 'normal', name: 'Normal', price_usd_cents: 300, description: 'Presencia clara en el directorio.', features: ['Ficha completa', 'Edición mientras esté activo', 'Analítica de clics'] },
-  { code: 'plus', name: 'Plus', price_usd_cents: 700, description: 'Más visibilidad para temporadas y lanzamientos.', features: ['Todo lo de Normal', 'Posición destacada', 'Insignia de destacado'] },
+  { code: 'normal', name: 'Normal', price_usd_cents: 300, features: ['Ficha completa', 'Edición mientras esté activo', 'Analítica de clics'] },
+  { code: 'plus', name: 'Plus', price_usd_cents: 700, features: ['Todo lo de Normal', 'Posición destacada', 'Insignia de destacado'] },
 ];
 
 function plansMarkup(plans) {
-  return plans.map((plan) => `<article class="owner-plan ${plan.code === 'plus' ? 'is-plus' : ''}"><div><span>${plan.code === 'plus' ? 'Mayor visibilidad' : 'Base esencial'}</span><h2>${escapeHtml(plan.name)}</h2><p>${escapeHtml(plan.description || '')}</p></div><strong>$${(plan.price_usd_cents / 100).toFixed(0)}<small> USD / mes</small></strong><ul>${(plan.features || []).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul><a class="button ${plan.code === 'plus' ? 'button-primary' : 'button-secondary'}" href="/servers/publish?plan=${plan.code}" data-link>Elegir ${escapeHtml(plan.name)}</a></article>`).join('');
+  return plans.map((plan) => `<article class="owner-plan ${plan.code === 'plus' ? 'is-plus' : ''}"><div><span>${plan.code === 'plus' ? 'Mayor visibilidad' : 'Base esencial'}</span><h2>${escapeHtml(plan.name)}</h2><p>${plan.code === 'plus' ? 'Pensado para temporadas, wipes y lanzamientos.' : 'Presencia clara y estable en el directorio.'}</p></div><strong>$${(plan.price_usd_cents / 100).toFixed(0)}<small> USD / mes</small></strong><ul>${(plan.features || []).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul><a class="button ${plan.code === 'plus' ? 'button-primary' : 'button-secondary'}" href="/servers/publish?plan=${plan.code}" data-link>Elegir ${escapeHtml(plan.name)}</a></article>`).join('');
 }
 
 export function render() {

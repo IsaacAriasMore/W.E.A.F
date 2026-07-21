@@ -52,6 +52,12 @@ test('global administration is protected from guests', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Ingresa a la forja' })).toBeVisible();
 });
 
+test('server publishing preserves the selected paid plan through login', async ({ page }) => {
+  await page.goto('/servers/publish?plan=plus');
+  await expect(page).toHaveURL(/\/login\?next=%2Fservers%2Fpublish%3Fplan%3Dplus/);
+  await expect(page.getByRole('heading', { name: 'Ingresa a la forja' })).toBeVisible();
+});
+
 test('auth layouts remain contained on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/register');
