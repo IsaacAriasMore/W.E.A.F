@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../config/supabase.js';
 import { LEGAL_VERSION } from '../config/legal.js';
+import { pathWithNext, safeInternalDestination } from '../utils/navigation.js';
 
 const authErrorMessages = {
   invalid_credentials: 'El correo o la contraseña no coinciden.',
@@ -33,14 +34,15 @@ export function createAuthService(client = getSupabaseClient()) {
       return error ? null : data.session;
     },
 
-    async signUp({ email, password, displayName, gameMode }) {
+    async signUp({ email, password, displayName, gameMode, next = null }) {
       if (!client) return unavailable();
       const redirectBase = (import.meta.env?.VITE_PUBLIC_SITE_URL || window.location.origin).replace(/\/$/, '');
+      const onboardingPath = pathWithNext('/onboarding', safeInternalDestination(next, null));
       const { data, error } = await client.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${redirectBase}/onboarding`,
+          emailRedirectTo: `${redirectBase}${onboardingPath}`,
           data: {
             display_name: displayName,
             default_game_mode: gameMode,

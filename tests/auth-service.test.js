@@ -19,6 +19,7 @@ test('signup sends only profile metadata and the current legal versions', async 
     password: 'strong-passphrase',
     displayName: 'Survivor',
     gameMode: 'ascended',
+    next: '/app?invite=one-time-token',
   });
 
   assert.equal(result.error, null);
@@ -28,6 +29,6 @@ test('signup sends only profile metadata and the current legal versions', async 
     terms_version: '2026-07-draft',
     privacy_version: '2026-07-draft',
   });
-  assert.equal(request.options.emailRedirectTo, 'https://weaf.example/onboarding');
+  assert.equal(request.options.emailRedirectTo, 'https://weaf.example/onboarding?next=%2Fapp%3Finvite%3Done-time-token');
   assert.equal('global_role' in request.options.data, false);
 });

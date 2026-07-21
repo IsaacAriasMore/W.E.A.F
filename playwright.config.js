@@ -13,7 +13,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4173',
+    command: 'npm run dev -- --mode test --host 127.0.0.1 --port 4173',
+    env: { VITE_SUPABASE_DISABLED: 'true' },
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: true,
     timeout: 60_000,

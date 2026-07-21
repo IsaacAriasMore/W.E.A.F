@@ -1,12 +1,14 @@
 import { bindPasswordToggle, configurationNotice, setFormStatus, setSubmitting } from './formUtils.js';
+import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
 
 export function render({ state }) {
+  const destination = destinationFromSearch(window.location.search, null);
   return `
     <section class="auth-shell auth-shell-register container">
       <div class="auth-context" aria-hidden="true">
         <span class="auth-coordinate">W.E.A.F / NUEVO PERFIL</span>
         <div class="auth-mark-frame"><img src="/assets/weaf-mark.svg" alt="" width="96" height="96" /></div>
-        <p>Empieza con tu identidad de juego. La tribu y sus permisos llegan en la siguiente fase.</p>
+        <p>Empieza con tu identidad de juego y entra al espacio privado de tu tribu.</p>
       </div>
       <div class="auth-card">
         <div class="auth-heading">
@@ -45,7 +47,7 @@ export function render({ state }) {
           <p class="form-status" data-form-status role="alert" hidden></p>
           <button class="button button-primary auth-submit" type="submit">Crear cuenta</button>
         </form>
-        <p class="auth-switch">¿Ya tienes cuenta? <a class="text-link" href="/login" data-link>Ingresar</a></p>
+        <p class="auth-switch">¿Ya tienes cuenta? <a class="text-link" href="${pathWithNext('/login', destination)}" data-link>Ingresar</a></p>
       </div>
     </section>
   `;
@@ -53,6 +55,8 @@ export function render({ state }) {
 
 export function bind({ authService, profileService, navigate }) {
   const form = document.querySelector('[data-register-form]');
+  const destination = destinationFromSearch(window.location.search, null);
+  const onboardingDestination = pathWithNext('/onboarding', destination);
   bindPasswordToggle(form);
 
   const onSubmit = async (event) => {
@@ -67,6 +71,7 @@ export function bind({ authService, profileService, navigate }) {
       email: values.get('email').trim(),
       password: values.get('password'),
       gameMode: values.get('gameMode'),
+      next: destination,
     });
 
     if (error) {
@@ -77,7 +82,7 @@ export function bind({ authService, profileService, navigate }) {
 
     if (data?.session?.user) {
       await profileService.recordLegalAcceptance(data.session.user.id);
-      navigate('/onboarding');
+      navigate(onboardingDestination);
       return;
     }
 
@@ -87,7 +92,7 @@ export function bind({ authService, profileService, navigate }) {
         <p class="section-kicker">Un paso más</p>
         <h1>Revisa tu correo</h1>
         <p>Enviamos un enlace de confirmación. Al abrirlo volverás a W.E.A.F para terminar tu perfil.</p>
-        <a class="button button-secondary" href="/login" data-link>Ir al ingreso</a>
+        <a class="button button-secondary" href="${pathWithNext('/login', destination)}" data-link>Ir al ingreso</a>
       </div>
     `;
   };

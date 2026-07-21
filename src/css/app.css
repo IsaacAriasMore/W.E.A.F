@@ -1,0 +1,508 @@
+body[data-route-kind='app'] .desktop-nav,
+body[data-route-kind='app'] .site-footer {
+  display: none;
+}
+
+body[data-route-kind='app'] {
+  background: oklch(0.09 0.012 252);
+}
+
+.private-app-shell {
+  display: grid;
+  min-height: calc(100dvh - 70px);
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.app-sidebar {
+  display: flex;
+  min-height: calc(100dvh - 70px);
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  border-right: 1px solid var(--line-soft);
+  background: oklch(0.115 0.016 252);
+}
+
+.app-user {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem 1.5rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.app-user > span {
+  display: grid;
+  width: 2.3rem;
+  height: 2.3rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--bg);
+  font-weight: 900;
+}
+
+.app-user > div {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.app-user strong {
+  overflow: hidden;
+  font-size: 0.88rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-user small {
+  color: var(--subtle);
+  font-size: 0.7rem;
+}
+
+.app-sidebar nav {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 1.5rem;
+}
+
+.app-sidebar nav a,
+.app-sidebar nav button {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.app-sidebar nav a:hover,
+.app-sidebar nav button:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-sidebar nav a[aria-current='page'] {
+  background: oklch(0.7 0.13 60 / 0.12);
+  color: var(--primary);
+}
+
+.app-sidebar nav span {
+  width: 1rem;
+  color: var(--primary);
+  text-align: center;
+}
+
+.app-profile-link {
+  margin-top: auto;
+  padding: 0.75rem;
+  color: var(--subtle);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.app-profile-link:hover {
+  color: var(--primary);
+}
+
+.private-app-main {
+  min-width: 0;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.app-mobile-nav {
+  display: none;
+}
+
+.app-view-loading {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 1100px;
+}
+
+.app-view-loading .skeleton-title {
+  height: 3.4rem;
+}
+
+.app-view-loading > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+}
+
+.app-view-loading > div .skeleton {
+  height: 8rem;
+  border-radius: 0;
+}
+
+.tribe-gateway {
+  max-width: 1120px;
+  margin-inline: auto;
+}
+
+.tribe-gateway > header {
+  max-width: 52rem;
+  padding-block: 1.5rem clamp(2.5rem, 6vw, 5rem);
+}
+
+.tribe-gateway h1,
+.tribe-dashboard h1,
+.app-error h1 {
+  margin-top: 0.8rem;
+  font-size: 3.5rem;
+}
+
+.tribe-gateway > header > p:last-child {
+  max-width: 58ch;
+  margin-top: 1.25rem;
+}
+
+.gateway-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+}
+
+.gateway-form {
+  display: grid;
+  gap: 1.1rem;
+  align-content: start;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--bg-raised);
+}
+
+.gateway-form + .gateway-form {
+  border-left: 1px solid var(--line);
+  background: oklch(0.13 0.02 252);
+}
+
+.gateway-form > div:first-child {
+  min-height: 7.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.gateway-form h2 {
+  margin-top: 0.55rem;
+  font-size: 1.7rem;
+}
+
+.gateway-form > div:first-child p {
+  margin-top: 0.55rem;
+}
+
+.gateway-index {
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.gateway-form label span small {
+  color: var(--subtle);
+  font-weight: 500;
+}
+
+.gateway-form .button {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.tribe-dashboard {
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.app-toolbar {
+  display: flex;
+  gap: 2rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.app-toolbar h1 {
+  margin-bottom: 0.8rem;
+}
+
+.incoming-invite {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(420px, 1.2fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: end;
+  margin-top: 2.5rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid oklch(0.7 0.13 60 / 0.45);
+  background: oklch(0.7 0.13 60 / 0.06);
+}
+
+.incoming-invite h2 {
+  margin-top: 0.45rem;
+  font-size: 1.5rem;
+}
+
+.incoming-invite > div > p:last-child {
+  max-width: 46ch;
+  margin-top: 0.65rem;
+  font-size: 0.82rem;
+}
+
+.incoming-invite form {
+  display: grid;
+  grid-template-columns: 1fr 0.75fr auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.incoming-invite .form-status {
+  grid-column: 1 / -1;
+}
+
+.incoming-invite label small {
+  color: var(--subtle);
+  font-weight: 500;
+}
+
+.role-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.role-owner {
+  background: oklch(0.7 0.13 60 / 0.14);
+  color: var(--primary);
+}
+
+.role-admin {
+  background: oklch(0.66 0.12 270 / 0.16);
+  color: oklch(0.78 0.09 275);
+}
+
+.tribe-switcher {
+  width: min(100%, 16rem);
+}
+
+.tribe-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 2.5rem;
+  border-block: 1px solid var(--line);
+}
+
+.tribe-metrics > div {
+  display: grid;
+  min-height: 8.5rem;
+  align-content: center;
+  padding: 1.25rem;
+}
+
+.tribe-metrics > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.tribe-metrics span,
+.tribe-metrics small {
+  color: var(--subtle);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.tribe-metrics strong {
+  margin-block: 0.25rem;
+  font-size: 1.8rem;
+}
+
+.tribe-workgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(290px, 0.65fr);
+  gap: clamp(2.5rem, 6vw, 5.5rem);
+  margin-top: clamp(3rem, 7vw, 5.5rem);
+}
+
+.workspace-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.15rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.workspace-heading h2,
+.member-permission-note h2 {
+  font-size: 1.45rem;
+}
+
+.workspace-heading p {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.member-list {
+  display: grid;
+}
+
+.member-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 0.9rem;
+  align-items: center;
+  min-height: 74px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.member-avatar {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-strong);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.member-identity {
+  display: grid;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.member-identity strong,
+.member-identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-identity strong {
+  font-size: 0.87rem;
+}
+
+.member-identity span {
+  color: var(--subtle);
+  font-size: 0.75rem;
+}
+
+.member-actions {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.role-select select {
+  width: auto;
+  min-height: 36px;
+  padding: 0.35rem 1.8rem 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.danger-action {
+  color: oklch(0.75 0.12 25);
+  font-size: 0.75rem;
+}
+
+.leave-action {
+  margin-top: 2rem;
+}
+
+.invite-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.invite-inline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
+.invite-form .button {
+  width: 100%;
+}
+
+.invite-result {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid oklch(0.73 0.12 155 / 0.4);
+  border-radius: var(--radius-control);
+  background: oklch(0.73 0.12 155 / 0.07);
+}
+
+.invite-result code {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.pending-invites {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.pending-invites strong {
+  font-size: 0.78rem;
+}
+
+.pending-invites span {
+  color: var(--subtle);
+  font-size: 0.72rem;
+}
+
+.member-permission-note {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.member-permission-note > span {
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.member-permission-note h2 {
+  margin-top: 0.8rem;
+}
+
+.member-permission-note p {
+  margin-top: 0.75rem;
+  font-size: 0.84rem;
+}
+
+.app-error {
+  display: grid;
+  min-height: 60dvh;
+  align-content: center;
+  justify-items: start;
+}
+
+.app-error p {
+  margin-top: 1rem;
+}
+
+.app-error .button {
+  margin-top: 1.5rem;
+}

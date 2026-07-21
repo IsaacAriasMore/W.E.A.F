@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 const env = import.meta.env || {};
 const supabaseUrl = env.VITE_SUPABASE_URL?.trim();
 const supabaseKey = (env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY)?.trim();
+const supabaseDisabled = env.VITE_SUPABASE_DISABLED === 'true';
 
 let client = null;
 
 export function isSupabaseConfigured() {
-  return Boolean(supabaseUrl && supabaseKey);
+  return Boolean(!supabaseDisabled && supabaseUrl && supabaseKey);
 }
 
 export function getSupabaseClient() {

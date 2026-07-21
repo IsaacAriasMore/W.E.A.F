@@ -1,6 +1,8 @@
 import { bindPasswordToggle, configurationNotice, setFormStatus, setSubmitting } from './formUtils.js';
+import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
 
 export function render({ state }) {
+  const destination = destinationFromSearch(window.location.search, null);
   return `
     <section class="auth-shell container">
       <div class="auth-context" aria-hidden="true">
@@ -30,7 +32,7 @@ export function render({ state }) {
           <p class="form-status" data-form-status role="alert" hidden></p>
           <button class="button button-primary auth-submit" type="submit">Ingresar</button>
         </form>
-        <p class="auth-switch">¿Aún no tienes cuenta? <a class="text-link" href="/register" data-link>Crear cuenta</a></p>
+        <p class="auth-switch">¿Aún no tienes cuenta? <a class="text-link" href="${pathWithNext('/register', destination)}" data-link>Crear cuenta</a></p>
       </div>
     </section>
   `;
@@ -58,8 +60,7 @@ export function bind({ authService, navigate }) {
       return;
     }
 
-    const requested = new URLSearchParams(window.location.search).get('next');
-    const destination = requested?.startsWith('/') && !requested.startsWith('//') ? requested : '/onboarding';
+    const destination = destinationFromSearch();
     if (data?.session) navigate(destination);
   };
 

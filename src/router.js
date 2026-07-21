@@ -1,3 +1,5 @@
+import { destinationFromSearch, pathWithNext } from './utils/navigation.js';
+
 const routeLoaders = {
   '/': () => import('./pages/public/home.js'),
   '/inis': () => import('./pages/public/inis.js'),
@@ -6,6 +8,7 @@ const routeLoaders = {
   '/login': () => import('./pages/auth/login.js'),
   '/register': () => import('./pages/auth/register.js'),
   '/onboarding': () => import('./pages/auth/onboarding.js'),
+  '/app': () => import('./pages/app/tribeDashboard.js'),
   '/terms': () => import('./pages/public/legal.js'),
   '/privacy': () => import('./pages/public/legal.js'),
   '/cookies': () => import('./pages/public/legal.js'),
@@ -24,6 +27,7 @@ const titles = {
   '/login': 'Ingresar | W.E.A.F',
   '/register': 'Crear cuenta | W.E.A.F',
   '/onboarding': 'Configurar perfil | W.E.A.F',
+  '/app': 'Centro de tribu | W.E.A.F',
   '/terms': 'Términos | W.E.A.F',
   '/privacy': 'Privacidad | W.E.A.F',
   '/cookies': 'Cookies | W.E.A.F',
@@ -40,7 +44,7 @@ function normalizePath(pathname) {
 }
 
 const guestOnlyRoutes = new Set(['/login', '/register']);
-const protectedRoutes = new Set(['/onboarding']);
+const protectedRoutes = new Set(['/onboarding', '/app']);
 
 export function createRouter({ outlet, onRouteChange, getContext }) {
   let cleanup = null;
@@ -51,12 +55,19 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
     const context = getContext();
 
     if (protectedRoutes.has(path) && !context.state.session) {
-      const next = encodeURIComponent(path);
-      replace(`/login?next=${next}`);
+      replace(pathWithNext('/login', `${path}${window.location.search}`));
       return;
     }
 
     if (guestOnlyRoutes.has(path) && context.state.session) {
+      const destination = destinationFromSearch(window.location.search, null);
+      replace(context.state.profile?.onboarding_completed
+        ? destination || '/app'
+        : pathWithNext('/onboarding', destination));
+      return;
+    }
+
+    if (path === '/app' && context.state.profile && !context.state.profile.onboarding_completed) {
       replace('/onboarding');
       return;
     }

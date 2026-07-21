@@ -1,3 +1,5 @@
+import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
+
 const navigation = [
   { href: '/', label: 'Inicio' },
   { href: '/inis', label: 'INIs' },
@@ -39,18 +41,21 @@ export function updateHeaderAuth(session, pathname = window.location.pathname) {
   const mobile = document.querySelector('[data-mobile-auth]');
   if (!desktop || !mobile) return;
 
+  const destination = destinationFromSearch(window.location.search, null);
+
   if (session?.user) {
+    const appHref = destination || '/app';
     desktop.innerHTML = `
-      <a class="button button-quiet header-login" href="/onboarding" data-link>Mi perfil</a>
+      <a class="button button-quiet header-login" href="${appHref}" data-link>Mi tribu</a>
       <button class="button button-secondary button-small" type="button" data-sign-out>Salir</button>
     `;
-    mobile.textContent = 'Mi perfil';
-    mobile.setAttribute('href', '/onboarding');
+    mobile.textContent = 'Mi tribu';
+    mobile.setAttribute('href', appHref);
     return;
   }
 
   const onLogin = pathname === '/login';
-  const href = onLogin ? '/register' : '/login';
+  const href = pathWithNext(onLogin ? '/register' : '/login', destination);
   const label = onLogin ? 'Crear cuenta' : 'Ingresar';
   desktop.innerHTML = `<a class="button button-quiet header-login" href="${href}" data-link>${label}</a>`;
   mobile.textContent = label;
@@ -74,7 +79,7 @@ export function bindPublicHeader(navigate) {
     button.setAttribute('aria-expanded', 'false');
     button.querySelector('.sr-only').textContent = 'Abrir menú';
     menu.hidden = true;
-    navigate(link.pathname);
+    navigate(`${link.pathname}${link.search}`);
   });
 }
 

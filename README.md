@@ -2,7 +2,7 @@
 
 Wild Evolution & Ascension Forge es una plataforma comunitaria independiente para jugadores y tribus de ARK: Survival Evolved y ARK: Survival Ascended.
 
-Las Fases 0, 1 y 2 están implementadas. La experiencia incluye el sitio público, registro e ingreso con Supabase Auth, perfil inicial, selección ASE/ASA y cierre de sesión por inactividad. Las funciones privadas por tribu comienzan en la Fase 3 descrita en [docs/phase-0-audit-and-plan.md](docs/phase-0-audit-and-plan.md).
+Las Fases 0 a 3 están implementadas. La experiencia incluye el sitio público, registro e ingreso con Supabase Auth, onboarding y un espacio privado multi-tenant para crear tribus, aceptar invitaciones y administrar miembros por rol.
 
 ## Stack
 
@@ -30,7 +30,7 @@ npm run build
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local`. La Fase 1 funciona sin credenciales remotas.
+Copia `.env.example` a `.env.local`. El sitio público funciona sin credenciales remotas; Auth y el espacio privado requieren Supabase.
 
 ```text
 VITE_SUPABASE_URL=
@@ -51,13 +51,14 @@ Antes de activar Auth en producción, registra la URL de `/onboarding` entre las
 - [Overview](docs/overview.md)
 - [Auditoría y plan](docs/phase-0-audit-and-plan.md)
 - [Fase 2: Auth y onboarding](docs/phase-2-auth-and-onboarding.md)
+- [Fase 3: tribus y miembros](docs/phase-3-tribes.md)
 - [Arquitectura](docs/architecture.md)
 - [Esquema de datos](docs/database-schema.md)
 - [RLS](docs/rls-policies.md)
 
 ## Seguridad
 
-El diseño multi-tenant depende de `tribe_id` y Row Level Security. `supabase/schema.sql` y `supabase/rls.sql` son referencias de Fase 0; la migración incremental de Fase 2 está en `supabase/migrations`. Los secretos solo serán utilizados por Edge Functions.
+El diseño multi-tenant depende de `tribe_id`, privilegios SQL mínimos, Row Level Security y RPCs transaccionales con comprobaciones explícitas de sesión y rol. Las migraciones incrementales están en `supabase/migrations`; los secretos solo serán utilizados por servicios de servidor o Edge Functions.
 
 ## Disclaimer
 

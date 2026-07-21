@@ -19,7 +19,8 @@ Las policies filtran las filas aunque exista el privilegio SQL.
 
 - Perfiles: el usuario lee su perfil y solo edita `display_name`, `avatar_url`, `discord_username`, `default_game_mode` y `onboarding_completed`.
 - Tribus: un miembro activo puede leer su tribu.
-- Configuración de tribu: owner o admin según sensibilidad.
+- Configuración de tribu: owner o admin según sensibilidad; solo columnas concedidas pueden actualizarse directamente.
+- Membresías e invitaciones: lectura filtrada por tribu; altas, cambios y bajas se realizan mediante RPCs protegidos.
 - Breeds y mutaciones: solo miembros activos de la misma tribu.
 - Webhooks: ninguna lectura directa desde el frontend.
 - Admin global: validación desde `profiles.global_role`, nunca desde `user_metadata`.
@@ -39,17 +40,12 @@ Los helpers viven en esquema `private` y fijan `search_path`:
 
 Los helpers `SECURITY DEFINER` revocan ejecución de `PUBLIC` y solo conceden acceso a los roles necesarios. Se evita colocarlos en el esquema expuesto `public`.
 
+Los RPCs públicos de Fase 3 sí son puntos de entrada deliberados para `authenticated`, pero revocan `anon`, fijan `search_path` y vuelven a comprobar sesión activa, tribu y rol antes de cualquier cambio. Que sean ejecutables no equivale a acceso irrestricto a las tablas.
+
 ## Cambio de plataforma 2026
 
 Supabase ya no expone automáticamente nuevas tablas a Data API en proyectos nuevos. RLS y privilegios son capas separadas. Por eso `supabase/rls.sql` declara `GRANT` mínimos de forma explícita y no depende de defaults del proyecto.
 
-## Verificación prevista
+## Verificación aplicada
 
-Al conectar un proyecto Supabase:
-
-1. Aplicar schema en una rama de desarrollo.
-2. Ejecutar casos `anon`, usuario sin tribu, miembro, admin, owner y global admin.
-3. Probar que `UPDATE` tiene policy `SELECT` correspondiente.
-4. Ejecutar Security y Performance Advisors.
-5. Generar una migración limpia con CLI actual.
-6. Confirmar que ningún webhook o secreto aparece en consultas del cliente.
+En el proyecto remoto se comprobó aislamiento entre dos tribus, creación atómica de owner, invitación y aceptación, promoción a admin, protección del owner, expulsión autorizada y ausencia de DML directo sobre membresías. La transacción de prueba se revirtió y los Advisors se revisaron después de las migraciones.

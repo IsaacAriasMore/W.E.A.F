@@ -1,5 +1,6 @@
 import { escapeHtml } from '../../utils/sanitize.js';
 import { setFormStatus, setSubmitting } from './formUtils.js';
+import { destinationFromSearch } from '../../utils/navigation.js';
 
 const modes = [
   { value: 'evolved', title: 'ARK: Survival Evolved', code: 'ASE', detail: 'Herramientas y datos clásicos.' },
@@ -12,6 +13,7 @@ export function render({ state }) {
   const displayName = state.profile?.display_name || metadata.display_name || '';
   const selectedMode = state.profile?.default_game_mode || metadata.default_game_mode || 'both';
   const completed = state.profile?.onboarding_completed;
+  const destination = destinationFromSearch();
 
   if (completed) {
     return `
@@ -19,9 +21,9 @@ export function render({ state }) {
         <div class="completion-seal" aria-hidden="true">WF</div>
         <p class="section-kicker">Perfil operativo</p>
         <h1>La forja te reconoce, ${escapeHtml(displayName)}.</h1>
-        <p>Tu preferencia de juego está guardada. En la Fase 3 podrás crear o unirte a una tribu y administrar sus permisos.</p>
+        <p>Tu preferencia de juego está guardada. Ya puedes crear una tribu, aceptar tu invitación y administrar sus permisos.</p>
         <div class="completion-actions">
-          <a class="button button-primary" href="/creatures" data-link>Explorar criaturas</a>
+          <a class="button button-primary" href="${escapeHtml(destination)}" data-link>Ir a mis tribus</a>
           <a class="button button-secondary" href="/" data-link>Volver al inicio</a>
         </div>
       </section>
@@ -70,6 +72,7 @@ export function render({ state }) {
 
 export function bind({ state, store, profileService, navigate }) {
   const form = document.querySelector('[data-onboarding-form]');
+  const destination = destinationFromSearch();
   if (!form) return null;
 
   const onSubmit = async (event) => {
@@ -91,7 +94,7 @@ export function bind({ state, store, profileService, navigate }) {
     }
 
     store.setState({ profile: result.profile });
-    navigate('/creatures');
+    navigate(destination);
   };
 
   form.addEventListener('submit', onSubmit);

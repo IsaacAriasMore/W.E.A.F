@@ -11,16 +11,15 @@
 - Cierre de sesión tras 4 horas de inactividad y diálogo de sesión expirada.
 - Diseño responsive y estados de configuración, carga, error, confirmación y finalización.
 
-La creación y unión a tribus se mantiene fuera de este alcance y comienza en Fase 3.
+La creación y unión a tribus se entrega por separado en la Fase 3.
 
 ## Activación de Supabase
 
-1. Confirma el proyecto correcto; no se aplicó la migración remotamente porque la cuenta conectada no contiene un proyecto inequívocamente llamado W.E.A.F.
-2. Aplica primero `supabase/schema.sql` y `supabase/rls.sql` en una rama de desarrollo si el proyecto todavía no tiene la base de Fase 0.
-3. Aplica `supabase/migrations/20260721212837_phase_2_auth_profiles.sql` con Supabase CLI.
-4. Configura la Site URL y permite `https://tu-dominio/onboarding` como Redirect URL.
-5. Define `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` en local y Vercel.
-6. Ejecuta Security y Performance Advisors después de la migración.
+Las migraciones de Fase 0, RLS, Fase 2 y Fase 3 ya están aplicadas al proyecto remoto W.E.A.F. Para cada entorno desplegado aún se debe:
+
+1. Configurar la Site URL y permitir `https://tu-dominio/onboarding` como Redirect URL.
+2. Definir `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` en el proveedor de hosting.
+3. Mantener fuera del frontend la contraseña de base de datos y cualquier clave `service_role`.
 
 ## Decisiones de seguridad
 
