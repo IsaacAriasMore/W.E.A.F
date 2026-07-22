@@ -7,6 +7,7 @@ test('public listings request only active server records', async () => {
   const query = {
     select(columns) { calls.push(['select', columns]); return this; },
     eq(column, value) { calls.push(['eq', column, value]); return this; },
+    or(filter) { calls.push(['or', filter]); return this; },
     order(column, options) { calls.push(['order', column, options]); return this; },
     then(resolve) { resolve({ data: [], error: null }); },
   };
@@ -14,6 +15,7 @@ test('public listings request only active server records', async () => {
   await service.listPublic();
   assert.deepEqual(calls[0], ['from', 'server_listings']);
   assert.deepEqual(calls.find((call) => call[0] === 'eq'), ['eq', 'status', 'active']);
+  assert.deepEqual(calls.find((call) => call[0] === 'or'), ['or', 'payment_status.eq.paid,and(billing_source.eq.manual,payment_status.eq.not_required)']);
 });
 
 test('server event tracking sends only the listing and event type', async () => {

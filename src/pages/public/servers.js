@@ -20,7 +20,7 @@ function card(server) {
     <div class="server-card-body">
       <div class="server-card-title"><div><span>${escapeHtml(server.game.toUpperCase())} · ${escapeHtml(server.server_type)}</span><h2>${escapeHtml(server.title)}</h2></div><small>${escapeHtml(server.region)} / ${escapeHtml(server.language)}</small></div>
       <p>${escapeHtml(server.description)}</p>
-      <dl><div><dt>Mapas</dt><dd>${arrayLabel(server.maps)}</dd></div><div><dt>Plataformas</dt><dd>${arrayLabel(server.platforms)}</dd></div><div><dt>Rates</dt><dd>${rateLabel(server.rates)}</dd></div><div><dt>Mods</dt><dd>${server.has_mods ? arrayLabel(server.mods, 'Sí') : 'Sin mods'}</dd></div></dl>
+      <dl><div><dt>Mapas</dt><dd>${arrayLabel(server.maps)}</dd></div><div><dt>Plataformas</dt><dd>${arrayLabel(server.platforms)}</dd></div><div><dt>Rates</dt><dd>${rateLabel(server.rates)}</dd></div><div><dt>Mods</dt><dd>${server.has_mods ? 'Sí' : 'No'}</dd></div></dl>
       ${server.cluster_name || server.wipe_date || server.uses_propagators ? `<div class="server-notes">${server.cluster_name ? `<span>Cluster: ${escapeHtml(server.cluster_name)}</span>` : ''}${server.wipe_date ? `<span>Wipe: ${escapeHtml(server.wipe_date)}</span>` : ''}${server.uses_propagators ? '<span>Propagadores</span>' : ''}</div>` : ''}
       <div class="server-card-actions"><a class="button button-primary" href="${escapeHtml(server.discord_invite_url)}" target="_blank" rel="noopener noreferrer" data-discord-click="${server.id}">Entrar a Discord</a>${server.website_url ? `<a class="button button-quiet" href="${escapeHtml(server.website_url)}" target="_blank" rel="noopener noreferrer">Sitio web</a>` : ''}</div>
     </div>
