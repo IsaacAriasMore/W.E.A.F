@@ -17,7 +17,7 @@ export function createServerService(client) {
       if (!client) return { data: [], error: 'Supabase no está conectado.' };
       const { data, error } = await client
         .from('server_listings')
-        .select('id,title,slug,game,server_type,platforms,has_mods,mods,maps,rates,region,language,description,discord_invite_url,website_url,banner_url,is_featured,is_verified,created_at,wipe_date,cluster_name,uses_propagators,click_count')
+        .select('id,title,slug,plan,game,server_type,platforms,has_mods,mods,maps,rates,region,language,description,discord_invite_url,website_url,banner_url,is_featured,is_verified,created_at,wipe_date,cluster_name,uses_propagators,click_count')
         .eq('status', 'active')
         .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false });

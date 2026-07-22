@@ -4,6 +4,8 @@ La Fase 6 incorpora el directorio público de servidores, planes para propietari
 
 La Fase 7 añade Stripe Checkout, webhook firmado, activación por suscripción y expiración automática. Consulta [phase-7-stripe-and-expiration.md](./phase-7-stripe-and-expiration.md).
 
+La Fase 8 incorpora consentimiento granular, promociones internas no invasivas y una PWA instalable con experiencia sin conexión. Consulta [phase-8-pwa-ads-and-launch-checklist.md](./phase-8-pwa-ads-and-launch-checklist.md).
+
 W.E.A.F, Wild Evolution & Ascension Forge, es una aplicación web comunitaria independiente para jugadores y tribus de ARK: Survival Evolved y ARK: Survival Ascended.
 
 La plataforma se divide en dos dominios:

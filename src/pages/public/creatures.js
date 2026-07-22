@@ -1,4 +1,5 @@
 import { creatures } from '../../data/publicData.js';
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 
 function unique(field) {
   return [...new Set(creatures.map((creature) => creature[field]))].sort();
@@ -83,6 +84,7 @@ export function render() {
         <p>Prueba otro juego, mapa o término de búsqueda.</p>
         <button class="button button-secondary" type="button" data-clear-filters>Limpiar filtros</button>
       </div>
+      <div class="sponsored-break">${createSponsoredServerSlot('servers_featured', 'Comunidad destacada')}</div>
     </section>
   `;
 }

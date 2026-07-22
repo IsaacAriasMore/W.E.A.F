@@ -6,6 +6,7 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import { formatRelativeTime } from '../../utils/dates.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 
 const roleLabels = { owner: 'Propietario', admin: 'Admin de tribu', member: 'Miembro' };
 const gameLabels = { evolved: 'ASE', ascended: 'ASA', both: 'ASE + ASA' };
@@ -146,6 +147,7 @@ function dashboardView({ memberships, activeMembership, members, invites, curren
         <div><span>Breeds activos</span><strong>${breedingSummary.activeCount}</strong><small>Workspace privado</small></div>
       </div>
       ${breedingSnapshot(breedingSummary, tribe.id)}
+      <div class="sponsored-break sponsored-break-private">${createSponsoredServerSlot('dashboard_carousel', 'Servidor recomendado para tu tribu')}</div>
       <div class="tribe-workgrid">
         <section class="member-section">
           <div class="workspace-heading"><div><h2>Miembros</h2><p>Roles separados de la administración global.</p></div></div>

@@ -1,5 +1,6 @@
 import { mapBosses } from '../../data/publicData.js';
 import { showToast } from '../../utils/feedback.js';
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 
 const STORAGE_KEY = 'weaf:boss-checklist:v1';
 
@@ -72,6 +73,8 @@ export function render() {
         </section>
       </div>
     </section>
+
+    <div class="container sponsored-break">${createSponsoredServerSlot('bosses_footer', 'Comunidad para tu próxima batalla')}</div>
 
     <section class="boss-callout container">
       <div>

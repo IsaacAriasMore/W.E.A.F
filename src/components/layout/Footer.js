@@ -23,6 +23,8 @@ export function createFooter() {
           <a href="/cookies" data-link>Cookies</a>
           <a href="/disclaimer" data-link>Disclaimer</a>
           <a href="/contact" data-link>Contacto</a>
+          <button type="button" data-open-consent>Preferencias de privacidad</button>
+          <button type="button" data-install-app hidden>Instalar W.E.A.F</button>
         </nav>
       </div>
       <div class="footer-legal container">

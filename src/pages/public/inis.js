@@ -1,6 +1,7 @@
 import { iniPresets } from '../../data/publicData.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 
 const categories = [
   ['all', 'Todas'],
@@ -61,12 +62,7 @@ export function render() {
             ${iniPresets.map(presetCard).join('')}
           </div>
         </div>
-        <aside class="sponsor-slot" aria-label="Servidor destacado de demostración">
-          <span>Espacio Plus</span>
-          <h2>Obsidian Coast</h2>
-          <p>Ejemplo de promoción interna discreta. El marketplace llegará en la Fase 6.</p>
-          <button class="text-button" type="button" data-coming-soon="Los servidores destacados se conectarán en la Fase 6.">Ver cómo funcionará</button>
-        </aside>
+        ${createSponsoredServerSlot('inis_sidebar', 'Servidor Plus')}
       </div>
     </section>
 

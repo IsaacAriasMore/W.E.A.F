@@ -5,6 +5,9 @@ import {
   updateHeaderAuth,
 } from './components/layout/PublicHeader.js';
 import { createFooter } from './components/layout/Footer.js';
+import { createConsentManager, bindConsentManager } from './components/privacy/ConsentManager.js';
+import { createInstallPrompt, bindInstallPrompt } from './components/pwa/InstallPrompt.js';
+import { bindSponsoredServerSlots } from './components/ads/SponsoredServerSlot.js';
 import { createRouter } from './router.js';
 import { createAuthService } from './services/authService.js';
 import { createProfileService } from './services/profileService.js';
@@ -40,12 +43,17 @@ export async function startApp(root) {
     </main>
     ${createFooter()}
     ${createSessionExpiredDialog()}
+    ${createConsentManager()}
+    ${createInstallPrompt()}
     <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
   `;
 
   const authService = createAuthService();
   const profileService = createProfileService(authService.getClient());
   const store = createAppStore({ configured: authService.isConfigured() });
+  bindConsentManager(root);
+  bindInstallPrompt(root);
+  bindSponsoredServerSlots(root.querySelector('#main-content'), authService.getClient());
   let router;
   let inactivity;
 

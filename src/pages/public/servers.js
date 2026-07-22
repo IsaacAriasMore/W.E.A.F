@@ -1,5 +1,6 @@
 import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 
 const options = (label, values) => `<label><span>${label}</span><select data-server-filter><option value="">Todos</option>${values.map(([value, text]) => `<option value="${value}">${text}</option>`).join('')}</select></label>`;
 
@@ -34,7 +35,7 @@ export function render() {
         <label><span>Región</span><input type="search" data-server-search="region" placeholder="Ej. LATAM"></label><label><span>Idioma</span><input type="search" data-server-search="language" placeholder="Ej. Español"></label>
         ${options('Cluster', [['true','Sí'],['false','No']])}${options('Propagadores', [['true','Sí'],['false','No']])}
       </aside>
-      <div class="server-results"><header><div><span data-server-count>Buscando servidores…</span><h2>Servidores disponibles</h2></div><a class="button button-secondary" href="/servers/owners" data-link>Publicar servidor</a></header><div data-server-list class="server-list"><div class="server-loading"></div><div class="server-loading"></div></div><div class="server-empty" data-server-empty><strong>No encontramos una coincidencia.</strong><p>Prueba una región más amplia o limpia los filtros.</p><button class="button button-secondary" type="button" data-clear-server-filters>Limpiar filtros</button></div></div>
+      <div class="server-results"><header><div><span data-server-count>Buscando servidores…</span><h2>Servidores disponibles</h2></div><a class="button button-secondary" href="/servers/owners" data-link>Publicar servidor</a></header>${createSponsoredServerSlot('servers_featured', 'Servidor Plus')}<div data-server-list class="server-list"><div class="server-loading"></div><div class="server-loading"></div></div><div class="server-empty" data-server-empty><strong>No encontramos una coincidencia.</strong><p>Prueba una región más amplia o limpia los filtros.</p><button class="button button-secondary" type="button" data-clear-server-filters>Limpiar filtros</button></div></div>
     </section>`;
 }
 

@@ -1,3 +1,5 @@
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
+
 export function render() {
   return `
     <section class="hero">
@@ -47,6 +49,8 @@ export function render() {
         </a>
       </div>
     </section>
+
+    <div class="container sponsored-break">${createSponsoredServerSlot('home_hero_secondary', 'Comunidad Plus')}</div>
 
     <section class="game-compare section">
       <div class="container compare-layout">

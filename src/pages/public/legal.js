@@ -25,8 +25,8 @@ const pages = {
     sections: [
       ['Necesarias', 'Permitirán conservar sesión, seguridad y preferencias esenciales. No requerirán consentimiento cuando sean imprescindibles para prestar el servicio solicitado.'],
       ['Analíticas', 'Se activarán solo con consentimiento cuando corresponda y se usarán para entender rendimiento y uso agregado.'],
-      ['Publicidad', 'Los anuncios externos estarán desactivados por defecto. La futura configuración permitirá aceptar o rechazar categorías no esenciales.'],
-      ['Preferencias actuales', 'En Fase 1 solo se usa almacenamiento local para el checklist de bosses. No se instalan cookies publicitarias.'],
+      ['Publicidad', 'Las promociones internas pueden mostrarse sin cookies publicitarias. Su medición y cualquier futuro proveedor externo permanecen desactivados hasta que aceptes publicidad o analítica.'],
+      ['Preferencias actuales', 'La elección se guarda localmente en este navegador. Puedes cambiarla desde “Preferencias de privacidad” en el pie de página. También se usa almacenamiento local para checklists, seguridad y avisos de instalación.'],
     ],
   },
   '/disclaimer': {
@@ -43,7 +43,7 @@ const pages = {
     title: 'Política de reembolsos',
     intro: 'Base prevista para las futuras publicaciones pagadas de servidores.',
     sections: [
-      ['Antes del lanzamiento', 'W.E.A.F no procesa pagos en Fase 1. Los precios mostrados son parte del alcance planificado y no constituyen una oferta activa.'],
+      ['Estado actual', 'La integración técnica con Stripe está preparada, pero la venta pública depende de configurar las credenciales de producción y revisar estas condiciones.'],
       ['Servicios digitales', 'Antes de activar Stripe se definirán duración, renovación, cancelación, reembolso y jurisdicción aplicable de cada plan.'],
       ['Revisión manual', 'El administrador podrá evaluar reembolsos por cobro duplicado, fallo técnico o retiro justificado de una publicación.'],
     ],
