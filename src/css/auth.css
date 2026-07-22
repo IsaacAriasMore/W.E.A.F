@@ -133,6 +133,59 @@ body[data-route-kind='auth'] main {
   font-size: 0.92rem;
 }
 
+.auth-route-status {
+  margin-top: 1.5rem;
+}
+
+.auth-recovery {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 1rem;
+}
+
+.auth-recovery summary {
+  width: fit-content;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: .88rem;
+  font-weight: 750;
+}
+
+.auth-recovery form {
+  display: grid;
+  gap: .85rem;
+  margin-top: 1rem;
+}
+
+.auth-recovery form > p:first-child {
+  font-size: .8rem;
+}
+
+.auth-recovery-invalid {
+  margin-top: 2rem;
+}
+
+.auth-recovery-invalid .button {
+  margin-top: 1.25rem;
+}
+
+.email-verification-notice {
+  max-width: 44rem;
+  margin-top: 2rem;
+  padding: .9rem 1rem;
+  border-left: 2px solid var(--primary);
+  background: oklch(0.7 0.13 60 / .07);
+}
+
+.email-verification-notice strong {
+  font-size: .86rem;
+}
+
+.email-verification-notice p {
+  margin-top: .2rem;
+  font-size: .78rem;
+}
+
 .config-notice {
   margin-top: 1.5rem;
   padding: 0.9rem 1rem;

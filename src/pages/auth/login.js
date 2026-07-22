@@ -1,8 +1,12 @@
 import { bindPasswordToggle, configurationNotice, setFormStatus, setSubmitting } from './formUtils.js';
 import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
+import { AUTH_COPY } from '../../config/auth.js';
 
 export function render({ state }) {
   const destination = destinationFromSearch(window.location.search, null);
+  const search = new URLSearchParams(window.location.search);
+  const passwordUpdated = search.get('password') === 'updated';
+  const accountCreated = search.get('registered') === '1';
   return `
     <section class="auth-shell container">
       <div class="auth-context" aria-hidden="true">
@@ -17,6 +21,8 @@ export function render({ state }) {
           <p>Continúa desde el último punto guardado.</p>
         </div>
         ${configurationNotice(state.configured)}
+        ${accountCreated ? '<p class="form-status form-status-success auth-route-status" role="status">Cuenta creada correctamente. Ya puedes entrar a W.E.A.F.</p>' : ''}
+        ${passwordUpdated ? '<p class="form-status form-status-success auth-route-status" role="status">Contraseña actualizada. Ya puedes iniciar sesión.</p>' : ''}
         <form class="auth-form" data-login-form novalidate>
           <label>
             <span>Correo electrónico</span>
@@ -30,8 +36,17 @@ export function render({ state }) {
             </div>
           </label>
           <p class="form-status" data-form-status role="alert" hidden></p>
-          <button class="button button-primary auth-submit" type="submit">Ingresar</button>
+          <button class="button button-primary auth-submit" type="submit">${AUTH_COPY.es.signIn}</button>
         </form>
+        <details class="auth-recovery">
+          <summary>¿Olvidaste tu contraseña?</summary>
+          <form data-recovery-form novalidate>
+            <p>Te enviaremos un enlace. Esta función depende de que SMTP esté disponible.</p>
+            <label><span>Correo de recuperación</span><input name="email" type="email" autocomplete="email" required /></label>
+            <p class="form-status" data-form-status role="alert" hidden></p>
+            <button class="button button-secondary button-small" type="submit">Enviar enlace</button>
+          </form>
+        </details>
         <p class="auth-switch">¿Aún no tienes cuenta? <a class="text-link" href="${pathWithNext('/register', destination)}" data-link>Crear cuenta</a></p>
       </div>
     </section>
@@ -40,6 +55,7 @@ export function render({ state }) {
 
 export function bind({ authService, navigate }) {
   const form = document.querySelector('[data-login-form]');
+  const recoveryForm = document.querySelector('[data-recovery-form]');
   bindPasswordToggle(form);
 
   const onSubmit = async (event) => {
@@ -47,7 +63,7 @@ export function bind({ authService, navigate }) {
     setFormStatus(form);
     if (!form.reportValidity()) return;
 
-    setSubmitting(form, true, 'Ingresar');
+    setSubmitting(form, true, AUTH_COPY.es.signIn);
     const values = new FormData(form);
     const { data, error } = await authService.signIn({
       email: values.get('email').trim(),
@@ -56,7 +72,7 @@ export function bind({ authService, navigate }) {
 
     if (error) {
       setFormStatus(form, error);
-      setSubmitting(form, false, 'Ingresar');
+      setSubmitting(form, false, AUTH_COPY.es.signIn);
       return;
     }
 
@@ -64,6 +80,26 @@ export function bind({ authService, navigate }) {
     if (data?.session) navigate(destination);
   };
 
+  const onRecovery = async (event) => {
+    event.preventDefault();
+    setFormStatus(recoveryForm);
+    if (!recoveryForm.reportValidity()) return;
+    setSubmitting(recoveryForm, true, 'Enviar enlace');
+    const email = new FormData(recoveryForm).get('email').trim();
+    const { error } = await authService.requestPasswordReset(email);
+    if (error) {
+      setFormStatus(recoveryForm, error);
+      setSubmitting(recoveryForm, false, 'Enviar enlace');
+      return;
+    }
+    setFormStatus(recoveryForm, 'Si la cuenta existe, recibirás un enlace de recuperación.', 'success');
+    setSubmitting(recoveryForm, false, 'Enviar enlace');
+  };
+
   form.addEventListener('submit', onSubmit);
-  return () => form.removeEventListener('submit', onSubmit);
+  recoveryForm.addEventListener('submit', onRecovery);
+  return () => {
+    form.removeEventListener('submit', onSubmit);
+    recoveryForm.removeEventListener('submit', onRecovery);
+  };
 }

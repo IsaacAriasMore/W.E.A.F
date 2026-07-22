@@ -8,7 +8,7 @@ test('login renders a usable accessible form', async ({ page }) => {
   await page.getByLabel('Contraseña').fill('correct-horse-battery');
   await page.getByRole('button', { name: 'Mostrar' }).click();
   await expect(page.getByLabel('Contraseña')).toHaveAttribute('type', 'text');
-  await expect(page.getByRole('button', { name: 'Ingresar' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeEnabled();
   await page.screenshot({ path: 'artifacts/browser-qa/login-desktop.png', fullPage: true });
 });
 
@@ -22,7 +22,22 @@ test('registration captures profile, game and legal consent', async ({ page }) =
   await page.getByRole('radio', { name: /ASA/ }).check();
   await expect(page.getByRole('radio', { name: /ASA/ })).toBeChecked();
   await page.getByLabel(/Acepto los/).check();
-  await expect(page.getByRole('button', { name: 'Crear cuenta' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Registrarse' })).toBeEnabled();
+});
+
+test('password recovery is available without breaking login', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Solo necesarias' }).click();
+  await page.getByText('¿Olvidaste tu contraseña?').click();
+  await expect(page.getByLabel('Correo de recuperación')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Enviar enlace' })).toBeEnabled();
+});
+
+test('an invalid recovery link fails safely', async ({ page }) => {
+  await page.goto('/reset-password');
+  await expect(page).toHaveTitle('Restablecer contraseña | W.E.A.F');
+  await expect(page.getByRole('heading', { name: 'Crea una contraseña nueva' })).toBeVisible();
+  await expect(page.getByText(/El enlace no es válido/)).toBeVisible();
 });
 
 test('onboarding is protected and sends guests to login', async ({ page }) => {

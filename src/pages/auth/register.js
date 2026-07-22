@@ -1,5 +1,7 @@
 import { bindPasswordToggle, configurationNotice, setFormStatus, setSubmitting } from './formUtils.js';
 import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
+import { AUTH_COPY, REQUIRE_EMAIL_CONFIRMATION } from '../../config/auth.js';
+import { showToast } from '../../utils/feedback.js';
 
 export function render({ state }) {
   const destination = destinationFromSearch(window.location.search, null);
@@ -45,15 +47,15 @@ export function render({ state }) {
             <span>Acepto los <a href="/terms" data-link>Términos</a> y la <a href="/privacy" data-link>Política de privacidad</a>.</span>
           </label>
           <p class="form-status" data-form-status role="alert" hidden></p>
-          <button class="button button-primary auth-submit" type="submit">Crear cuenta</button>
+          <button class="button button-primary auth-submit" type="submit">${AUTH_COPY.es.signUp}</button>
         </form>
-        <p class="auth-switch">¿Ya tienes cuenta? <a class="text-link" href="${pathWithNext('/login', destination)}" data-link>Ingresar</a></p>
+        <p class="auth-switch">¿Ya tienes cuenta? <a class="text-link" href="${pathWithNext('/login', destination)}" data-link>${AUTH_COPY.es.signIn}</a></p>
       </div>
     </section>
   `;
 }
 
-export function bind({ authService, profileService, navigate }) {
+export function bind({ authService, profileService, store, navigate }) {
   const form = document.querySelector('[data-register-form]');
   const destination = destinationFromSearch(window.location.search, null);
   const onboardingDestination = pathWithNext('/onboarding', destination);
@@ -64,7 +66,7 @@ export function bind({ authService, profileService, navigate }) {
     setFormStatus(form);
     if (!form.reportValidity()) return;
 
-    setSubmitting(form, true, 'Crear cuenta');
+    setSubmitting(form, true, AUTH_COPY.es.signUp);
     const values = new FormData(form);
     const { data, error } = await authService.signUp({
       displayName: values.get('displayName').trim(),
@@ -76,13 +78,22 @@ export function bind({ authService, profileService, navigate }) {
 
     if (error) {
       setFormStatus(form, error);
-      setSubmitting(form, false, 'Crear cuenta');
+      setSubmitting(form, false, AUTH_COPY.es.signUp);
       return;
     }
 
     if (data?.session?.user) {
       await profileService.recordLegalAcceptance(data.session.user.id);
+      const { profile } = await profileService.getProfile(data.session.user.id);
+      store.setState({ session: data.session, profile });
+      showToast(`${AUTH_COPY.es.accountCreated} ${AUTH_COPY.es.tribeReady}`);
       navigate(onboardingDestination);
+      return;
+    }
+
+    if (!REQUIRE_EMAIL_CONFIRMATION) {
+      const loginDestination = pathWithNext('/login', destination);
+      navigate(`${loginDestination}${loginDestination.includes('?') ? '&' : '?'}registered=1`);
       return;
     }
 
@@ -90,9 +101,9 @@ export function bind({ authService, profileService, navigate }) {
       <div class="auth-success" role="status">
         <span class="success-mark">✓</span>
         <p class="section-kicker">Un paso más</p>
-        <h1>Revisa tu correo</h1>
+        <h1>Confirma tu correo</h1>
         <p>Enviamos un enlace de confirmación. Al abrirlo volverás a W.E.A.F para terminar tu perfil.</p>
-        <a class="button button-secondary" href="${pathWithNext('/login', destination)}" data-link>Ir al ingreso</a>
+        <a class="button button-secondary" href="${pathWithNext('/login', destination)}" data-link>${AUTH_COPY.es.signIn}</a>
       </div>
     `;
   };

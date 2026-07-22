@@ -59,6 +59,7 @@ Antes de activar Auth en producción, registra la URL de `/onboarding` entre las
 - [Fase 6: marketplace de servidores](docs/phase-6-server-marketplace.md)
 - [Fase 7: Stripe y expiración](docs/phase-7-stripe-and-expiration.md)
 - [Fase 8: privacidad, anuncios, PWA y checklist](docs/phase-8-pwa-ads-and-launch-checklist.md)
+- [Autenticación y registro directo](docs/auth.md)
 - [Guía del centro de comando](docs/admin-guide.md)
 - [Arquitectura](docs/architecture.md)
 - [Esquema de datos](docs/database-schema.md)

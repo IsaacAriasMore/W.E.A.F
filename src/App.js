@@ -80,7 +80,7 @@ export async function startApp(root) {
         ? 'admin'
         : pathname.startsWith('/app')
           ? 'app'
-        : ['/login', '/register', '/onboarding'].includes(pathname) ? 'auth' : 'public';
+        : ['/login', '/register', '/reset-password', '/onboarding'].includes(pathname) ? 'auth' : 'public';
       window.scrollTo({ top: 0, behavior: 'auto' });
     },
   });

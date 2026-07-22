@@ -1,12 +1,18 @@
 import { escapeHtml } from '../../utils/sanitize.js';
 import { setFormStatus, setSubmitting } from './formUtils.js';
 import { destinationFromSearch } from '../../utils/navigation.js';
+import { needsUnverifiedEmailNotice } from '../../config/auth.js';
 
 const modes = [
   { value: 'evolved', title: 'ARK: Survival Evolved', code: 'ASE', detail: 'Herramientas y datos clásicos.' },
   { value: 'ascended', title: 'ARK: Survival Ascended', code: 'ASA', detail: 'Contenido y sistemas actuales.' },
   { value: 'both', title: 'Juego en ambos', code: 'ASE + ASA', detail: 'Una vista combinada del ecosistema.' },
 ];
+
+function emailNotice(user) {
+  if (!needsUnverifiedEmailNotice(user)) return '';
+  return `<aside class="email-verification-notice" role="note"><strong>Tu correo no ha sido verificado todavía.</strong><p>Puedes usar W.E.A.F con normalidad. Este aviso no cambia tus permisos ni bloquea el acceso.</p></aside>`;
+}
 
 export function render({ state }) {
   const metadata = state.session?.user?.user_metadata || {};
@@ -22,6 +28,7 @@ export function render({ state }) {
         <p class="section-kicker">Perfil operativo</p>
         <h1>La forja te reconoce, ${escapeHtml(displayName)}.</h1>
         <p>Tu preferencia de juego está guardada. Ya puedes crear una tribu, aceptar tu invitación y administrar sus permisos.</p>
+        ${emailNotice(state.session?.user)}
         <div class="completion-actions">
           <a class="button button-primary" href="${escapeHtml(destination)}" data-link>Ir a mis tribus</a>
           <a class="button button-secondary" href="/" data-link>Volver al inicio</a>
@@ -42,6 +49,7 @@ export function render({ state }) {
         <h1>¿En qué ARK construyes?</h1>
         <p>Esta elección ordena el contenido que verás primero. Podrás cambiarla después.</p>
       </div>
+      ${emailNotice(state.session?.user)}
       <form class="onboarding-form" data-onboarding-form novalidate>
         <label class="profile-name">
           <span>Nombre visible</span>

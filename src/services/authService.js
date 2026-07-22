@@ -1,10 +1,13 @@
 import { getSupabaseClient } from '../config/supabase.js';
 import { LEGAL_VERSION } from '../config/legal.js';
 import { pathWithNext, safeInternalDestination } from '../utils/navigation.js';
+import { REQUIRE_EMAIL_CONFIRMATION } from '../config/auth.js';
 
 const authErrorMessages = {
   invalid_credentials: 'El correo o la contraseña no coinciden.',
-  email_not_confirmed: 'Confirma tu correo antes de ingresar.',
+  email_not_confirmed: REQUIRE_EMAIL_CONFIRMATION
+    ? 'Confirma tu correo antes de ingresar.'
+    : 'Supabase todavía exige confirmar el correo. Desactiva “Confirm email” para permitir el acceso directo.',
   user_already_exists: 'Ya existe una cuenta con este correo.',
   signup_disabled: 'El registro está deshabilitado temporalmente.',
   weak_password: 'Usa una contraseña más segura.',
@@ -57,7 +60,32 @@ export function createAuthService(client = getSupabaseClient()) {
     async signIn({ email, password }) {
       if (!client) return unavailable();
       const { data, error } = await client.auth.signInWithPassword({ email, password });
+      if (!error && REQUIRE_EMAIL_CONFIRMATION && data?.user && !data.user.email_confirmed_at) {
+        await client.auth.signOut({ scope: 'local' });
+        return { data: null, error: authErrorMessages.email_not_confirmed };
+      }
       return { data, error: friendlyAuthError(error) };
+    },
+
+    async requestPasswordReset(email) {
+      if (!client) return unavailable();
+      const redirectBase = (import.meta.env?.VITE_PUBLIC_SITE_URL || window.location.origin).replace(/\/$/, '');
+      const { data, error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: `${redirectBase}/reset-password`,
+      });
+      return {
+        data,
+        error: error ? 'No se pudo enviar el correo de recuperación. Inténtalo más tarde.' : null,
+      };
+    },
+
+    async updatePassword(password) {
+      if (!client) return unavailable();
+      const { data, error } = await client.auth.updateUser({ password });
+      return {
+        data,
+        error: error ? 'No pudimos actualizar la contraseña. Solicita un enlace nuevo e inténtalo otra vez.' : null,
+      };
     },
 
     async signOut({ localOnly = false } = {}) {
