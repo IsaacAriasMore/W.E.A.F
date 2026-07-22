@@ -1,122 +1,93 @@
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
+import { createServerService } from '../../services/serverService.js';
+import { escapeHtml } from '../../utils/sanitize.js';
+import { t } from '../../i18n/index.js';
+
+const tool = (href, code, title, body, link) => `<a class="home-tool cinematic-card reveal-up" href="${href}" data-link><span>${code}</span><h3>${title}</h3><p>${body}</p><strong>${link} →</strong></a>`;
+
+const faq = [
+  ['¿Necesito cuenta para usar INIs?', 'No. Las herramientas públicas se pueden consultar sin iniciar sesión.'],
+  ['¿Los breeds son públicos?', 'No. Los breeds, mutaciones y actividad pertenecen al espacio privado de cada tribu.'],
+  ['¿Puedo usarlo para ASA?', 'Sí. W.E.A.F separa contenido compatible con ASE, ASA o ambos.'],
+  ['¿El webhook de Discord es privado?', 'Sí. La URL se guarda para la tribu y no se muestra en páginas públicas.'],
+  ['¿Puedo publicar mi servidor?', 'Sí. Puedes elegir un plan mensual Normal o Plus y completar el pago con Stripe.'],
+  ['¿W.E.A.F está afiliado a ARK o Wildcard?', 'No. Es una herramienta independiente creada para la comunidad.'],
+];
+
+function featuredCard(server) {
+  return `<article class="home-server-card cinematic-card reveal-scale">
+    <div>${server.banner_url ? `<img src="${escapeHtml(server.banner_url)}" alt="" loading="lazy">` : '<img src="/assets/weaf-hero.webp" alt="Paisaje prehistórico de W.E.A.F" loading="lazy">'}</div>
+    <span>${server.game.toUpperCase()} / ${escapeHtml(server.server_type)}</span>
+    <h3>${escapeHtml(server.title)}</h3>
+    <p>${escapeHtml(server.region)}. ${escapeHtml(server.maps?.slice(0, 2).join(', ') || t('servers.noSpecification'))}</p>
+    <a class="text-link" href="/servers" data-link>${t('home.servers.view')} →</a>
+  </article>`;
+}
 
 export function render() {
-  return `
-    <section class="hero">
-      <div class="hero-inner container">
-        <div class="hero-copy">
-          <p class="hero-kicker">Coordinación para tribus</p>
-          <h1>Convierte el progreso en un plan compartido.</h1>
-          <p>Herramientas públicas y un espacio privado para preparar, criar y avanzar juntos.</p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="/register" data-link>Crear cuenta</a>
-            <a class="button button-secondary" href="/inis" data-link>Explorar INIs</a>
-          </div>
-        </div>
-        <figure class="hero-visual">
-          <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="Criaturas prehistóricas recorren una meseta volcánica al amanecer" fetchpriority="high" />
-          <figcaption>
-            <span>ASE + ASA</span>
-            <strong>Una base para cada forma de jugar.</strong>
-          </figcaption>
-        </figure>
+  return `<section class="hero home-hero">
+    <div class="hero-atmosphere" aria-hidden="true"></div>
+    <div class="hero-inner container">
+      <div class="hero-copy reveal-left">
+        <p class="hero-kicker">${t('home.hero.eyebrow')}</p>
+        <h1>${t('home.hero.title')}</h1>
+        <p>${t('home.hero.subtitle')}</p>
+        <div class="hero-actions"><a class="button button-primary" href="/register" data-link>${t('home.hero.primary')}</a><a class="button button-secondary" href="/inis" data-link>${t('home.hero.secondary')}</a><a class="button button-quiet" href="/servers" data-link>${t('home.hero.servers')}</a></div>
       </div>
-    </section>
+      <figure class="hero-visual reveal-right">
+        <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="Criaturas prehistóricas recorren una meseta volcánica al amanecer" fetchpriority="high">
+        <figcaption><span>ASE + ASA</span><strong>Planifica. Cría. Progresa.</strong></figcaption>
+      </figure>
+    </div>
+    <a class="home-scroll-cue" href="#public-tools">Explorar <span aria-hidden="true">↓</span></a>
+  </section>
 
-    <section class="tool-intro section container" aria-labelledby="tools-title">
-      <div class="section-heading compact-heading">
-        <h2 id="tools-title">Consulta antes de entrar.</h2>
-        <p>La parte pública resuelve tareas concretas sin pedir una cuenta.</p>
-      </div>
-      <div class="tool-rail">
-        <a class="tool-link tool-link-featured" href="/inis" data-link>
-          <span class="tool-index">INI</span>
-          <strong>Configuraciones listas para copiar</strong>
-          <p>Filtra por objetivo, revisa el contenido y descarga un archivo limpio.</p>
-          <span class="text-link">Abrir biblioteca</span>
-        </a>
-        <a class="tool-link" href="/maps-bosses" data-link>
-          <span class="tool-index">BOSS</span>
-          <strong>Requisitos sin perder el hilo</strong>
-          <p>Elige mapa y dificultad. Tu checklist queda guardado en el navegador.</p>
-          <span class="text-link">Preparar batalla</span>
-        </a>
-        <a class="tool-link" href="/creatures" data-link>
-          <span class="tool-index">DEX</span>
-          <strong>Criaturas por juego y función</strong>
-          <p>Encuentra líneas útiles para boss, movilidad, farmeo o PvP.</p>
-          <span class="text-link">Explorar criaturas</span>
-        </a>
-      </div>
-    </section>
+  <section id="public-tools" class="home-section container">
+    <div class="home-heading reveal-up"><h2>${t('home.tools.title')}</h2><p>${t('home.tools.body')}</p></div>
+    <div class="home-tool-grid">
+      ${tool('/inis', 'INI', 'INIs listas para copiar', 'Filtra por objetivo y descarga una configuración limpia.', 'Abrir biblioteca')}
+      ${tool('/maps-bosses', 'BOSS', 'Mapas & Bosses', 'Marca tributos por mapa, boss y dificultad.', 'Preparar batalla')}
+      ${tool('/creatures', 'DEX', 'Biblioteca de criaturas', 'Encuentra especies por juego, mapa y función.', 'Explorar criaturas')}
+      ${tool('/servers', 'LIVE', 'Servidores destacados', 'Compara mapas, rates, plataformas y estilo de juego.', 'Ver servidores')}
+    </div>
+  </section>
 
-    <div class="container sponsored-break">${createSponsoredServerSlot('home_hero_secondary', 'Comunidad Plus')}</div>
+  <section class="home-private home-section">
+    <div class="container home-private-grid">
+      <div class="home-private-copy reveal-left"><h2>${t('home.private.title')}</h2><p>${t('home.private.body')}</p><a class="button button-primary" href="/register" data-link>${t('common.signUp')}</a></div>
+      <div class="home-ledger reveal-right" aria-label="Funciones privadas"><div><strong>Roles claros</strong><span>owner / admin / member</span></div><div><strong>Breeds y mutaciones</strong><span>aislados por tribu</span></div><div><strong>Discord</strong><span>alertas con webhook privado</span></div></div>
+    </div>
+  </section>
 
-    <section class="game-compare section">
-      <div class="container compare-layout">
-        <div class="section-heading">
-          <h2>Dos juegos. Una lógica clara.</h2>
-          <p>W.E.A.F conserva el contexto de cada versión y evita mezclar criaturas o tiempos incompatibles.</p>
-          <button class="button button-secondary" type="button" data-coming-soon="El comparador detallado llegará después de consolidar los datos públicos.">Ver comparación completa</button>
-        </div>
-        <div class="compare-board" aria-label="Comparación general entre ASE y ASA">
-          <div class="compare-column">
-            <span>ASE</span>
-            <strong>Catálogo establecido</strong>
-            <p>Contenido amplio, rutas conocidas y configuraciones maduras.</p>
-          </div>
-          <div class="compare-shared">
-            <span>Compartido</span>
-            <ul>
-              <li>Objetivos de stats</li>
-              <li>Preparación de bosses</li>
-              <li>Organización por tribu</li>
-            </ul>
-          </div>
-          <div class="compare-column">
-            <span>ASA</span>
-            <strong>Ecosistema en expansión</strong>
-            <p>Nuevas criaturas, rendimiento distinto y contenido en evolución.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+  <section class="home-section container home-game-layout">
+    <div class="home-heading reveal-up"><h2>${t('home.games.title')}</h2><p>${t('home.games.body')}</p></div>
+    <div class="home-game-board reveal-scale"><article><span>ASE</span><h3>Evolved</h3><p>Catálogo establecido, mapas clásicos y configuraciones maduras.</p></article><div><strong>Ambos</strong><p>Objetivos, coordinación y privacidad con el contexto correcto.</p></div><article><span>ASA</span><h3>Ascended</h3><p>Contenido compatible y un catálogo preparado para crecer.</p></article></div>
+  </section>
 
-    <section class="tribe-story section container">
-      <div class="tribe-story-copy">
-        <h2>Lo público ayuda. La tribu coordina.</h2>
-        <p>Tu perfil ya puede prepararse. En la Fase 3, cada miembro verá solo breeds, mutaciones y actividad de sus tribus. Sin feed global.</p>
-        <a class="button button-primary" href="/register" data-link>Preparar mi perfil</a>
-      </div>
-      <div class="privacy-ledger" aria-label="Principios del espacio privado">
-        <div><strong>Privacidad por diseño</strong><span>Cada registro depende de <code>tribe_id</code> y RLS.</span></div>
-        <div><strong>Roles sin confusión</strong><span>Owner, admin de tribu y admin global son permisos distintos.</span></div>
-        <div><strong>Discord seguro</strong><span>Las alertas salen desde Edge Functions, nunca desde el navegador.</span></div>
-      </div>
-    </section>
+  <section class="home-breeding home-section container">
+    <div class="home-breeding-visual reveal-left"><img src="/assets/weaf-hero.webp" alt="Criaturas prehistóricas en el entorno original de W.E.A.F" loading="lazy"></div>
+    <div class="home-breeding-copy reveal-right"><h2>${t('home.breeding.title')}</h2><p>${t('home.breeding.body')}</p><div><span>Con propagadores</span><strong>Cooldown configurable</strong></div><div><span>Breeding vanilla</span><strong>Multiplicador y tiempos reales</strong></div></div>
+  </section>
 
-    <section class="server-owner section">
-      <div class="container server-owner-layout">
-        <div>
-          <h2>Tu servidor frente a la comunidad correcta.</h2>
-          <p>Explora publicaciones directas de comunidades ASE y ASA, o presenta tu servidor desde $3 al mes.</p>
-          <a class="button button-secondary" href="/servers/owners" data-link>Conocer planes</a>
-        </div>
-        <div class="server-preview-list" aria-label="Acceso al directorio de servidores">
-          <article class="server-preview"><div><span>DIRECTORIO ACTIVO</span><h3>Filtra antes de unirte.</h3></div><dl><div><dt>Juegos</dt><dd>ASE + ASA</dd></div><div><dt>Modos</dt><dd>PvP · PvE · PvPvE</dd></div><div><dt>Señales</dt><dd>Rates, wipe, cluster y mods</dd></div></dl><a class="text-link" href="/servers" data-link>Abrir servidores</a></article>
-        </div>
-      </div>
-    </section>
+  <section class="home-featured home-section">
+    <div class="container"><div class="home-heading reveal-up"><h2>${t('home.servers.title')}</h2><p>${t('home.servers.body')}</p></div><div class="home-server-rail" data-home-featured><div class="server-loading"></div><div class="server-loading"></div></div><div class="home-server-actions reveal-up"><a class="button button-primary" href="/servers" data-link>${t('home.servers.view')}</a><a class="button button-secondary" href="/servers/owners" data-link>${t('home.servers.publish')}</a></div></div>
+  </section>
+  <div class="container sponsored-break reveal">${createSponsoredServerSlot('home_hero_secondary', 'Comunidad Plus')}</div>
 
-    <section class="final-cta section container">
-      <div>
-        <h2>Empieza con una herramienta.</h2>
-        <p>No necesitas iniciar sesión para preparar tu siguiente sesión.</p>
-      </div>
-      <div>
-        <a class="button button-primary" href="/maps-bosses" data-link>Preparar un boss</a>
-        <a class="button button-quiet" href="/creatures" data-link>Buscar criatura</a>
-      </div>
-    </section>
-  `;
+  <section class="home-section container home-process"><div class="home-heading reveal-up"><h2>${t('home.steps.title')}</h2></div><ol>${['account', 'tribe', 'config', 'breeds', 'alerts'].map((key) => `<li class="reveal-up"><strong>${t(`home.steps.${key}`)}</strong></li>`).join('')}</ol></section>
+
+  <section class="home-community home-section container reveal-scale"><div><h2>${t('home.community.title')}</h2><p>${t('home.community.body')}</p></div><div><strong>No es una app oficial.</strong><p>La independencia está documentada y visible en cada página.</p></div></section>
+
+  <section class="home-section container home-faq"><div class="home-heading reveal-up"><h2>${t('home.faq.title')}</h2></div><div class="home-faq-list">${faq.map(([question, answer]) => `<details class="reveal-up"><summary>${question}</summary><p>${answer}</p></details>`).join('')}</div></section>
+
+  <section class="home-final container reveal-scale"><h2>${t('home.final.title')}</h2><div><a class="button button-primary" href="/register" data-link>${t('home.hero.primary')}</a><a class="button button-secondary" href="/servers" data-link>${t('home.final.servers')}</a></div></section>`;
+}
+
+export function bind({ authService }) {
+  const rail = document.querySelector('[data-home-featured]');
+  const service = createServerService(authService.getClient());
+  service.listPublic().then((result) => {
+    const featured = result.data.filter((server) => server.is_featured).slice(0, 3);
+    rail.innerHTML = featured.length ? featured.map(featuredCard).join('') : `<div class="home-server-empty"><strong>El escaparate está listo.</strong><p>Los servidores Plus aparecerán aquí cuando Stripe confirme su suscripción.</p><a class="text-link" href="/servers/owners" data-link>${t('home.servers.publish')} →</a></div>`;
+  });
 }
