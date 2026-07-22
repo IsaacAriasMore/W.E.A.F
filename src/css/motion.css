@@ -92,6 +92,39 @@ body:is([data-route-kind='public'], [data-route-kind='auth']) main {
   pointer-events: none;
 }
 
+.three-hero-layer canvas {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 700ms var(--ease-out);
+}
+
+.three-hero-ready canvas { opacity: 0.72; }
+
+.three-hero-fallback-orb {
+  position: absolute;
+  top: 7%;
+  right: 8%;
+  width: min(32rem, 48vw);
+  aspect-ratio: 1;
+  border: 1px solid oklch(0.7 0.13 60 / 0.09);
+  border-radius: 50%;
+  opacity: 0.75;
+}
+
+.three-hero-fallback-orb::before,
+.three-hero-fallback-orb::after {
+  position: absolute;
+  border: 1px solid oklch(0.52 0.08 240 / 0.1);
+  border-radius: 50%;
+  content: '';
+}
+
+.three-hero-fallback-orb::before { inset: 16%; }
+.three-hero-fallback-orb::after { inset: 34%; }
+
+.three-hero-ready .three-hero-fallback-orb { opacity: 0.28; }
+
 .lottie-motion {
   display: grid;
   width: 5rem;
@@ -141,4 +174,6 @@ body:is([data-route-kind='public'], [data-route-kind='auth']) main {
   }
 
   :is(.cinematic-card, .glow-card, .interactive-card):hover { transform: none; }
+
+  .three-hero-layer canvas { display: none; }
 }

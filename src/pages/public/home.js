@@ -2,6 +2,7 @@ import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerS
 import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { t } from '../../i18n/index.js';
+import { mountWeafThreeHero } from '../../components/visuals/WeafThreeHero.js';
 
 const tool = (href, code, title, body, link) => `<a class="home-tool cinematic-card reveal-up" href="${href}" data-link><span>${code}</span><h3>${title}</h3><p>${body}</p><strong>${link} →</strong></a>`;
 
@@ -20,6 +21,7 @@ function featuredCard(server) {
 export function render() {
   return `<section class="hero home-hero">
     <div class="hero-atmosphere" aria-hidden="true"></div>
+    <div class="three-hero-layer" data-three-hero aria-hidden="true"><span class="three-hero-fallback-orb"></span></div>
     <div class="hero-inner container">
       <div class="hero-copy reveal-left">
         <p class="hero-kicker">${t('home.hero.eyebrow')}</p>
@@ -79,8 +81,15 @@ export function render() {
 export function bind({ authService }) {
   const rail = document.querySelector('[data-home-featured]');
   const service = createServerService(authService.getClient());
+  const cleanupThree = mountWeafThreeHero(document.querySelector('[data-three-hero]'));
+  let disposed = false;
   service.listPublic().then((result) => {
+    if (disposed || !rail) return;
     const featured = result.data.filter((server) => server.is_featured).slice(0, 3);
     rail.innerHTML = featured.length ? featured.map(featuredCard).join('') : `<div class="home-server-empty"><strong>${t('home.featuredEmpty.title')}</strong><p>${t('home.featuredEmpty.body')}</p><a class="text-link" href="/servers/owners" data-link>${t('home.servers.publish')} →</a></div>`;
   });
+  return () => {
+    disposed = true;
+    cleanupThree();
+  };
 }
