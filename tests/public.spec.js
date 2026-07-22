@@ -60,6 +60,9 @@ test('server directory and owner plans are public and responsive', async ({ page
   await page.goto('/servers/owners');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Publica con control');
   await expect(page.locator('.owner-plan')).toHaveCount(2);
+  await expect(page.getByRole('link', { name: /Ver planes/ })).toBeVisible();
+  const planTop = await page.locator('#owner-plans').evaluate((element) => element.getBoundingClientRect().top);
+  expect(planTop).toBeLessThan(page.viewportSize().height);
 });
 
 test('all legal routes render a document', async ({ page }) => {

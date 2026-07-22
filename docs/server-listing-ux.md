@@ -4,7 +4,7 @@
 
 El propietario elige un plan, completa una ficha estructurada y guarda el borrador mediante `save_server_listing_draft`. Si Stripe está habilitado, la app abre Checkout después de que la base de datos valida y guarda la publicación.
 
-El formulario no expone campos técnicos. El slug se genera en Postgres a partir del nombre del servidor y recibe un sufijo corto solo cuando existe una colisión.
+El formulario no expone campos técnicos. `public.generate_server_listing_slug` genera el slug en Postgres a partir del nombre del servidor y usa sufijos numéricos (`-2`, `-3`) cuando existe una colisión. Las ediciones conservan el slug existente.
 
 ## Campos
 

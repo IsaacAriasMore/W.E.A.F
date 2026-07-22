@@ -29,11 +29,18 @@ test('public publish form no longer asks for a slug or mod names', () => {
   assert.match(page, /name: 'has_mods'/);
   assert.match(page, /t\('servers\.maps'\)/);
   assert.match(page, /t\('servers\.platforms'\)/);
+  assert.match(page, /data-select-publish-plan="normal"/);
+  assert.match(page, /data-select-publish-plan="plus"/);
+  assert.match(page, /workspace\.innerHTML = planSelector/);
+  assert.match(page, /Cancelación programada/);
+  assert.match(page, /canceled: 'Cancelado'/);
 });
 
-test('database creates the listing slug and stores the mods boolean', () => {
-  const migration = read('supabase/migrations/20260722150010_server_listing_publish_ux.sql');
-  assert.match(migration, /private\.server_listing_slug/);
+test('database creates stable numeric listing slugs and stores the mods boolean', () => {
+  const migration = read('supabase/migrations/20260722162000_production_server_listing_fixes.sql');
+  assert.match(migration, /public\.generate_server_listing_slug/);
+  assert.match(migration, /suffix_number := suffix_number \+ 1/);
+  assert.match(migration, /slug = coalesce\(nullif\(slug, ''\)/);
   assert.match(migration, /has_mods = selected_has_mods/);
   assert.doesNotMatch(migration, /p_payload->>'slug'/);
 });

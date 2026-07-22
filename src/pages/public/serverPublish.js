@@ -15,6 +15,10 @@ import { t } from '../../i18n/index.js';
 const value = (item, key, fallback = '') => escapeHtml(String(item?.[key] ?? fallback));
 const planLabel = (plan) => plan === 'plus' ? 'Plus - $7 USD/mes' : 'Normal - $3 USD/mes';
 const checked = (condition) => condition ? 'checked' : '';
+const billingStatusLabel = (listing) => {
+  if (listing?.cancel_at_period_end) return 'Cancelación programada';
+  return ({ active: 'Activo', canceled: 'Cancelado', paused: 'Pausado', expired: 'Expirado', pending_payment: 'Pago pendiente', draft: 'Borrador', hidden: 'Oculto', rejected: 'Rechazado' })[listing?.status] || listing?.status || 'Sin estado';
+};
 
 function choiceGroup({ legend, help, name, items, selected = [], type = 'checkbox' }) {
   return `<fieldset class="publish-choice-group" data-choice-group="${name}">
@@ -69,7 +73,18 @@ function form(plan, listing) {
 
 function dashboard(listings, hasCustomer) {
   if (!listings.length) return `<div class="publish-message"><h2>Aún no tienes publicaciones.</h2><p>Elige Normal o Plus, completa la ficha y continúa al pago seguro.</p><a class="button button-primary" href="/servers/owners" data-link>Ver planes</a></div>`;
-  return `<div class="publish-message"><h2>Tus publicaciones</h2><p>Consulta su estado, edita la ficha o administra la suscripción.</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(listing.status)} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>Editar</a></article>`).join('')}</div><div class="server-card-actions">${hasCustomer && REAL_STRIPE_BILLING ? `<button class="button button-primary" type="button" data-billing-portal>${t('servers.billing')}</button>` : ''}<a class="button button-quiet" href="/servers/owners" data-link>Nueva publicación</a></div></div>`;
+  return `<div class="publish-message"><h2>Tus publicaciones</h2><p>Consulta su estado, edita la ficha o administra la suscripción.</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(billingStatusLabel(listing))} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>Editar</a></article>`).join('')}</div><div class="server-card-actions">${hasCustomer && REAL_STRIPE_BILLING ? `<button class="button button-primary" type="button" data-billing-portal>${t('servers.billing')}</button>` : ''}<a class="button button-quiet" href="/servers/owners" data-link>Nueva publicación</a></div></div>`;
+}
+
+function planSelector(listings, hasCustomer) {
+  return `<section class="publish-plan-selector" aria-labelledby="publish-plan-title">
+    <div><p>Elige cómo aparecer</p><h2 id="publish-plan-title">Selecciona un plan para comenzar.</h2><span>Podrás revisar toda la ficha antes de abrir Stripe Checkout.</span></div>
+    <div class="publish-plan-options">
+      <button class="publish-plan-option cinematic-card" type="button" data-select-publish-plan="normal"><span>Base esencial</span><strong>Normal</strong><b>$3 <small>USD / mes</small></b><em>Ficha completa y edición mientras esté activo.</em></button>
+      <button class="publish-plan-option cinematic-card is-plus" type="button" data-select-publish-plan="plus"><span>Mayor visibilidad</span><strong>Plus</strong><b>$7 <small>USD / mes</small></b><em>Posición destacada e insignia Plus.</em></button>
+    </div>
+    ${listings.length ? dashboard(listings, hasCustomer) : ''}
+  </section>`;
 }
 
 export function render() {
@@ -91,7 +106,7 @@ export function bind({ authService, navigate }) {
   const service = createServerService(authService.getClient());
   const workspace = document.querySelector('[data-publish-workspace]');
   const query = new URLSearchParams(window.location.search);
-  const chosenPlan = ['normal', 'plus'].includes(query.get('plan')) ? query.get('plan') : null;
+  let chosenPlan = ['normal', 'plus'].includes(query.get('plan')) ? query.get('plan') : null;
   const requestedListingId = query.get('listing_id');
   let selectedListing = null;
 
@@ -107,7 +122,7 @@ export function bind({ authService, navigate }) {
       workspace.innerHTML = form(plan === 'manual' ? 'normal' : plan, selectedListing);
       return;
     }
-    workspace.innerHTML = dashboard(listings, Boolean(result.data?.has_customer));
+    workspace.innerHTML = planSelector(listings, Boolean(result.data?.has_customer));
   }
 
   workspace.addEventListener('change', (event) => {
@@ -118,6 +133,14 @@ export function bind({ authService, navigate }) {
   });
 
   workspace.addEventListener('click', async (event) => {
+    const planChoice = event.target.closest('[data-select-publish-plan]');
+    if (planChoice) {
+      chosenPlan = planChoice.dataset.selectPublishPlan;
+      window.history.replaceState({}, '', `/servers/publish?plan=${chosenPlan}`);
+      workspace.innerHTML = form(chosenPlan, null);
+      workspace.querySelector('[name="title"]')?.focus();
+      return;
+    }
     const portal = event.target.closest('[data-billing-portal]');
     if (!portal) return;
     portal.disabled = true; portal.textContent = 'Abriendo Stripe…';

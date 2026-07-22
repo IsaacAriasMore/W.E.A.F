@@ -120,11 +120,11 @@ Con `VITE_BILLING_ENABLED=false` o `VITE_STRIPE_ENABLED=false`, el frontend guar
 W.E.A.F retira una publicación Stripe de la zona pública cuando ocurre cualquiera de estos estados:
 
 - `customer.subscription.deleted`: estado `canceled`, pago `canceled` y sin destacado.
-- `customer.subscription.updated` con `cancel_at_period_end=true`: estado `paused` de inmediato y sin destacado.
+- `customer.subscription.updated` con `cancel_at_period_end=true`: estado y pago `canceled` de inmediato, sin destacado.
 - Suscripción `canceled`, `unpaid`, `incomplete_expired` o `past_due`: cancelada o pausada según el estado de pago.
 - `invoice.payment_failed`: estado `paused`, pago `failed` y sin destacado.
 
-La protección existe en dos capas. El trigger de base de datos normaliza el estado aunque el webhook reciba una actualización activa con cancelación programada. La política RLS y la consulta pública solo exponen publicaciones activas con pago Stripe confirmado o publicaciones manuales con `payment_status=not_required`.
+La protección existe en dos capas. El trigger de base de datos normaliza el estado aunque el webhook reciba una actualización activa con cancelación programada. La política RLS y la consulta pública solo exponen publicaciones activas con pago confirmado o publicaciones manuales con `payment_status=not_required`/`paid`.
 
 El propietario y el admin global conservan lectura del registro cancelado. Solo un admin global puede reactivar manualmente una publicación sin suscripción Stripe; el trigger la marca como `billing_source=manual` y `payment_status=not_required`.
 
@@ -134,5 +134,5 @@ El propietario y el admin global conservan lectura del registro cancelado. Solo 
 2. Confirmar `status=active`, `payment_status=paid` e `is_featured=true`.
 3. Cancelar en Billing Portal.
 4. Confirmar la entrega de `customer.subscription.updated` con `cancel_at_period_end=true`.
-5. Confirmar `status=paused`, `is_featured=false` y ausencia en `/servers`.
-6. Entregar o simular `customer.subscription.deleted` y confirmar `status=canceled` y `payment_status=canceled`.
+5. Confirmar `status=canceled`, `payment_status=canceled`, `is_featured=false` y ausencia en `/servers`.
+6. Reactivar la suscripción y confirmar que un evento `active` con `cancel_at_period_end=false` devuelve la ficha a `active`/`paid`.
