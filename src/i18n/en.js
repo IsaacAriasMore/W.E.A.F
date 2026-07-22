@@ -5,6 +5,17 @@ export default {
     edit: 'Edit', saveChanges: 'Save changes', website: 'Website', back: 'Back', new: 'New', verified: 'Verified',
   },
   nav: { home: 'Home', inis: 'INIs', mapsBosses: 'Maps & Bosses', creatures: 'Creatures', servers: 'Servers', menuOpen: 'Open menu', menuClose: 'Close menu' },
+  ads: {
+    internalPromotion: 'Internal promotion', plusServer: 'Plus server', featuredServer: 'Featured server',
+    learnServer: 'Learn about server', joinDiscord: 'Join Discord', viewServers: 'View servers', listServer: 'List my server',
+    availableSpace: 'This space highlights active Plus servers.', noneYet: 'No featured servers yet.',
+    hideRecommendation: 'Hide recommendation', internalAds: 'Internal ads', notSpecified: 'Not specified',
+    regionLanguage: 'Region and language', communityPick: 'Featured community server',
+    tribeBody: 'Explore a Plus community while organizing your tribe.',
+    previewTitle: 'This is how a Plus server gains visibility.', previewBody: 'It can appear on Home, above the directory, and in clearly labeled internal recommendations.',
+    previewBadge: 'Plus benefit preview', enabled: 'Placement enabled', disabled: 'Placement disabled',
+    enable: 'Enable placement', disable: 'Disable placement', promotableCount: '{count} promotable servers',
+  },
   home: {
     hero: {
       eyebrow: 'Coordination for tribes', title: 'Turn progress into a shared plan.',
@@ -56,11 +67,11 @@ export default {
     low: 'Low', medium: 'Medium', high: 'High', configuration: 'Configuration', modsHelp: 'We only need to know whether the server uses mods.',
     directory: {
       eyebrow: 'Community directory', title: 'Find a server with your rules.', gameCoverage: 'ASE + ASA', directInfo: 'Direct information', noRankings: 'No artificial rankings',
-      filters: 'Server filters', filter: 'Filter', game: 'Game', mode: 'Mode', withMods: 'With mods', withoutMods: 'Without mods', platform: 'Platform', console: 'Console', region: 'Region', regionExample: 'e.g. LATAM', language: 'Language', languageExample: 'e.g. English', cluster: 'Cluster', propagators: 'Propagators', searching: 'Searching servers…', howItWorks: 'See how it works', emptyHelp: 'Try a broader region or clear the filters.', one: '{count} server', many: '{count} servers', discord: 'Join Discord', website: 'Website', wipe: 'Wipe', verified: 'Verified', new: 'New',
+      filters: 'Server filters', filter: 'Filter', game: 'Game', mode: 'Mode', withMods: 'With mods', withoutMods: 'Without mods', platform: 'Platform', console: 'Console', region: 'Region', regionExample: 'e.g. LATAM', language: 'Language', languageExample: 'e.g. English', cluster: 'Cluster', propagators: 'Propagators', searching: 'Searching servers…', howItWorks: 'See how it works', emptyHelp: 'Try a broader region or clear the filters.', emptyPublish: 'Do you run a community? List your server with a clear profile.', one: '{count} server', many: '{count} servers', discord: 'Join Discord', website: 'Website', wipe: 'Wipe', verified: 'Verified', new: 'New', plus: 'Plus',
     },
     owner: {
       back: 'Back to directory', eyebrow: 'For server owners', title: 'List with control and transparent billing.', body: 'Choose Normal or Plus, complete the listing, and activate it through Stripe Checkout.', viewPlans: 'View plans', plansLabel: 'Server listing plans', essential: 'Essential base', visibility: 'More visibility', normalBody: 'A clear, stable presence in the directory.', plusBody: 'Built for seasons, wipes, and launches.', perMonth: 'USD / month', choose: 'Choose {plan}',
-      normalFeatures: 'Full listing|Edit while active|Click analytics', plusFeatures: 'Everything in Normal|Featured placement|Featured badge',
+      normalFeatures: 'Full listing|Edit while active|Click analytics', plusFeatures: 'Everything in Normal|Featured placement|Featured badge|Internal promotion across Home and tools',
       processTitle: 'A short, transparent flow.', step1: 'Choose reach', step1Body: 'Normal for a stable presence; Plus to stand out.', step2: 'Complete the listing', step2Body: 'Maps, platforms, rates, and links are saved as a draft.', step3: 'Confirm payment', step3Body: 'Stripe processes the subscription and a signed webhook activates the listing.', policyBefore: 'Listings must follow the', policyLink: 'server policy', policyAfter: 'The team may pause misleading or unsafe content.',
     },
     form: {

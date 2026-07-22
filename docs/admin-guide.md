@@ -12,9 +12,9 @@ Para retirar una especie, INI, mapa o boss, usa **Archivar**. Esta operación ev
 
 ## Lanzamientos y monetización
 
-Los feature flags controlan capacidades globales. No actives `server_marketplace`, `stripe_payments` o `community_ads` hasta completar y validar sus fases correspondientes.
+Los feature flags controlan capacidades globales. `server_marketplace` y `community_ads` corresponden a fases ya implementadas; `stripe_payments` debe activarse únicamente después de validar secretos, precios, webhook y Checkout en el entorno correspondiente.
 
-Los placements publicitarios comienzan apagados. Activarlos solo cambia la configuración central; todavía deben tener un proveedor y creatividad válidos antes de mostrarse al público.
+Los nueve placements de Fase 9 usan únicamente `provider = internal` y promocionan servidores Plus elegibles. Desde Governance pueden activarse o desactivarse sin cambiar código. `home_hero_secondary` permanece apagado por defecto para evitar saturar Home; ningún control admite proveedores externos.
 
 ## Legal y moderación
 

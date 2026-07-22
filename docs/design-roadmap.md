@@ -6,6 +6,16 @@ La base visual de Fase 8 queda integrada y verificada localmente en escritorio y
 
 Los `.lottie` finales pasan a ser una mejora editorial opcional, no un bloqueo técnico: los fallbacks actuales son ligeros, accesibles y están listos para producción. Si se incorporan assets, deberán reemplazar esos estados sin cambiar contratos de negocio.
 
+## Fase 9 — promoción interna Plus
+
+- Nueve placements internos controlados desde Admin, sin publicidad externa.
+- Cards promocionadas integradas en Home, herramientas públicas, servidores y dashboard.
+- Badge Plus, glow contenido, skeleton y layouts laterales responsive.
+- Preview editorial del beneficio Plus en Owners/Publish, fuera de formularios críticos.
+- Recomendación privada cerrable durante siete días.
+- Medición de impresión, Discord y sitio web únicamente con consentimiento.
+- Servidores cancelados, vencidos, fallidos o pendientes se excluyen antes de renderizar.
+
 ## Aplicado en la fase de diseño y animación
 
 ### Fundamentos

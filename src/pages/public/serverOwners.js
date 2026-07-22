@@ -1,6 +1,7 @@
 import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { t } from '../../i18n/index.js';
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 
 const fallbackPlans = [
   { code: 'normal', name: 'Normal', price_usd_cents: 300 },
@@ -16,7 +17,7 @@ function plansMarkup(plans) {
 }
 
 export function render() {
-  return `<div class="owners-fold"><section class="owners-hero container" data-gsap-hero><a href="/servers" data-link data-gsap-hero-item>← ${t('servers.owner.back')}</a><div data-gsap-hero-item><p>${t('servers.owner.eyebrow')}</p><h1>${t('servers.owner.title')}</h1><span>${t('servers.owner.body')}</span><a class="button button-secondary owners-plan-cue" href="#owner-plans" data-owner-plans-link>${t('servers.owner.viewPlans')} ↓</a></div></section><section id="owner-plans" class="owner-plans container" data-owner-plans data-gsap-stagger tabindex="-1" aria-label="${t('servers.owner.plansLabel')}">${plansMarkup(fallbackPlans)}</section></div><section class="owner-process container reveal-up"><h2>${t('servers.owner.processTitle')}</h2><ol><li><div><strong>${t('servers.owner.step1')}</strong><p>${t('servers.owner.step1Body')}</p></div></li><li><div><strong>${t('servers.owner.step2')}</strong><p>${t('servers.owner.step2Body')}</p></div></li><li><div><strong>${t('servers.owner.step3')}</strong><p>${t('servers.owner.step3Body')}</p></div></li></ol><p class="owner-policy">${t('servers.owner.policyBefore')} <a href="/server-listing-policy" data-link>${t('servers.owner.policyLink')}</a>. ${t('servers.owner.policyAfter')}</p></section>`;
+  return `<div class="owners-fold"><section class="owners-hero container" data-gsap-hero><a href="/servers" data-link data-gsap-hero-item>← ${t('servers.owner.back')}</a><div data-gsap-hero-item><p>${t('servers.owner.eyebrow')}</p><h1>${t('servers.owner.title')}</h1><span>${t('servers.owner.body')}</span><a class="button button-secondary owners-plan-cue" href="#owner-plans" data-owner-plans-link>${t('servers.owner.viewPlans')} ↓</a></div></section><section id="owner-plans" class="owner-plans container" data-owner-plans data-gsap-stagger tabindex="-1" aria-label="${t('servers.owner.plansLabel')}">${plansMarkup(fallbackPlans)}</section></div><div class="container sponsored-break">${createSponsoredServerSlot('server_publish_example', { variant: 'preview', preview: true })}</div><section class="owner-process container reveal-up"><h2>${t('servers.owner.processTitle')}</h2><ol><li><div><strong>${t('servers.owner.step1')}</strong><p>${t('servers.owner.step1Body')}</p></div></li><li><div><strong>${t('servers.owner.step2')}</strong><p>${t('servers.owner.step2Body')}</p></div></li><li><div><strong>${t('servers.owner.step3')}</strong><p>${t('servers.owner.step3Body')}</p></div></li></ol><p class="owner-policy">${t('servers.owner.policyBefore')} <a href="/server-listing-policy" data-link>${t('servers.owner.policyLink')}</a>. ${t('servers.owner.policyAfter')}</p></section>`;
 }
 
 export function bind({ authService }) {

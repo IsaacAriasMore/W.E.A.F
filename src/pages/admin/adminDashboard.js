@@ -10,6 +10,7 @@ import {
   availableForGame,
   normalizeRates,
 } from '../../config/serverListing.js';
+import { promotableServers } from '../../utils/serverPromotion.js';
 
 const sectionNames = {
   overview: ['Pulso de plataforma', 'Señales operativas para decidir qué necesita atención.'],
@@ -25,6 +26,18 @@ const SPECIES_STATS = [
   ['health', 'Vida'], ['stamina', 'Estamina'], ['oxygen', 'Oxígeno'], ['food', 'Comida'],
   ['weight', 'Peso'], ['melee', 'Daño cuerpo a cuerpo'], ['speed', 'Velocidad'],
 ];
+
+const AD_PLACEMENT_LABELS = {
+  home_featured_servers: 'Home · servidores destacados',
+  home_hero_secondary: 'Home · promoción secundaria',
+  inis_sidebar: 'INIs · lateral',
+  maps_bosses_sidebar: 'Mapas & Bosses · lateral',
+  creatures_sidebar: 'Criaturas · lateral',
+  servers_featured: 'Servidores · destacado superior',
+  tribe_dashboard_soft: 'Dashboard de tribu · recomendación suave',
+  empty_state_server_recommendation: 'Estados vacíos · recomendación',
+  server_publish_example: 'Publicación · vista previa Plus',
+};
 
 function slugify(value) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -155,10 +168,12 @@ function operations(data) {
 }
 
 function governance(data) {
+  const promotable = promotableServers(data.serverOps?.listings || []);
+  const preview = promotable[0];
   return `<div class="admin-governance">
     <section><div class="admin-block-heading"><span>Moderación</span><h2>Reportes</h2></div>${table(['Entidad', 'Motivo', 'Estado', 'Resolver'], data.reports.map((report) => `<tr><td>${escapeHtml(report.entity_type)}<small>${escapeHtml(report.reporter_name || 'Anónimo')}</small></td><td>${escapeHtml(report.reason)}</td><td>${status(report.status)}</td><td><select data-report-status="${report.id}"><option value="open" ${report.status === 'open' ? 'selected' : ''}>Abierto</option><option value="reviewing" ${report.status === 'reviewing' ? 'selected' : ''}>Revisando</option><option value="resolved" ${report.status === 'resolved' ? 'selected' : ''}>Resuelto</option><option value="dismissed" ${report.status === 'dismissed' ? 'selected' : ''}>Descartado</option></select></td></tr>`), 'No hay reportes pendientes.')}</section>
     <div class="admin-split"><section><div class="admin-block-heading"><span>Lanzamientos</span><h2>Feature flags</h2></div>${data.flags.map((flag) => `<label class="admin-toggle"><span><strong>${escapeHtml(flag.key)}</strong><small>${escapeHtml(flag.description || 'Sin descripción')}</small></span><input type="checkbox" data-flag="${escapeHtml(flag.key)}" data-description="${escapeHtml(flag.description || '')}" ${flag.enabled ? 'checked' : ''}></label>`).join('') || empty('Sin flags configurados.')}<form class="admin-inline-form" data-flag-form><input name="key" placeholder="nuevo_flag" required><input name="description" placeholder="Descripción"><button class="admin-action">Crear</button></form></section>
-    <section><div class="admin-block-heading"><span>Monetización</span><h2>Publicidad</h2></div>${data.ads.map((ad) => `<label class="admin-toggle"><span><strong>${escapeHtml(ad.placement)}</strong><small>${escapeHtml(ad.provider)}</small></span><input type="checkbox" data-ad="${escapeHtml(ad.placement)}" data-provider="${escapeHtml(ad.provider)}" ${ad.enabled ? 'checked' : ''}></label>`).join('') || empty('Sin placements configurados.')}</section></div>
+    <section class="admin-ads"><div class="admin-block-heading"><span>Monetización interna</span><h2>Anuncios</h2></div><p class="admin-muted">Solo servidores Plus activos. No se cargan proveedores ni scripts externos.</p><div class="admin-ads-summary"><strong>${promotable.length}</strong><span>servidores promocionables</span></div>${data.ads.map((ad) => `<article class="admin-ad-placement"><div><strong>${escapeHtml(AD_PLACEMENT_LABELS[ad.placement] || ad.placement)}</strong><small>${escapeHtml(ad.placement)} · ${escapeHtml(ad.provider)}</small></div><span class="admin-status ${ad.enabled ? 'is-positive' : ''}">${ad.enabled ? 'activo' : 'desactivado'}</span><label class="admin-toggle"><span>${ad.enabled ? 'Desactivar placement' : 'Activar placement'}</span><input type="checkbox" data-ad="${escapeHtml(ad.placement)}" data-provider="internal" aria-label="${ad.enabled ? 'Desactivar' : 'Activar'} ${escapeHtml(AD_PLACEMENT_LABELS[ad.placement] || ad.placement)}" ${ad.enabled ? 'checked' : ''}></label></article>`).join('') || empty('Sin placements configurados.')}<div class="admin-ad-preview"><span>Vista previa</span>${preview ? `<strong>${escapeHtml(preview.title)}</strong><small>${escapeHtml(preview.game.toUpperCase())} · ${escapeHtml(preview.server_type.toUpperCase())} · ${escapeHtml(preview.region)}</small>` : '<strong>Sin servidores Plus disponibles</strong><small>El espacio permanece oculto para usuarios.</small>'}</div></section></div>
     <section><div class="admin-block-heading"><span>Legal</span><h2>Documentos</h2></div>${table(['Documento', 'Versión', 'Estado', 'Actualización'], data.legal.map((item) => `<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.document_type)}</small></td><td>${escapeHtml(item.version)}</td><td>${status(item.is_published ? 'published' : 'draft')}</td><td>${formatRelativeTime(item.updated_at)}</td></tr>`), 'No hay documentos legales.')}
       <details class="admin-legal-editor"><summary>Redactar nueva versión</summary><form data-legal-form><div><input name="type" placeholder="privacy" required><input name="version" placeholder="2026-08" required><input name="title" placeholder="Título público" required></div><textarea name="content" rows="7" minlength="20" placeholder="Contenido completo del documento" required></textarea><label><input name="publish" type="checkbox"> Publicar al guardar</label><button class="admin-action" type="submit">Guardar versión</button></form></details>
     </section>
@@ -210,7 +225,10 @@ export function bind({ state, authService, navigate }) {
     if (event.target.matches('[data-admin-mobile]')) navigate(`/admin?section=${event.target.value}`);
     if (event.target.matches('[data-report-status]')) await action(await service.setReportStatus(event.target.dataset.reportStatus, event.target.value), 'Reporte actualizado.');
     if (event.target.matches('[data-flag]')) await action(await service.setFeatureFlag({ key: event.target.dataset.flag, description: event.target.dataset.description, enabled: event.target.checked }), 'Flag actualizado.');
-    if (event.target.matches('[data-ad]')) await action(await service.setAdsPlacement({ placement: event.target.dataset.ad, provider: event.target.dataset.provider, enabled: event.target.checked }), 'Placement actualizado.');
+    if (event.target.matches('[data-ad]')) {
+      const currentAd = data.ads.find((ad) => ad.placement === event.target.dataset.ad);
+      await action(await service.setAdsPlacement({ placement: event.target.dataset.ad, provider: 'internal', enabled: event.target.checked, configuration: currentAd?.configuration || {} }), 'Placement actualizado.');
+    }
     if (event.target.matches('[data-content-entity]')) {
       const entity = event.target.value;
       main.querySelectorAll('[data-content-fields]').forEach((fields) => {

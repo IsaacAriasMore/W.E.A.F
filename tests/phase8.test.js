@@ -62,11 +62,11 @@ test('sponsored placements avoid critical forms and checkout', () => {
   const protectedPages = [
     'src/pages/app/breedingWorkspace.js',
     'src/pages/app/tribeSettings.js',
-    'src/pages/public/serverPublish.js',
-    'src/pages/public/serverOwners.js',
   ];
   allowedPages.forEach((path) => assert.match(read(path), /createSponsoredServerSlot/));
   protectedPages.forEach((path) => assert.doesNotMatch(read(path), /createSponsoredServerSlot/));
+  assert.match(read('src/pages/public/serverPublish.js'), /server_publish_example[\s\S]*preview: true/);
+  assert.match(read('src/pages/public/serverPublish.js'), /data-publish-form data-motion="none"/);
 });
 
 test('sponsored tracking requires measurement consent', () => {

@@ -11,6 +11,7 @@ import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import { getLanguage, t } from '../../i18n/index.js';
+import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 
 const value = (item, key, fallback = '') => escapeHtml(String(item?.[key] ?? fallback));
 const planLabel = (plan) => plan === 'plus' ? `Plus - $7 ${t('servers.owner.perMonth')}` : `Normal - $3 ${t('servers.owner.perMonth')}`;
@@ -85,6 +86,7 @@ function planSelector(listings, hasCustomer) {
       <button class="publish-plan-option interactive-card" type="button" data-select-publish-plan="normal" data-gsap-item><span>${t('servers.owner.essential')}</span><strong>Normal</strong><b>$3 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.normalBody')}</em></button>
       <button class="publish-plan-option interactive-card is-plus" type="button" data-select-publish-plan="plus" data-gsap-item><span>${t('servers.owner.visibility')}</span><strong>Plus</strong><b>$7 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.plusBody')}</em></button>
     </div>
+    ${createSponsoredServerSlot('server_publish_example', { variant: 'preview', preview: true })}
     ${listings.length ? dashboard(listings, hasCustomer) : ''}
   </section>`;
 }

@@ -51,7 +51,7 @@ export function render() {
             ${iniPresets.map(presetCard).join('')}
           </div>
         </div>
-        ${createSponsoredServerSlot('inis_sidebar', 'Servidor Plus')}
+        ${createSponsoredServerSlot('inis_sidebar', { label: t('ads.plusServer'), variant: 'sidebar' })}
       </div>
     </section>
 

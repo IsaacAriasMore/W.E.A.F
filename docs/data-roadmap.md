@@ -99,3 +99,12 @@ Los seis presets locales son candidatos de revisión, no métricas ni recomendac
 - [ ] Mantener RLS habilitado y validar con dos usuarios que una tribu nunca pueda leer datos de otra.
 - [ ] Revisar periódicamente listings activos, banners, fuentes y fechas; ningún registro demo debe volver a producción.
 - [ ] Revalidar SMTP, SPF, DKIM y DMARC antes de volver a activar confirmación obligatoria de correo.
+
+## Operación de anuncios internos
+
+- [ ] Revisar semanalmente que banners, Discord, sitio web, mapas y rates de cada servidor Plus sigan vigentes.
+- [ ] Moderar manualmente cualquier promoción engañosa y conservar la auditoría del cambio.
+- [ ] Comparar impresiones/clics solo con usuarios que aceptaron medición; no presentar estos datos como alcance total.
+- [ ] Definir límites de rotación si el catálogo supera tres servidores Plus simultáneos.
+- [ ] Mantener `home_hero_secondary` desactivado hasta confirmar que Home no queda saturada.
+- [ ] No habilitar providers externos sin revisión legal, CMP, CSP y migración dedicada.

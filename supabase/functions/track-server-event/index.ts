@@ -3,7 +3,7 @@ import { corsHeaders } from "@supabase/supabase-js/cors"
 import { withSupabase } from "@supabase/server"
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const allowedEvents = new Set(["impression", "discord_click"])
+const allowedEvents = new Set(["impression", "discord_click", "website_click"])
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: corsHeaders })
 
 function safeReferrer(value: string | null) {

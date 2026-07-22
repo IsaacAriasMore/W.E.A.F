@@ -44,9 +44,10 @@ export function render() {
     </section>
 
     <section class="creature-library container">
-      <details class="filter-drawer" open>
-        <summary>${t('creatures.filters')}</summary>
-        <form class="creature-filters" data-creature-filters>
+      <div class="creature-filter-layout">
+        <details class="filter-drawer" open>
+          <summary>${t('creatures.filters')}</summary>
+          <form class="creature-filters" data-creature-filters>
           <label class="search-field">
             <span>${t('creatures.search')}</span>
             <input type="search" name="search" placeholder="${t('creatures.searchExample')}" autocomplete="off" />
@@ -72,8 +73,10 @@ export function render() {
             <span>${t('creatures.use')}</span>
             <select name="use"><option value="all">${t('common.all')}</option>${optionList(unique('use'))}</select>
           </label>
-        </form>
-      </details>
+          </form>
+        </details>
+        ${createSponsoredServerSlot('creatures_sidebar', { label: t('ads.plusServer'), variant: 'sidebar' })}
+      </div>
 
       <div class="library-status">
         <p data-creature-summary>${t('creatures.many', { count: creatures.length })}</p>
@@ -85,7 +88,6 @@ export function render() {
         <p>${t('creatures.emptyBody')}</p>
         <button class="button button-secondary" type="button" data-clear-filters>${t('creatures.clear')}</button>
       </div>
-      <div class="sponsored-break">${createSponsoredServerSlot('servers_featured', 'Comunidad destacada')}</div>
     </section>
   `;
 }

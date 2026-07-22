@@ -2,7 +2,7 @@
 
 Wild Evolution & Ascension Forge es una plataforma comunitaria independiente para jugadores y tribus de ARK: Survival Evolved y ARK: Survival Ascended.
 
-Las Fases 0 a 8 están implementadas. La experiencia incluye el sitio público, Supabase Auth, tribus multi-tenant, breeding privado, administración global, marketplace de servidores, ciclo de pagos Stripe, consentimiento granular y una PWA instalable.
+Las Fases 0 a 9 están implementadas. La experiencia incluye el sitio público, Supabase Auth, tribus multi-tenant, breeding privado, administración global, marketplace de servidores, ciclo de pagos Stripe, consentimiento granular, promociones internas Plus y una PWA instalable.
 
 ## Stack
 
@@ -40,7 +40,6 @@ VITE_SUPABASE_ANON_KEY=
 VITE_APP_NAME=W.E.A.F
 VITE_PUBLIC_SITE_URL=http://localhost:5173
 VITE_STRIPE_PUBLIC_KEY=
-VITE_ADS_ENABLED=false
 ```
 
 Usa preferentemente la clave publicable `sb_publishable_...`. `VITE_SUPABASE_ANON_KEY` queda como compatibilidad con proyectos heredados. Nunca expongas `SUPABASE_SERVICE_ROLE_KEY`, secretos de Stripe o webhooks de Discord en variables `VITE_*`.
@@ -59,6 +58,8 @@ Antes de activar Auth en producción, registra la URL de `/onboarding` entre las
 - [Fase 6: marketplace de servidores](docs/phase-6-server-marketplace.md)
 - [Fase 7: Stripe y expiración](docs/phase-7-stripe-and-expiration.md)
 - [Fase 8: privacidad, anuncios, PWA y checklist](docs/phase-8-pwa-ads-and-launch-checklist.md)
+- [Fase 9: anuncios internos Plus](docs/internal-ads.md)
+- [Auditoría técnica y editorial vigente](docs/repository-audit.md)
 - [Autenticación y registro directo](docs/auth.md)
 - [Guía del centro de comando](docs/admin-guide.md)
 - [Arquitectura](docs/architecture.md)

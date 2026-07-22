@@ -1,22 +1,10 @@
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
-import { createServerService } from '../../services/serverService.js';
-import { escapeHtml } from '../../utils/sanitize.js';
 import { t } from '../../i18n/index.js';
 import { mountWeafThreeHero } from '../../components/visuals/WeafThreeHero.js';
 
 const tool = (href, code, title, body, link) => `<a class="home-tool interactive-card" href="${href}" data-link data-gsap-item><span>${code}</span><h3>${title}</h3><p>${body}</p><strong>${link} →</strong></a>`;
 
 const faqKeys = ['1', '2', '3', '4', '5', '6'];
-
-function featuredCard(server) {
-  return `<article class="home-server-card cinematic-card reveal-scale">
-    <div>${server.banner_url ? `<img src="${escapeHtml(server.banner_url)}" alt="" loading="lazy">` : `<img src="/assets/weaf-hero.webp" alt="${t('home.heroAlt')}" loading="lazy">`}</div>
-    <span>${server.game.toUpperCase()} / ${escapeHtml(server.server_type)}</span>
-    <h3>${escapeHtml(server.title)}</h3>
-    <p>${escapeHtml(server.region)}. ${escapeHtml(server.maps?.slice(0, 2).join(', ') || t('servers.noSpecification'))}</p>
-    <a class="text-link" href="/servers" data-link>${t('home.servers.view')} →</a>
-  </article>`;
-}
 
 export function render() {
   return `<section class="hero home-hero" data-gsap-hero>
@@ -65,9 +53,9 @@ export function render() {
   </section>
 
   <section class="home-featured home-section">
-    <div class="container"><div class="home-heading reveal-up"><h2>${t('home.servers.title')}</h2><p>${t('home.servers.body')}</p></div><div class="home-server-rail" data-home-featured><div class="server-loading"></div><div class="server-loading"></div></div><div class="home-server-actions reveal-up"><a class="button button-primary" href="/servers" data-link>${t('home.servers.view')}</a><a class="button button-secondary" href="/servers/owners" data-link>${t('home.servers.publish')}</a></div></div>
+    <div class="container"><div class="home-heading reveal-up"><h2>${t('home.servers.title')}</h2><p>${t('home.servers.body')}</p></div><div class="home-server-rail">${createSponsoredServerSlot('home_featured_servers', { label: t('ads.plusServer'), variant: 'rail', maxItems: 3, emptyMarkup: `<div class="home-server-empty"><strong>${t('home.featuredEmpty.title')}</strong><p>${t('home.featuredEmpty.body')}</p><a class="text-link" href="/servers/owners" data-link>${t('home.servers.publish')} →</a></div>` })}</div><div class="home-server-actions reveal-up"><a class="button button-primary" href="/servers" data-link>${t('home.servers.view')}</a><a class="button button-secondary" href="/servers/owners" data-link>${t('home.servers.publish')}</a></div></div>
   </section>
-  <div class="container sponsored-break reveal">${createSponsoredServerSlot('home_hero_secondary', 'Comunidad Plus')}</div>
+  <div class="container sponsored-break reveal">${createSponsoredServerSlot('home_hero_secondary', { label: t('ads.communityPick'), variant: 'compact' })}</div>
 
   <section class="home-section container home-process"><div class="home-heading reveal-up"><h2>${t('home.steps.title')}</h2></div><ol>${['account', 'tribe', 'config', 'breeds', 'alerts'].map((key) => `<li class="reveal-up"><strong>${t(`home.steps.${key}`)}</strong></li>`).join('')}</ol></section>
 
@@ -78,18 +66,7 @@ export function render() {
   <section class="home-final container reveal-scale"><h2>${t('home.final.title')}</h2><div><a class="button button-primary" href="/register" data-link>${t('home.hero.primary')}</a><a class="button button-secondary" href="/servers" data-link>${t('home.final.servers')}</a></div></section>`;
 }
 
-export function bind({ authService }) {
-  const rail = document.querySelector('[data-home-featured]');
-  const service = createServerService(authService.getClient());
+export function bind() {
   const cleanupThree = mountWeafThreeHero(document.querySelector('[data-three-hero]'));
-  let disposed = false;
-  service.listPublic().then((result) => {
-    if (disposed || !rail) return;
-    const featured = result.data.filter((server) => server.is_featured).slice(0, 3);
-    rail.innerHTML = featured.length ? featured.map(featuredCard).join('') : `<div class="home-server-empty"><strong>${t('home.featuredEmpty.title')}</strong><p>${t('home.featuredEmpty.body')}</p><a class="text-link" href="/servers/owners" data-link>${t('home.servers.publish')} →</a></div>`;
-  });
-  return () => {
-    disposed = true;
-    cleanupThree();
-  };
+  return () => cleanupThree();
 }

@@ -1,3 +1,5 @@
+import { promotableServers } from '../utils/serverPromotion.js';
+
 const messages = {
   listing_not_available: 'Este servidor ya no está disponible.',
   invalid_server_event: 'No pudimos registrar esa interacción.',
@@ -20,12 +22,16 @@ export function createServerService(client) {
       if (!client) return { data: [], error: 'Supabase no está conectado.' };
       const { data, error } = await client
         .from('server_listings')
-        .select('id,title,slug,plan,game,server_type,platforms,has_mods,maps,rates,region,language,description,discord_invite_url,website_url,banner_url,is_featured,is_verified,created_at,wipe_date,cluster_name,uses_propagators,click_count,billing_source,payment_status')
+        .select('id,title,slug,plan,plan_type,status,game,server_type,platforms,has_mods,maps,rates,region,language,description,discord_invite_url,website_url,banner_url,is_featured,is_verified,starts_at,expires_at,current_period_end,cancel_at_period_end,created_at,wipe_date,cluster_name,uses_propagators,click_count,billing_source,payment_status')
         .eq('status', 'active')
         .or('payment_status.eq.paid,and(billing_source.eq.manual,payment_status.eq.not_required)')
         .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false });
       return { data: data || [], error: friendly(error, 'No pudimos cargar el directorio de servidores.') };
+    },
+    async listPromotable() {
+      const result = await this.listPublic();
+      return { ...result, data: promotableServers(result.data) };
     },
     async listPlans() {
       if (!client) return { data: [], error: null };

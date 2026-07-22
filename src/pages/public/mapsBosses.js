@@ -75,7 +75,7 @@ export function render() {
       </div>
     </section>
 
-    <div class="container sponsored-break">${createSponsoredServerSlot('bosses_footer', 'Comunidad para tu próxima batalla')}</div>
+    <div class="container sponsored-break">${createSponsoredServerSlot('maps_bosses_sidebar', { label: t('ads.communityPick'), variant: 'sidebar' })}</div>
 
     <section class="boss-callout container reveal-up">
       <div>

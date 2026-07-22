@@ -9,6 +9,7 @@ import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 import { mountLottieMotion } from '../../components/visuals/LottieMotion.js';
 import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
+import { t } from '../../i18n/index.js';
 
 const roleLabels = { owner: 'Propietario', admin: 'Admin de tribu', member: 'Miembro' };
 const gameLabels = { evolved: 'ASE', ascended: 'ASA', both: 'ASE + ASA' };
@@ -150,7 +151,7 @@ function dashboardView({ memberships, activeMembership, members, invites, curren
         <div class="stagger-item"><span>Breeds activos</span><strong>${breedingSummary.activeCount}</strong><small>Workspace privado</small></div>
       </div>
       ${breedingSnapshot(breedingSummary, tribe.id)}
-      <div class="sponsored-break sponsored-break-private">${createSponsoredServerSlot('dashboard_carousel', 'Servidor recomendado para tu tribu')}</div>
+      <div class="sponsored-break sponsored-break-private"><p class="sponsored-context"><strong>${t('ads.communityPick')}</strong><span>${t('ads.tribeBody')}</span></p>${createSponsoredServerSlot('tribe_dashboard_soft', { label: t('ads.communityPick'), variant: 'soft', dismissible: true })}</div>
       <div class="tribe-workgrid reveal-up">
         <section class="member-section">
           <div class="workspace-heading"><div><h2>Miembros</h2><p>Roles separados de la administración global.</p></div></div>

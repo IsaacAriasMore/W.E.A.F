@@ -5,6 +5,17 @@ export default {
     edit: 'Editar', saveChanges: 'Guardar cambios', website: 'Sitio web', back: 'Volver', new: 'Nuevo', verified: 'Verificado',
   },
   nav: { home: 'Inicio', inis: 'INIs', mapsBosses: 'Mapas & Bosses', creatures: 'Criaturas', servers: 'Servidores', menuOpen: 'Abrir menú', menuClose: 'Cerrar menú' },
+  ads: {
+    internalPromotion: 'Promoción interna', plusServer: 'Servidor Plus', featuredServer: 'Servidor destacado',
+    learnServer: 'Conocer servidor', joinDiscord: 'Entrar a Discord', viewServers: 'Ver servidores', listServer: 'Publicar mi servidor',
+    availableSpace: 'Este espacio destacará servidores Plus activos.', noneYet: 'No hay servidores destacados todavía.',
+    hideRecommendation: 'Ocultar recomendación', internalAds: 'Anuncios internos', notSpecified: 'Sin especificar',
+    regionLanguage: 'Región e idioma', communityPick: 'Servidor destacado de la comunidad',
+    tribeBody: 'Explora una comunidad Plus mientras organizas tu tribu.',
+    previewTitle: 'Así gana visibilidad un servidor Plus.', previewBody: 'Puede aparecer en Home, arriba del directorio y en recomendaciones internas claramente etiquetadas.',
+    previewBadge: 'Vista previa del beneficio Plus', enabled: 'Placement activo', disabled: 'Placement desactivado',
+    enable: 'Activar placement', disable: 'Desactivar placement', promotableCount: '{count} servidores promocionables',
+  },
   home: {
     hero: {
       eyebrow: 'Coordinación para tribus', title: 'Convierte el progreso en un plan compartido.',
@@ -56,11 +67,11 @@ export default {
     low: 'Bajo', medium: 'Medio', high: 'Alto', configuration: 'Configuración', modsHelp: 'Solo necesitamos saber si el servidor utiliza mods.',
     directory: {
       eyebrow: 'Directorio comunitario', title: 'Encuentra un servidor con tus reglas.', gameCoverage: 'ASE + ASA', directInfo: 'Información directa', noRankings: 'Sin rankings artificiales',
-      filters: 'Filtros de servidores', filter: 'Filtrar', game: 'Juego', mode: 'Modo', withMods: 'Con mods', withoutMods: 'Sin mods', platform: 'Plataforma', console: 'Consola', region: 'Región', regionExample: 'Ej. LATAM', language: 'Idioma', languageExample: 'Ej. Español', cluster: 'Cluster', propagators: 'Propagadores', searching: 'Buscando servidores…', howItWorks: 'Ver cómo funciona', emptyHelp: 'Prueba una región más amplia o limpia los filtros.', one: '{count} servidor', many: '{count} servidores', discord: 'Entrar a Discord', website: 'Sitio web', wipe: 'Wipe', verified: 'Verificado', new: 'Nuevo',
+      filters: 'Filtros de servidores', filter: 'Filtrar', game: 'Juego', mode: 'Modo', withMods: 'Con mods', withoutMods: 'Sin mods', platform: 'Plataforma', console: 'Consola', region: 'Región', regionExample: 'Ej. LATAM', language: 'Idioma', languageExample: 'Ej. Español', cluster: 'Cluster', propagators: 'Propagadores', searching: 'Buscando servidores…', howItWorks: 'Ver cómo funciona', emptyHelp: 'Prueba una región más amplia o limpia los filtros.', emptyPublish: '¿Administras una comunidad? Publica tu servidor con una ficha clara.', one: '{count} servidor', many: '{count} servidores', discord: 'Entrar a Discord', website: 'Sitio web', wipe: 'Wipe', verified: 'Verificado', new: 'Nuevo', plus: 'Plus',
     },
     owner: {
       back: 'Volver al directorio', eyebrow: 'Para dueños de servidores', title: 'Publica con control y cobro transparente.', body: 'Elige Normal o Plus, completa la ficha y activa tu anuncio mediante Stripe Checkout.', viewPlans: 'Ver planes', plansLabel: 'Planes para publicar servidores', essential: 'Base esencial', visibility: 'Mayor visibilidad', normalBody: 'Presencia clara y estable en el directorio.', plusBody: 'Pensado para temporadas, wipes y lanzamientos.', perMonth: 'USD / mes', choose: 'Elegir {plan}',
-      normalFeatures: 'Ficha completa|Edición mientras esté activo|Analítica de clics', plusFeatures: 'Todo lo de Normal|Posición destacada|Insignia de destacado',
+      normalFeatures: 'Ficha completa|Edición mientras esté activo|Analítica de clics', plusFeatures: 'Todo lo de Normal|Posición destacada|Insignia de destacado|Promoción interna en Home y herramientas',
       processTitle: 'Un flujo corto y transparente.', step1: 'Elige el alcance', step1Body: 'Normal para presencia estable; Plus para destacar.', step2: 'Completa la ficha', step2Body: 'Mapas, plataformas, rates y enlaces quedan guardados como borrador.', step3: 'Confirma el pago', step3Body: 'Stripe procesa la suscripción y el webhook firmado activa la publicación.', policyBefore: 'Las publicaciones deben cumplir la', policyLink: 'política de servidores', policyAfter: 'El equipo puede pausar contenido engañoso o inseguro.',
     },
     form: {
