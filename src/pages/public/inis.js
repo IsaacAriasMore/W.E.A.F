@@ -2,41 +2,30 @@ import { iniPresets } from '../../data/publicData.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
+import { t } from '../../i18n/index.js';
 
 const categories = [
-  ['all', 'Todas'],
-  ['farming', 'Farmeo'],
-  ['pvp', 'PvP'],
-  ['hard', 'Hard'],
-  ['fps', 'FPS Boost'],
-  ['visibility', 'Visibilidad'],
-  ['clean', 'Clean'],
+  'all', 'farming', 'pvp', 'hard', 'fps', 'visibility', 'clean',
 ];
 
-function formatNumber(value) {
-  return new Intl.NumberFormat('es').format(value);
-}
+const categoryLabel = (category) => t(`inis.${category}`);
 
 function presetCard(preset) {
   return `
     <article class="ini-card cinematic-card reveal-up" data-preset-card="${preset.id}">
       <div class="ini-card-top">
         <span class="game-label">${preset.game === 'both' ? 'ASE + ASA' : preset.game.toUpperCase()}</span>
-        <span>${preset.categoryLabel}</span>
+        <span>${categoryLabel(preset.category)}</span>
       </div>
       <div>
         <h2>${preset.title}</h2>
         <p>${preset.description}</p>
       </div>
-      <pre aria-label="Vista previa de ${preset.title}"><code>${escapeHtml(preset.content.split('\n').slice(0, 3).join('\n'))}</code></pre>
-      <div class="ini-stats" aria-label="Uso de este preset">
-        <span><strong data-copy-count>${formatNumber(preset.copies)}</strong> copias</span>
-        <span><strong data-download-count>${formatNumber(preset.downloads)}</strong> descargas</span>
-      </div>
+      <pre aria-label="${t('inis.preview', { title: preset.title })}"><code>${escapeHtml(preset.content.split('\n').slice(0, 3).join('\n'))}</code></pre>
       <div class="ini-actions">
-        <button class="button button-primary button-small" type="button" data-copy="${preset.id}">Copiar</button>
-        <button class="button button-quiet button-small" type="button" data-view="${preset.id}">Ver INI</button>
-        <button class="text-button" type="button" data-download="${preset.id}">Descargar</button>
+        <button class="button button-primary button-small" type="button" data-copy="${preset.id}">${t('inis.copy')}</button>
+        <button class="button button-quiet button-small" type="button" data-view="${preset.id}">${t('inis.view')}</button>
+        <button class="text-button" type="button" data-download="${preset.id}">${t('inis.download')}</button>
       </div>
     </article>
   `;
@@ -45,19 +34,19 @@ function presetCard(preset) {
 export function render() {
   return `
     <section class="page-hero compact-page-hero container reveal-up">
-      <p class="section-kicker">Biblioteca pública</p>
-      <h1>INIs que puedes revisar antes de copiar.</h1>
-      <p>Presets de demostración para ASE y ASA. Comprueba cada valor y adáptalo a tu equipo.</p>
+      <p class="section-kicker">${t('inis.eyebrow')}</p>
+      <h1>${t('inis.title')}</h1>
+      <p>${t('inis.body')}</p>
     </section>
-    <section class="tool-page container" aria-label="Presets INI">
-      <div class="filter-bar" role="group" aria-label="Filtrar por categoría">
-        ${categories.map(([value, label], index) => `
-          <button class="filter-chip" type="button" data-category="${value}" aria-pressed="${index === 0}">${label}</button>
+    <section class="tool-page container" aria-label="${t('inis.aria')}">
+      <div class="filter-bar" role="group" aria-label="${t('inis.filters')}">
+        ${categories.map((value, index) => `
+          <button class="filter-chip" type="button" data-category="${value}" aria-pressed="${index === 0}">${categoryLabel(value)}</button>
         `).join('')}
       </div>
       <div class="tool-layout">
         <div>
-          <p class="results-summary" data-results-summary>${iniPresets.length} presets disponibles</p>
+          <p class="results-summary" data-results-summary>${t('inis.many', { count: iniPresets.length })}</p>
           <div class="ini-grid" data-ini-grid>
             ${iniPresets.map(presetCard).join('')}
           </div>
@@ -72,13 +61,13 @@ export function render() {
           <span data-dialog-category></span>
           <h2 id="ini-dialog-title" data-dialog-title></h2>
         </div>
-        <button class="dialog-close" type="button" data-dialog-close aria-label="Cerrar">×</button>
+        <button class="dialog-close" type="button" data-dialog-close aria-label="${t('inis.close')}">×</button>
       </div>
       <p data-dialog-description></p>
       <pre><code data-dialog-content></code></pre>
       <div class="dialog-actions">
-        <button class="button button-primary" type="button" data-dialog-copy>Copiar INI</button>
-        <button class="button button-secondary" type="button" data-dialog-download>Descargar</button>
+        <button class="button button-primary" type="button" data-dialog-copy>${t('inis.copyDialog')}</button>
+        <button class="button button-secondary" type="button" data-dialog-download>${t('inis.download')}</button>
       </div>
     </dialog>
   `;
@@ -117,40 +106,29 @@ export function bind() {
   const summary = document.querySelector('[data-results-summary]');
   const dialog = document.querySelector('[data-ini-dialog]');
   let activePreset = null;
-  const counters = new Map(iniPresets.map((preset) => [preset.id, { copies: preset.copies, downloads: preset.downloads }]));
 
   function findPreset(id) {
     return iniPresets.find((preset) => preset.id === id);
   }
 
-  function updateCounter(id, kind) {
-    const values = counters.get(id);
-    values[kind] += 1;
-    const card = grid.querySelector(`[data-preset-card="${id}"]`);
-    const selector = kind === 'copies' ? '[data-copy-count]' : '[data-download-count]';
-    card?.querySelector(selector)?.replaceChildren(document.createTextNode(formatNumber(values[kind])));
-  }
-
   async function copyPreset(preset) {
     try {
       await copyText(preset.content);
-      updateCounter(preset.id, 'copies');
-      showToast('INI copiada al portapapeles.');
+      showToast(t('inis.copied'));
     } catch {
-      showToast('No se pudo copiar. Selecciona el contenido manualmente.', 'error');
+      showToast(t('inis.copyError'), 'error');
     }
   }
 
   function download(preset) {
     downloadPreset(preset);
-    updateCounter(preset.id, 'downloads');
-    showToast('Descarga preparada.');
+    showToast(t('inis.downloadReady'));
   }
 
   function openDialog(preset) {
     activePreset = preset;
     dialog.querySelector('[data-dialog-title]').textContent = preset.title;
-    dialog.querySelector('[data-dialog-category]').textContent = `${preset.categoryLabel} / ${preset.game === 'both' ? 'ASE + ASA' : preset.game.toUpperCase()}`;
+    dialog.querySelector('[data-dialog-category]').textContent = `${categoryLabel(preset.category)} / ${preset.game === 'both' ? 'ASE + ASA' : preset.game.toUpperCase()}`;
     dialog.querySelector('[data-dialog-description]').textContent = preset.description;
     dialog.querySelector('[data-dialog-content]').textContent = preset.content;
     dialog.showModal();
@@ -163,7 +141,7 @@ export function bind() {
     document.querySelectorAll('[data-category]').forEach((chip) => chip.setAttribute('aria-pressed', String(chip === button)));
     const filtered = category === 'all' ? iniPresets : iniPresets.filter((preset) => preset.category === category);
     grid.innerHTML = filtered.map(presetCard).join('');
-    summary.textContent = `${filtered.length} ${filtered.length === 1 ? 'preset disponible' : 'presets disponibles'}`;
+    summary.textContent = t(filtered.length === 1 ? 'inis.one' : 'inis.many', { count: filtered.length });
   }, { signal });
 
   grid?.addEventListener('click', (event) => {

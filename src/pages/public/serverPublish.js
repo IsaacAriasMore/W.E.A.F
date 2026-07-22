@@ -10,14 +10,16 @@ import {
 import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
-import { t } from '../../i18n/index.js';
+import { getLanguage, t } from '../../i18n/index.js';
 
 const value = (item, key, fallback = '') => escapeHtml(String(item?.[key] ?? fallback));
-const planLabel = (plan) => plan === 'plus' ? 'Plus - $7 USD/mes' : 'Normal - $3 USD/mes';
+const planLabel = (plan) => plan === 'plus' ? `Plus - $7 ${t('servers.owner.perMonth')}` : `Normal - $3 ${t('servers.owner.perMonth')}`;
 const checked = (condition) => condition ? 'checked' : '';
+const formatDate = (date) => new Date(date).toLocaleDateString(getLanguage() === 'es' ? 'es-CR' : 'en-US');
 const billingStatusLabel = (listing) => {
-  if (listing?.cancel_at_period_end) return 'Cancelación programada';
-  return ({ active: 'Activo', canceled: 'Cancelado', paused: 'Pausado', expired: 'Expirado', pending_payment: 'Pago pendiente', draft: 'Borrador', hidden: 'Oculto', rejected: 'Rechazado' })[listing?.status] || listing?.status || 'Sin estado';
+  if (listing?.cancel_at_period_end) return t('servers.form.statusCanceling');
+  const labels = { active: 'statusActive', canceled: 'statusCanceled', paused: 'statusPaused', expired: 'statusExpired', pending_payment: 'statusPending', draft: 'statusDraft', hidden: 'statusHidden', rejected: 'statusRejected' };
+  return labels[listing?.status] ? t(`servers.form.${labels[listing.status]}`) : listing?.status || t('servers.form.statusUnknown');
 };
 
 function choiceGroup({ legend, help, name, items, selected = [], type = 'checkbox' }) {
@@ -32,12 +34,12 @@ function ratesSection(listing) {
   return `<fieldset class="publish-choice-group publish-rates">
     <legend>${t('servers.rates')}</legend>
     <p class="field-help">${t('servers.ratesHelp')}</p>
-    <label><span>Configuración</span><select name="rate_preset" data-rate-preset>
+    <label><span>${t('servers.configuration')}</span><select name="rate_preset" data-rate-preset>
       <option value="not_specified" ${preset === 'not_specified' ? 'selected' : ''}>${t('servers.unsure')}</option>
       <option value="vanilla" ${preset === 'vanilla' ? 'selected' : ''}>${t('servers.vanilla')}</option>
-      <option value="low" ${preset === 'low' ? 'selected' : ''}>Bajo</option>
-      <option value="medium" ${preset === 'medium' ? 'selected' : ''}>Medio</option>
-      <option value="high" ${preset === 'high' ? 'selected' : ''}>Alto</option>
+      <option value="low" ${preset === 'low' ? 'selected' : ''}>${t('servers.low')}</option>
+      <option value="medium" ${preset === 'medium' ? 'selected' : ''}>${t('servers.medium')}</option>
+      <option value="high" ${preset === 'high' ? 'selected' : ''}>${t('servers.high')}</option>
       <option value="custom" ${preset === 'custom' ? 'selected' : ''}>${t('servers.custom')}</option>
     </select></label>
     <div class="rate-grid" data-custom-rates ${preset === 'custom' ? '' : 'hidden'}>${RATE_FIELDS.map(([key, label, help]) => `<label><span>${label}</span><input name="rate_${key}" type="number" inputmode="decimal" min="0.01" max="1000" step="0.01" value="${escapeHtml(String(rates[key] ?? 1))}"><small>${help}</small></label>`).join('')}</div>
@@ -48,47 +50,47 @@ function form(plan, listing) {
   const paidAndActive = listing?.status === 'active';
   const game = listing?.game || 'ascended';
   return `<form class="publish-form" data-publish-form data-listing="${listing?.id || ''}" data-plan="${plan}" novalidate>
-    <header><p>${listing ? 'Editar publicación' : 'Nueva publicación'}</p><h2>${listing ? escapeHtml(listing.title) : planLabel(plan)}</h2><span>${paidAndActive ? `Activa hasta ${listing.expires_at ? new Date(listing.expires_at).toLocaleDateString('es-CR') : 'nuevo aviso'}` : 'La ficha se activa únicamente cuando Stripe confirma el pago.'}</span></header>
+    <header><p>${t(listing ? 'servers.form.editEyebrow' : 'servers.form.newEyebrow')}</p><h2>${listing ? escapeHtml(listing.title) : planLabel(plan)}</h2><span>${paidAndActive ? t('servers.form.activeUntil', { date: listing.expires_at ? formatDate(listing.expires_at) : t('servers.form.activeNotice') }) : t('servers.form.paymentGate')}</span></header>
     <div class="publish-fields">
-      <fieldset class="publish-section"><legend>Información básica</legend>
-        <label><span>Nombre del servidor</span><input name="title" value="${value(listing, 'title')}" minlength="2" maxlength="100" placeholder="Ej. Forja del Sur" required></label>
-        <label><span>Descripción</span><textarea name="description" minlength="20" maxlength="4000" rows="6" placeholder="Explica el estilo, reglas y comunidad del servidor." required>${value(listing, 'description')}</textarea></label>
-        <div class="publish-field-pair"><label><span>Juego</span><select name="game" data-listing-game required><option value="ascended" ${game === 'ascended' ? 'selected' : ''}>ASA</option><option value="evolved" ${game === 'evolved' ? 'selected' : ''}>ASE</option><option value="both" ${game === 'both' ? 'selected' : ''}>ASE + ASA</option></select></label><label><span>Modo</span><select name="server_type" required><option value="pve" ${listing?.server_type === 'pve' ? 'selected' : ''}>PvE</option><option value="pvp" ${listing?.server_type === 'pvp' ? 'selected' : ''}>PvP</option><option value="pvpve" ${listing?.server_type === 'pvpve' ? 'selected' : ''}>PvPvE</option></select></label></div>
-        <div class="publish-field-pair"><label><span>Región</span><input name="region" value="${value(listing, 'region')}" placeholder="Ej. LATAM" minlength="2" maxlength="40" required></label><label><span>Idioma</span><input name="language" value="${value(listing, 'language')}" placeholder="Ej. Español" minlength="2" maxlength="40" required></label></div>
-        <div class="publish-field-pair"><label><span>Discord</span><input name="discord" type="url" value="${value(listing, 'discord_invite_url')}" placeholder="https://discord.gg/..." required></label><label><span>Sitio web (opcional)</span><input name="website" type="url" value="${value(listing, 'website_url')}" placeholder="https://..."></label></div>
-        <label><span>Banner (opcional)</span><input name="banner" type="url" value="${value(listing, 'banner_url')}" placeholder="https://..."></label>
+      <fieldset class="publish-section"><legend>${t('servers.form.basic')}</legend>
+        <label><span>${t('servers.form.name')}</span><input name="title" value="${value(listing, 'title')}" minlength="2" maxlength="100" placeholder="${t('servers.form.nameExample')}" required></label>
+        <label><span>${t('servers.form.description')}</span><textarea name="description" minlength="20" maxlength="4000" rows="6" placeholder="${t('servers.form.descriptionExample')}" required>${value(listing, 'description')}</textarea></label>
+        <div class="publish-field-pair"><label><span>${t('servers.form.game')}</span><select name="game" data-listing-game required><option value="ascended" ${game === 'ascended' ? 'selected' : ''}>ASA</option><option value="evolved" ${game === 'evolved' ? 'selected' : ''}>ASE</option><option value="both" ${game === 'both' ? 'selected' : ''}>ASE + ASA</option></select></label><label><span>${t('servers.form.mode')}</span><select name="server_type" required><option value="pve" ${listing?.server_type === 'pve' ? 'selected' : ''}>PvE</option><option value="pvp" ${listing?.server_type === 'pvp' ? 'selected' : ''}>PvP</option><option value="pvpve" ${listing?.server_type === 'pvpve' ? 'selected' : ''}>PvPvE</option></select></label></div>
+        <div class="publish-field-pair"><label><span>${t('servers.form.region')}</span><input name="region" value="${value(listing, 'region')}" placeholder="${t('servers.directory.regionExample')}" minlength="2" maxlength="40" required></label><label><span>${t('servers.form.language')}</span><input name="language" value="${value(listing, 'language')}" placeholder="${t('servers.directory.languageExample')}" minlength="2" maxlength="40" required></label></div>
+        <div class="publish-field-pair"><label><span>${t('servers.form.discord')}</span><input name="discord" type="url" value="${value(listing, 'discord_invite_url')}" placeholder="https://discord.gg/..." required></label><label><span>${t('servers.form.website')}</span><input name="website" type="url" value="${value(listing, 'website_url')}" placeholder="https://..."></label></div>
+        <label><span>${t('servers.form.banner')}</span><input name="banner" type="url" value="${value(listing, 'banner_url')}" placeholder="https://..."></label>
       </fieldset>
       ${choiceGroup({ legend: t('servers.maps'), help: t('servers.mapsHelp'), name: 'maps', items: availableForGame(SERVER_MAPS, game), selected: listing?.maps || [] })}
       ${choiceGroup({ legend: t('servers.platforms'), help: t('servers.platformsHelp'), name: 'platforms', items: availableForGame(SERVER_PLATFORMS, game).map((item) => ({ ...item, value: item.label })), selected: listing?.platforms || [] })}
-      ${choiceGroup({ legend: t('servers.modsQuestion'), help: 'Solo necesitamos saber si el servidor utiliza mods.', name: 'has_mods', type: 'radio', items: [{ value: 'true', label: t('common.yes') }, { value: 'false', label: t('common.no') }], selected: [String(listing?.has_mods ?? false)] })}
+      ${choiceGroup({ legend: t('servers.modsQuestion'), help: t('servers.modsHelp'), name: 'has_mods', type: 'radio', items: [{ value: 'true', label: t('common.yes') }, { value: 'false', label: t('common.no') }], selected: [String(listing?.has_mods ?? false)] })}
       ${ratesSection(listing)}
-      <fieldset class="publish-section"><legend>Detalles adicionales</legend>
-        <div class="publish-field-pair"><label><span>Cluster (opcional)</span><input name="cluster_name" value="${value(listing, 'cluster_name')}"></label><label><span>Último wipe (opcional)</span><input name="wipe_date" type="date" value="${value(listing, 'wipe_date')}"></label></div>
-        <label class="publish-check"><input name="propagators" type="checkbox" ${checked(listing?.uses_propagators)}><span>Este servidor usa propagadores</span></label>
+      <fieldset class="publish-section"><legend>${t('servers.form.details')}</legend>
+        <div class="publish-field-pair"><label><span>${t('servers.form.cluster')}</span><input name="cluster_name" value="${value(listing, 'cluster_name')}"></label><label><span>${t('servers.form.wipe')}</span><input name="wipe_date" type="date" value="${value(listing, 'wipe_date')}"></label></div>
+        <label class="publish-check"><input name="propagators" type="checkbox" ${checked(listing?.uses_propagators)}><span>${t('servers.form.propagators')}</span></label>
       </fieldset>
     </div>
-    <footer><p>${paidAndActive ? 'Los cambios se publican inmediatamente.' : REAL_STRIPE_BILLING ? 'Serás redirigido a Stripe Checkout.' : 'Se guardará como pendiente para activación administrativa.'}</p><button class="button button-primary" type="submit">${paidAndActive ? 'Guardar cambios' : REAL_STRIPE_BILLING ? t('servers.checkout') : 'Guardar borrador'}</button></footer>
+    <footer><p>${t(paidAndActive ? 'servers.form.immediate' : REAL_STRIPE_BILLING ? 'servers.form.redirectStripe' : 'servers.form.adminPending')}</p><button class="button button-primary" type="submit">${paidAndActive ? t('common.saveChanges') : REAL_STRIPE_BILLING ? t('servers.checkout') : t('servers.form.saveDraft')}</button></footer>
   </form>`;
 }
 
 function dashboard(listings, hasCustomer) {
-  if (!listings.length) return `<div class="publish-message"><h2>Aún no tienes publicaciones.</h2><p>Elige Normal o Plus, completa la ficha y continúa al pago seguro.</p><a class="button button-primary" href="/servers/owners" data-link>Ver planes</a></div>`;
-  return `<div class="publish-message"><h2>Tus publicaciones</h2><p>Consulta su estado, edita la ficha o administra la suscripción.</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(billingStatusLabel(listing))} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>Editar</a></article>`).join('')}</div><div class="server-card-actions">${hasCustomer && REAL_STRIPE_BILLING ? `<button class="button button-primary" type="button" data-billing-portal>${t('servers.billing')}</button>` : ''}<a class="button button-quiet" href="/servers/owners" data-link>Nueva publicación</a></div></div>`;
+  if (!listings.length) return `<div class="publish-message"><h2>${t('servers.form.noneTitle')}</h2><p>${t('servers.form.noneBody')}</p><a class="button button-primary" href="/servers/owners" data-link>${t('servers.form.viewPlans')}</a></div>`;
+  return `<div class="publish-message"><h2>${t('servers.form.yours')}</h2><p>${t('servers.form.yoursBody')}</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(billingStatusLabel(listing))} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>${t('common.edit')}</a></article>`).join('')}</div><div class="server-card-actions">${hasCustomer && REAL_STRIPE_BILLING ? `<button class="button button-primary" type="button" data-billing-portal>${t('servers.billing')}</button>` : ''}<a class="button button-quiet" href="/servers/owners" data-link>${t('servers.form.newListing')}</a></div></div>`;
 }
 
 function planSelector(listings, hasCustomer) {
   return `<section class="publish-plan-selector" aria-labelledby="publish-plan-title">
-    <div><p>Elige cómo aparecer</p><h2 id="publish-plan-title">Selecciona un plan para comenzar.</h2><span>Podrás revisar toda la ficha antes de abrir Stripe Checkout.</span></div>
+    <div><p>${t('servers.form.selectorEyebrow')}</p><h2 id="publish-plan-title">${t('servers.form.selectorTitle')}</h2><span>${t('servers.form.selectorBody')}</span></div>
     <div class="publish-plan-options">
-      <button class="publish-plan-option cinematic-card" type="button" data-select-publish-plan="normal"><span>Base esencial</span><strong>Normal</strong><b>$3 <small>USD / mes</small></b><em>Ficha completa y edición mientras esté activo.</em></button>
-      <button class="publish-plan-option cinematic-card is-plus" type="button" data-select-publish-plan="plus"><span>Mayor visibilidad</span><strong>Plus</strong><b>$7 <small>USD / mes</small></b><em>Posición destacada e insignia Plus.</em></button>
+      <button class="publish-plan-option cinematic-card" type="button" data-select-publish-plan="normal"><span>${t('servers.owner.essential')}</span><strong>Normal</strong><b>$3 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.normalBody')}</em></button>
+      <button class="publish-plan-option cinematic-card is-plus" type="button" data-select-publish-plan="plus"><span>${t('servers.owner.visibility')}</span><strong>Plus</strong><b>$7 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.plusBody')}</em></button>
     </div>
     ${listings.length ? dashboard(listings, hasCustomer) : ''}
   </section>`;
 }
 
 export function render() {
-  return `<section class="publish-shell container"><header><a href="/servers/owners" data-link>← Planes</a><p>Cuenta de servidor</p><h1>Publica con datos claros.</h1></header><div data-publish-workspace class="publish-loading"><span></span><p>Cargando tus publicaciones…</p></div></section>`;
+  return `<section class="publish-shell container"><header><a href="/servers/owners" data-link>← ${t('servers.form.plansBack')}</a><p>${t('servers.form.accountEyebrow')}</p><h1>${t('servers.form.pageTitle')}</h1></header><div data-publish-workspace class="publish-loading"><span></span><p>${t('servers.form.loading')}</p></div></section>`;
 }
 
 function updateGameChoices(formElement) {
@@ -112,10 +114,10 @@ export function bind({ authService, navigate }) {
 
   async function load() {
     const result = await service.getMyBilling();
-    if (result.error) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>No pudimos abrir tu cuenta.</h2><p>${escapeHtml(result.error)}</p>`; return; }
+    if (result.error) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.accountError')}</h2><p>${escapeHtml(result.error)}</p>`; return; }
     const listings = result.data?.listings || [];
     selectedListing = requestedListingId ? listings.find((item) => item.id === requestedListingId) : null;
-    if (requestedListingId && !selectedListing) { workspace.className = 'publish-message'; workspace.innerHTML = '<h2>Publicación no disponible.</h2><p>Solo puedes editar publicaciones que te pertenecen.</p>'; return; }
+    if (requestedListingId && !selectedListing) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.unavailable')}</h2><p>${t('servers.form.ownershipError')}</p>`; return; }
     workspace.className = 'publish-workspace';
     if (selectedListing || chosenPlan) {
       const plan = selectedListing?.plan_type || selectedListing?.plan || chosenPlan;
@@ -143,7 +145,7 @@ export function bind({ authService, navigate }) {
     }
     const portal = event.target.closest('[data-billing-portal]');
     if (!portal) return;
-    portal.disabled = true; portal.textContent = 'Abriendo Stripe…';
+    portal.disabled = true; portal.textContent = t('servers.form.openingStripe');
     const result = await service.openBillingPortal();
     if (result.error) { showToast(result.error, 'error'); portal.disabled = false; portal.textContent = t('servers.billing'); return; }
     window.location.assign(result.data.url);
@@ -157,7 +159,7 @@ export function bind({ authService, navigate }) {
     const values = new FormData(publishForm);
     const maps = values.getAll('maps');
     const platforms = values.getAll('platforms');
-    if (!maps.length || !platforms.length) { showToast('Selecciona al menos un mapa y una plataforma.', 'error'); return; }
+    if (!maps.length || !platforms.length) { showToast(t('servers.form.choicesError'), 'error'); return; }
     const button = publishForm.querySelector('button[type="submit"]');
     button.disabled = true;
     const customRates = Object.fromEntries(RATE_FIELDS.map(([key]) => [key, values.get(`rate_${key}`)]));
@@ -173,9 +175,9 @@ export function bind({ authService, navigate }) {
     const result = await service.saveListingDraft(publishForm.dataset.listing || null, plan, payload);
     if (result.error) { showToast(result.error, 'error'); button.disabled = false; return; }
     const listingId = result.data;
-    if (selectedListing?.status === 'active') { showToast('Cambios publicados.'); await load(); return; }
-    if (!REAL_STRIPE_BILLING) { showToast('Borrador guardado. La activación será administrativa.'); navigate(`/servers/publish?listing_id=${listingId}`); return; }
-    button.textContent = 'Abriendo Stripe…';
+    if (selectedListing?.status === 'active') { showToast(t('servers.form.saved')); await load(); return; }
+    if (!REAL_STRIPE_BILLING) { showToast(t('servers.form.draftSaved')); navigate(`/servers/publish?listing_id=${listingId}`); return; }
+    button.textContent = t('servers.form.openingStripe');
     const checkout = await service.startCheckout(listingId, plan);
     if (checkout.error) { showToast(checkout.error, 'error'); button.disabled = false; button.textContent = t('servers.checkout'); return; }
     window.location.assign(checkout.data.url);

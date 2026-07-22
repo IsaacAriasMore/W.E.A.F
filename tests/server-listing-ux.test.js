@@ -26,6 +26,7 @@ test('public publish form no longer asks for a slug or mod names', () => {
   const page = read('src/pages/public/serverPublish.js');
   const ownersPage = read('src/pages/public/serverOwners.js');
   const directoryPage = read('src/pages/public/servers.js');
+  const adminPage = read('src/pages/admin/adminDashboard.js');
   assert.doesNotMatch(page, /name="slug"/);
   assert.doesNotMatch(page, /name="mods"/);
   assert.match(page, /name: 'has_mods'/);
@@ -41,8 +42,13 @@ test('public publish form no longer asks for a slug or mod names', () => {
   assert.match(ownersPage, /classList\.add\('reveal-visible'\)/);
   assert.match(directoryPage, /href="\/servers\/publish" data-link/);
   assert.match(directoryPage, /href="\/servers\/owners#owner-plans" data-link/);
-  assert.match(page, /Cancelación programada/);
-  assert.match(page, /canceled: 'Cancelado'/);
+  assert.match(page, /servers\.form\.statusCanceling/);
+  assert.match(page, /canceled: 'statusCanceled'/);
+  assert.doesNotMatch(adminPage, /name="slug"/);
+  assert.doesNotMatch(adminPage, /Plataformas, por coma|Mapas, por coma|Rates \(JSON\)/);
+  assert.match(adminPage, /name: 'maps'.*serverOptions: true/);
+  assert.match(adminPage, /name: 'platforms'.*serverOptions: true/);
+  assert.match(adminPage, /name: 'has_mods'/);
 });
 
 test('database creates stable numeric listing slugs and stores the mods boolean', () => {
@@ -52,4 +58,13 @@ test('database creates stable numeric listing slugs and stores the mods boolean'
   assert.match(migration, /slug = coalesce\(nullif\(slug, ''\)/);
   assert.match(migration, /has_mods = selected_has_mods/);
   assert.doesNotMatch(migration, /p_payload->>'slug'/);
+});
+
+test('admin manual listings use generated slugs and explicit manual billing', () => {
+  const migration = read('supabase/migrations/20260722210545_phase_8_content_admin_cleanup.sql');
+  assert.match(migration, /public\.generate_server_listing_slug\(p_payload->>'title'\)/);
+  assert.doesNotMatch(migration, /p_payload->>'slug'/);
+  assert.match(migration, /'manual', 'not_required'/);
+  assert.match(migration, /private\.is_global_admin\(\)/);
+  assert.match(migration, /set search_path = ''/);
 });

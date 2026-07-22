@@ -6,8 +6,6 @@ export const iniPresets = [
     categoryLabel: 'Visibilidad',
     game: 'both',
     description: 'Reduce efectos ambientales que dificultan leer el terreno sin alterar controles.',
-    copies: 1284,
-    downloads: 638,
     content: '[SystemSettings]\nr.VolumetricCloud=0\nr.Fog=0\nr.MotionBlurQuality=0\nr.BloomQuality=0',
   },
   {
@@ -17,8 +15,6 @@ export const iniPresets = [
     categoryLabel: 'FPS Boost',
     game: 'ascended',
     description: 'Base moderada para equipos que priorizan respuesta y lectura en ASA.',
-    copies: 943,
-    downloads: 482,
     content: '[SystemSettings]\nr.ShadowQuality=1\nr.ViewDistanceScale=0.8\nr.Lumen.Reflections.Allow=0\nr.Nanite.MaxPixelsPerEdge=4',
   },
   {
@@ -28,8 +24,6 @@ export const iniPresets = [
     categoryLabel: 'PvP',
     game: 'evolved',
     description: 'Configuración legible para combates y movimiento rápido en ASE.',
-    copies: 776,
-    downloads: 391,
     content: '[SystemSettings]\nr.LightShaftQuality=0\nr.TrueSkyQuality=0\nr.PostProcessQuality=1\nr.DetailMode=0',
   },
   {
@@ -39,8 +33,6 @@ export const iniPresets = [
     categoryLabel: 'Farmeo',
     game: 'both',
     description: 'Ajustes visuales suaves para rutas largas de recolección.',
-    copies: 619,
-    downloads: 254,
     content: '[SystemSettings]\nr.MotionBlurQuality=0\nr.DepthOfFieldQuality=0\nr.LensFlareQuality=0\nr.BloomQuality=1',
   },
   {
@@ -50,8 +42,6 @@ export const iniPresets = [
     categoryLabel: 'Hard',
     game: 'both',
     description: 'Mantiene atmósfera y contraste para sesiones de supervivencia exigente.',
-    copies: 412,
-    downloads: 188,
     content: '[SystemSettings]\nr.Fog=1\nr.BloomQuality=2\nr.ShadowQuality=2\nr.ViewDistanceScale=1.0',
   },
   {
@@ -61,8 +51,6 @@ export const iniPresets = [
     categoryLabel: 'Clean',
     game: 'both',
     description: 'Punto de partida breve y fácil de adaptar para cualquier servidor.',
-    copies: 359,
-    downloads: 146,
     content: '[SystemSettings]\nr.MotionBlurQuality=0\nr.LensFlareQuality=0\nr.DepthOfFieldQuality=0',
   },
 ];
@@ -140,12 +128,7 @@ export const creatures = [
   { id: 'argentavis', name: 'Argentavis', game: 'both', type: 'Volador', map: 'The Island', use: 'Farmeo', cooldown: '18-48 h', note: 'Transporte fiable para rutas de metal.' },
   { id: 'rock-drake', name: 'Rock Drake', game: 'both', type: 'Especial', map: 'Aberration', use: 'Exploración', cooldown: 'Sin reproducción vanilla ASE', note: 'Movilidad vertical y camuflaje.' },
   { id: 'carcharodontosaurus', name: 'Carcharodontosaurus', game: 'both', type: 'Terrestre', map: 'The Island', use: 'PvP', cooldown: '18-48 h', note: 'Presión sostenida cuando mantiene ritmo.' },
-  { id: 'deinosuchus', name: 'Deinosuchus', game: 'ascended', type: 'Acuático', map: 'The Center', use: 'PvP', cooldown: 'Datos por validar', note: 'Emboscada anfibia y alto daño cargado.' },
+  { id: 'deinosuchus', name: 'Deinosuchus', game: 'ascended', type: 'Acuático', map: 'The Center', use: 'PvP', cooldown: 'Verificar según versión', note: 'Emboscada anfibia y alto daño cargado.' },
   { id: 'managarmr', name: 'Managarmr', game: 'evolved', type: 'Especial', map: 'Extinction', use: 'Movilidad', cooldown: '18-48 h', note: 'Control de distancia y desplazamiento rápido.' },
   { id: 'basilosaurus', name: 'Basilosaurus', game: 'both', type: 'Acuático', map: 'The Island', use: 'Exploración', cooldown: '18-48 h', note: 'Resistencia para rutas oceánicas profundas.' },
-];
-
-export const featuredServers = [
-  { name: 'Obsidian Coast', game: 'ASA', type: 'PvPvE', region: 'LATAM', rate: '5x', tag: 'Ejemplo Plus' },
-  { name: 'Valhalla Origins', game: 'ASE', type: 'PvE', region: 'NA', rate: '3x', tag: 'Ejemplo' },
 ];

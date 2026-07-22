@@ -1,21 +1,23 @@
+import { t } from '../../i18n/index.js';
+
 const pages = {
   '/terms': {
     title: 'Términos y condiciones',
     intro: 'Reglas base para usar W.E.A.F de forma segura y respetuosa.',
     sections: [
       ['Uso permitido', 'Puedes usar las herramientas públicas para fines personales y comunitarios. No puedes intentar vulnerar cuentas, automatizar abuso, distribuir malware ni interferir con otros usuarios.'],
-      ['Cuentas y tribus', 'En fases privadas, cada persona será responsable de su cuenta y de las acciones realizadas con ella. Los roles de tribu no conceden privilegios globales sobre la plataforma.'],
+      ['Cuentas y tribus', 'Cada persona es responsable de su cuenta y de las acciones realizadas con ella. Los roles de tribu no conceden privilegios globales sobre la plataforma.'],
       ['Contenido', 'Quien publique información conservará responsabilidad sobre su exactitud y derechos de uso. W.E.A.F podrá retirar contenido que incumpla las políticas de comunidad.'],
       ['Disponibilidad', 'El servicio puede cambiar durante su desarrollo. Se procurará avisar cuando una modificación afecte funciones o datos importantes.'],
     ],
   },
   '/privacy': {
     title: 'Política de privacidad',
-    intro: 'Resumen inicial de los datos que W.E.A.F prevé tratar y por qué.',
+    intro: 'Resumen preliminar de los datos que W.E.A.F trata y por qué.',
     sections: [
-      ['Datos previstos', 'Cuenta, perfil, membresías de tribu, preferencias, actividad funcional y aceptaciones legales. Los pagos serán procesados por Stripe y los secretos se gestionarán fuera del navegador.'],
+      ['Datos tratados', 'Cuenta, perfil, membresías de tribu, preferencias, actividad funcional y aceptaciones legales. Los pagos son procesados por Stripe y los secretos se gestionan fuera del navegador.'],
       ['Finalidad', 'Autenticar usuarios, aislar contenido por tribu, operar herramientas, prevenir abuso y mejorar estabilidad. No se venderán datos personales.'],
-      ['Conservación y control', 'Las ventanas de conservación se definirán antes del lanzamiento comercial. Los usuarios podrán solicitar acceso o eliminación cuando la función esté disponible.'],
+      ['Conservación y control', 'Las ventanas de conservación y el procedimiento formal de acceso o eliminación requieren revisión legal antes del lanzamiento comercial. Mientras tanto, las solicitudes se reciben por el canal de contacto.'],
       ['Seguridad', 'La arquitectura usa Row Level Security, privilegios mínimos, logs de auditoría y Edge Functions para operaciones con secretos.'],
     ],
   },
@@ -41,10 +43,10 @@ const pages = {
   },
   '/refund-policy': {
     title: 'Política de reembolsos',
-    intro: 'Base prevista para las futuras publicaciones pagadas de servidores.',
+    intro: 'Base preliminar para las publicaciones pagadas de servidores.',
     sections: [
-      ['Estado actual', 'La integración técnica con Stripe está preparada, pero la venta pública depende de configurar las credenciales de producción y revisar estas condiciones.'],
-      ['Servicios digitales', 'Antes de activar Stripe se definirán duración, renovación, cancelación, reembolso y jurisdicción aplicable de cada plan.'],
+      ['Estado actual', 'Stripe procesa las suscripciones cuando la facturación está habilitada. Estas condiciones aún requieren revisión profesional antes de considerarse definitivas.'],
+      ['Servicios digitales', 'Los planes mensuales se renuevan mediante Stripe hasta su cancelación. La jurisdicción, los plazos y las excepciones de reembolso requieren revisión legal final.'],
       ['Revisión manual', 'El administrador podrá evaluar reembolsos por cobro duplicado, fallo técnico o retiro justificado de una publicación.'],
     ],
   },
@@ -79,14 +81,14 @@ const pages = {
 };
 
 const relatedLinks = [
-  ['/terms', 'Términos'],
-  ['/privacy', 'Privacidad'],
-  ['/cookies', 'Cookies'],
-  ['/disclaimer', 'Disclaimer'],
-  ['/refund-policy', 'Reembolsos'],
-  ['/server-listing-policy', 'Servidores'],
-  ['/report-content', 'Reportar'],
-  ['/contact', 'Contacto'],
+  ['/terms', 'terms'],
+  ['/privacy', 'privacy'],
+  ['/cookies', 'cookies'],
+  ['/disclaimer', 'disclaimer'],
+  ['/refund-policy', 'refunds'],
+  ['/server-listing-policy', 'servers'],
+  ['/report-content', 'report'],
+  ['/contact', 'contact'],
 ];
 
 export function render({ path }) {
@@ -94,10 +96,10 @@ export function render({ path }) {
   return `
     <article class="legal-page container reveal-up">
       <header class="legal-header">
-        <p class="section-kicker">Documento base</p>
+        <p class="section-kicker">${t('legal.eyebrow')}</p>
         <h1>${page.title}</h1>
         <p>${page.intro}</p>
-        <span>Versión preliminar: 21 de julio de 2026</span>
+        <span>${t('legal.version')}</span>
       </header>
       <div class="legal-layout">
         <div class="legal-content">
@@ -108,13 +110,13 @@ export function render({ path }) {
             </section>
           `).join('')}
           <aside class="legal-notice">
-            <strong>Revisión pendiente</strong>
-            <p>Este texto es una base informativa, no asesoría legal definitiva. Debe revisarse antes del lanzamiento comercial.</p>
+            <strong>${t('legal.noticeTitle')}</strong>
+            <p>${t('legal.noticeBody')}</p>
           </aside>
         </div>
-        <nav class="legal-nav" aria-label="Documentos legales">
-          <strong>Documentos</strong>
-          ${relatedLinks.map(([href, label]) => `<a href="${href}" data-link ${href === path ? 'aria-current="page"' : ''}>${label}</a>`).join('')}
+        <nav class="legal-nav" aria-label="${t('legal.aria')}">
+          <strong>${t('legal.documents')}</strong>
+          ${relatedLinks.map(([href, key]) => `<a href="${href}" data-link ${href === path ? 'aria-current="page"' : ''}>${t(`legal.${key}`)}</a>`).join('')}
         </nav>
       </div>
     </article>

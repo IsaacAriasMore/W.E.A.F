@@ -85,7 +85,7 @@ test('all legal routes render a document', async ({ page }) => {
   for (const route of routes) {
     await page.goto(route);
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('.legal-notice')).toContainText('Revisión pendiente');
+    await expect(page.locator('.legal-notice')).toContainText('Pendiente de revisión profesional');
   }
 });
 

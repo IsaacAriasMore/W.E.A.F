@@ -1,6 +1,7 @@
 import { mapBosses } from '../../data/publicData.js';
 import { showToast } from '../../utils/feedback.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
+import { t } from '../../i18n/index.js';
 
 const STORAGE_KEY = 'weaf:boss-checklist:v1';
 
@@ -20,7 +21,7 @@ function saveChecklist(value) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
   } catch {
-    showToast('El navegador no permitió guardar el checklist.', 'error');
+    showToast(t('bosses.storageError'), 'error');
   }
 }
 
@@ -29,27 +30,27 @@ export function render() {
   return `
     <section class="page-hero map-page-hero container reveal-up">
       <div>
-        <p class="section-kicker">Preparación local</p>
-        <h1>Que el tributo no sea la sorpresa.</h1>
-        <p>Selecciona mapa, boss y dificultad. Marca lo que ya tiene tu tribu.</p>
+        <p class="section-kicker">${t('bosses.eyebrow')}</p>
+        <h1>${t('bosses.title')}</h1>
+        <p>${t('bosses.body')}</p>
       </div>
-      <p class="local-note"><strong>Guardado local</strong><span>El checklist permanece solo en este navegador.</span></p>
+      <p class="local-note"><strong>${t('bosses.local')}</strong><span>${t('bosses.localBody')}</span></p>
     </section>
 
     <section class="boss-tool container">
-      <form class="boss-controls" aria-label="Seleccionar enfrentamiento">
+      <form class="boss-controls" aria-label="${t('bosses.encounter')}">
         <label>
-          <span>Mapa</span>
+          <span>${t('bosses.map')}</span>
           <select data-map-select>
             ${mapBosses.map((map) => `<option value="${map.id}">${map.name}</option>`).join('')}
           </select>
         </label>
         <label>
-          <span>Boss</span>
+          <span>${t('bosses.boss')}</span>
           <select data-boss-select>${bossOptions(initialMap, initialMap.bosses[0].id)}</select>
         </label>
         <label>
-          <span>Dificultad</span>
+          <span>${t('bosses.difficulty')}</span>
           <select data-difficulty-select>
             <option value="gamma">Gamma</option>
             <option value="beta">Beta</option>
@@ -64,12 +65,12 @@ export function render() {
           <div class="checklist-header">
             <div>
               <span data-checklist-difficulty>Gamma</span>
-              <h2 id="checklist-title">Tributos requeridos</h2>
+              <h2 id="checklist-title">${t('bosses.requirements')}</h2>
             </div>
             <p data-checklist-progress aria-live="polite"></p>
           </div>
           <div class="checklist-items" data-checklist-items></div>
-          <button class="text-button" type="button" data-reset-checklist>Limpiar selección</button>
+          <button class="text-button" type="button" data-reset-checklist>${t('bosses.clear')}</button>
         </section>
       </div>
     </section>
@@ -78,10 +79,10 @@ export function render() {
 
     <section class="boss-callout container reveal-up">
       <div>
-        <h2>Checklist listo. Estrategia en contexto.</h2>
-        <p>Las recomendaciones son una base comunitaria de demostración. Contrástalas con la versión y configuración de tu servidor.</p>
+        <h2>${t('bosses.callout')}</h2>
+        <p>${t('bosses.calloutBody')}</p>
       </div>
-      <a class="button button-secondary" href="/creatures" data-link>Buscar criaturas</a>
+      <a class="button button-secondary" href="/creatures" data-link>${t('bosses.creatures')}</a>
     </section>
   `;
 }
@@ -117,13 +118,13 @@ export function bind() {
 
     summary.innerHTML = `
       <div class="boss-art">
-        <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="Paisaje prehistórico original usado como referencia visual" loading="lazy" />
+        <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="${t('bosses.imageAlt')}" loading="lazy" />
       </div>
       <div class="boss-summary-copy">
         <span>${selection.map.game === 'both' ? 'ASE + ASA' : selection.map.game.toUpperCase()}</span>
         <h2>${selection.boss.name}</h2>
         <p>${selection.map.description}</p>
-        <strong>Preparación sugerida</strong>
+        <strong>${t('bosses.preparation')}</strong>
         <p>${selection.boss.preparation}</p>
       </div>
     `;
@@ -146,7 +147,7 @@ export function bind() {
   function updateProgress() {
     const total = items.querySelectorAll('input').length;
     const complete = items.querySelectorAll('input:checked').length;
-    progress.textContent = `${complete} de ${total} listos`;
+    progress.textContent = t('bosses.progress', { complete, total });
   }
 
   mapSelect.addEventListener('change', () => {
@@ -169,7 +170,7 @@ export function bind() {
     delete checklist[key];
     saveChecklist(checklist);
     renderSelection();
-    showToast('Checklist limpio.');
+    showToast(t('bosses.cleared'));
   }, { signal });
 
   renderSelection();
