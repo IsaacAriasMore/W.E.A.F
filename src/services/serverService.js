@@ -44,10 +44,19 @@ export function createServerService(client) {
     },
     async track(listingId, eventType) {
       if (!client) return { data: null, error: null };
-      const { data, error } = await client.functions.invoke('track-server-event', {
-        body: { listingId, eventType },
-      });
-      return { data, error: friendly(error, 'No pudimos registrar la interacción.') };
+      try {
+        const { data, error } = await client.functions.invoke('track-server-event', {
+          body: { listingId, eventType },
+        });
+        if (error) {
+          if (import.meta.env?.DEV) console.warn('[W.E.A.F] Tracking no crítico omitido.', error.message);
+          return { data: null, error: null };
+        }
+        return { data, error: null };
+      } catch (error) {
+        if (import.meta.env?.DEV) console.warn('[W.E.A.F] Tracking no crítico omitido.', error?.message);
+        return { data: null, error: null };
+      }
     },
     async startCheckout(serverListingId, planType) {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };

@@ -27,6 +27,20 @@ test('server event tracking sends only the listing and event type', async () => 
   assert.deepEqual(call, { name: 'track-server-event', options: { body: { listingId: 'listing-id', eventType: 'discord_click' } } });
 });
 
+test('server event tracking failures are non-blocking', async () => {
+  const service = createServerService({
+    functions: { async invoke() { return { data: null, error: new Error('tracking_failed') }; } },
+  });
+  assert.deepEqual(await service.track('listing-id', 'impression'), { data: null, error: null });
+});
+
+test('server event tracking also swallows transport failures', async () => {
+  const service = createServerService({
+    functions: { async invoke() { throw new Error('network unavailable'); } },
+  });
+  assert.deepEqual(await service.track('listing-id', 'website_click'), { data: null, error: null });
+});
+
 test('checkout starts in a protected Edge Function without exposing Stripe keys', async () => {
   let call;
   const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { url: 'https://checkout.stripe.com/test' }, error: null }; } } });

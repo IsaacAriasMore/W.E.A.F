@@ -63,3 +63,26 @@ test('phase 9 normalizes internal placements and tracking without external provi
   assert.match(slot, /isAdDismissed/);
   assert.doesNotMatch(slot, /googlesyndication|doubleclick|adsense/i);
 });
+
+test('tracking hotfix keeps events constrained and failures non-blocking', () => {
+  const migration = read('supabase/migrations/20260722234732_fix_tracking_service_role_check.sql');
+  const edge = read('supabase/functions/track-server-event/index.ts');
+  const service = read('src/services/serverService.js');
+  const slot = read('src/components/ads/SponsoredServerSlot.js');
+
+  assert.match(edge, /new Set\(\["impression", "discord_click", "website_click"\]\)/);
+  assert.match(edge, /invalid_server_event/);
+  assert.match(edge, /recorded: false, ignored: true, reason/);
+  assert.match(edge, /console\.warn/);
+  assert.match(edge, /ctx\.supabaseAdmin\.rpc/);
+  assert.match(service, /return \{ data: null, error: null \}/);
+
+  assert.doesNotMatch(migration, /request\.jwt\.claim\.role/);
+  assert.match(migration, /security definer/i);
+  assert.match(migration, /set search_path = ''/);
+  assert.match(migration, /from public, anon, authenticated/);
+  assert.match(migration, /to service_role/);
+
+  assert.match(slot, /if \(!state\.impressionObserver\)/);
+  assert.match(slot, /trackedCards\.has/);
+});

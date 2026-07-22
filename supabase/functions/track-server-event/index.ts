@@ -6,6 +6,15 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 const allowedEvents = new Set(["impression", "discord_click", "website_click"])
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: corsHeaders })
 
+function ignored(reason: string, listingId: string, eventType: string, error?: unknown) {
+  console.warn("[track-server-event] non-critical tracking ignored", {
+    error: error instanceof Error ? error.message : String(error || reason),
+    listingId,
+    eventType,
+  })
+  return json({ recorded: false, ignored: true, reason })
+}
+
 function safeReferrer(value: string | null) {
   if (!value) return null
   try {
@@ -45,21 +54,27 @@ export default {
         || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
         || "unknown"
       const secret = Deno.env.get("CLICK_HASH_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-      if (!secret) return json({ error: "tracking_not_configured" }, 503)
-      const ipHash = await sha256(`${secret}:${forwarded}`)
+      if (!secret) return ignored("tracking_not_configured", body.listingId, body.eventType)
 
-      const { data, error } = await ctx.supabaseAdmin.rpc("record_server_listing_event", {
-        p_listing_id: body.listingId,
-        p_event: body.eventType,
-        p_ip_hash: ipHash,
-        p_referrer: safeReferrer(request.headers.get("referer")),
-      })
+      try {
+        const ipHash = await sha256(`${secret}:${forwarded}`)
+        const { data, error } = await ctx.supabaseAdmin.rpc("record_server_listing_event", {
+          p_listing_id: body.listingId,
+          p_event: body.eventType,
+          p_ip_hash: ipHash,
+          p_referrer: safeReferrer(request.headers.get("referer")),
+        })
 
-      if (error) {
-        const unavailable = error.message.includes("listing_not_available")
-        return json({ error: unavailable ? "listing_not_available" : "tracking_failed" }, unavailable ? 404 : 500)
+        if (error) {
+          const reason = error.message.includes("listing_not_available")
+            ? "listing_not_available"
+            : "tracking_failed"
+          return ignored(reason, body.listingId, body.eventType, error)
+        }
+        return json({ recorded: Boolean(data) })
+      } catch (error) {
+        return ignored("tracking_failed", body.listingId, body.eventType, error)
       }
-      return json({ recorded: Boolean(data) })
     })(req)
   },
 }
