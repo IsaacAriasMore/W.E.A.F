@@ -115,3 +115,24 @@ Antes de producción reemplaza `pk_test_`, `sk_test_`, los Price IDs test y el w
 ## Modo degradado
 
 Con `VITE_BILLING_ENABLED=false` o `VITE_STRIPE_ENABLED=false`, el frontend guarda la ficha pero no llama Checkout. La publicación permanece no pública hasta que un administrador la active manualmente. Los flags privados `BILLING_ENABLED` y `STRIPE_ENABLED` impiden además crear sesiones aunque alguien invoque directamente la función.
+# Visibilidad después de cancelar
+
+W.E.A.F retira una publicación Stripe de la zona pública cuando ocurre cualquiera de estos estados:
+
+- `customer.subscription.deleted`: estado `canceled`, pago `canceled` y sin destacado.
+- `customer.subscription.updated` con `cancel_at_period_end=true`: estado `paused` de inmediato y sin destacado.
+- Suscripción `canceled`, `unpaid`, `incomplete_expired` o `past_due`: cancelada o pausada según el estado de pago.
+- `invoice.payment_failed`: estado `paused`, pago `failed` y sin destacado.
+
+La protección existe en dos capas. El trigger de base de datos normaliza el estado aunque el webhook reciba una actualización activa con cancelación programada. La política RLS y la consulta pública solo exponen publicaciones activas con pago Stripe confirmado o publicaciones manuales con `payment_status=not_required`.
+
+El propietario y el admin global conservan lectura del registro cancelado. Solo un admin global puede reactivar manualmente una publicación sin suscripción Stripe; el trigger la marca como `billing_source=manual` y `payment_status=not_required`.
+
+## Prueba de cancelación
+
+1. Completar Checkout test con Plus.
+2. Confirmar `status=active`, `payment_status=paid` e `is_featured=true`.
+3. Cancelar en Billing Portal.
+4. Confirmar la entrega de `customer.subscription.updated` con `cancel_at_period_end=true`.
+5. Confirmar `status=paused`, `is_featured=false` y ausencia en `/servers`.
+6. Entregar o simular `customer.subscription.deleted` y confirmar `status=canceled` y `payment_status=canceled`.
