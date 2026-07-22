@@ -1,3 +1,5 @@
+import { t } from '../../i18n/index.js';
+
 export function createFooter() {
   return `
     <footer class="site-footer">
@@ -7,7 +9,7 @@ export function createFooter() {
             <img src="/assets/weaf-mark.svg" width="42" height="42" alt="" />
             <span><strong>W.E.A.F</strong><small>Wild Evolution & Ascension Forge</small></span>
           </a>
-          <p>Herramientas para preparar, criar y progresar con tu tribu.</p>
+          <p data-i18n="footer.tagline">${t('footer.tagline')}</p>
         </div>
         <div class="creator-card" aria-label="Información del creador">
           <div class="creator-avatar" aria-hidden="true">IA<span></span></div>
@@ -15,20 +17,20 @@ export function createFooter() {
             <strong>Isaac Arias</strong>
             <span>@whiskyzc_</span>
           </div>
-          <span class="creator-badge">Creator</span>
+          <span class="creator-badge" data-i18n="footer.creator">${t('footer.creator')}</span>
         </div>
         <nav class="footer-links" aria-label="Enlaces legales">
-          <a href="/terms" data-link>Términos</a>
-          <a href="/privacy" data-link>Privacidad</a>
-          <a href="/cookies" data-link>Cookies</a>
-          <a href="/disclaimer" data-link>Disclaimer</a>
-          <a href="/contact" data-link>Contacto</a>
-          <button type="button" data-open-consent>Preferencias de privacidad</button>
-          <button type="button" data-install-app hidden>Instalar W.E.A.F</button>
+          <a href="/terms" data-link data-i18n="footer.terms">${t('footer.terms')}</a>
+          <a href="/privacy" data-link data-i18n="footer.privacy">${t('footer.privacy')}</a>
+          <a href="/cookies" data-link data-i18n="footer.cookies">${t('footer.cookies')}</a>
+          <a href="/disclaimer" data-link data-i18n="footer.disclaimer">${t('footer.disclaimer')}</a>
+          <a href="/contact" data-link data-i18n="footer.contact">${t('footer.contact')}</a>
+          <button type="button" data-open-consent data-i18n="footer.preferences">${t('footer.preferences')}</button>
+          <button type="button" data-install-app hidden data-i18n="footer.install">${t('footer.install')}</button>
         </nav>
       </div>
       <div class="footer-legal container">
-        <p>W.E.A.F es una herramienta independiente de comunidad. No está afiliada, aprobada ni patrocinada por Studio Wildcard, Snail Games, ARK: Survival Evolved o ARK: Survival Ascended.</p>
+        <p data-i18n="footer.legal">${t('footer.legal')}</p>
         <span>© ${new Date().getFullYear()} W.E.A.F</span>
       </div>
     </footer>

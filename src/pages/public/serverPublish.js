@@ -10,6 +10,7 @@ import {
 import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
+import { t } from '../../i18n/index.js';
 
 const value = (item, key, fallback = '') => escapeHtml(String(item?.[key] ?? fallback));
 const planLabel = (plan) => plan === 'plus' ? 'Plus - $7 USD/mes' : 'Normal - $3 USD/mes';
@@ -25,15 +26,15 @@ function ratesSection(listing) {
   const rates = listing?.rates || {};
   const preset = rates.preset && (rates.preset === 'custom' || rates.preset in RATE_PRESETS) ? rates.preset : 'not_specified';
   return `<fieldset class="publish-choice-group publish-rates">
-    <legend>Rates del servidor</legend>
-    <p class="field-help">Los rates son multiplicadores del servidor. Por ejemplo, 5x significa cinco veces más rápido que vanilla/oficial.</p>
+    <legend>${t('servers.rates')}</legend>
+    <p class="field-help">${t('servers.ratesHelp')}</p>
     <label><span>Configuración</span><select name="rate_preset" data-rate-preset>
-      <option value="not_specified" ${preset === 'not_specified' ? 'selected' : ''}>No estoy seguro / No especificar</option>
-      <option value="vanilla" ${preset === 'vanilla' ? 'selected' : ''}>Vanilla / Oficial</option>
+      <option value="not_specified" ${preset === 'not_specified' ? 'selected' : ''}>${t('servers.unsure')}</option>
+      <option value="vanilla" ${preset === 'vanilla' ? 'selected' : ''}>${t('servers.vanilla')}</option>
       <option value="low" ${preset === 'low' ? 'selected' : ''}>Bajo</option>
       <option value="medium" ${preset === 'medium' ? 'selected' : ''}>Medio</option>
       <option value="high" ${preset === 'high' ? 'selected' : ''}>Alto</option>
-      <option value="custom" ${preset === 'custom' ? 'selected' : ''}>Personalizado</option>
+      <option value="custom" ${preset === 'custom' ? 'selected' : ''}>${t('servers.custom')}</option>
     </select></label>
     <div class="rate-grid" data-custom-rates ${preset === 'custom' ? '' : 'hidden'}>${RATE_FIELDS.map(([key, label, help]) => `<label><span>${label}</span><input name="rate_${key}" type="number" inputmode="decimal" min="0.01" max="1000" step="0.01" value="${escapeHtml(String(rates[key] ?? 1))}"><small>${help}</small></label>`).join('')}</div>
   </fieldset>`;
@@ -53,22 +54,22 @@ function form(plan, listing) {
         <div class="publish-field-pair"><label><span>Discord</span><input name="discord" type="url" value="${value(listing, 'discord_invite_url')}" placeholder="https://discord.gg/..." required></label><label><span>Sitio web (opcional)</span><input name="website" type="url" value="${value(listing, 'website_url')}" placeholder="https://..."></label></div>
         <label><span>Banner (opcional)</span><input name="banner" type="url" value="${value(listing, 'banner_url')}" placeholder="https://..."></label>
       </fieldset>
-      ${choiceGroup({ legend: 'Mapas disponibles', help: 'Marca todos los mapas que tiene tu servidor.', name: 'maps', items: availableForGame(SERVER_MAPS, game), selected: listing?.maps || [] })}
-      ${choiceGroup({ legend: 'Plataformas disponibles', help: 'Selecciona todas las plataformas desde las que se puede entrar al servidor.', name: 'platforms', items: availableForGame(SERVER_PLATFORMS, game).map((item) => ({ ...item, value: item.label })), selected: listing?.platforms || [] })}
-      ${choiceGroup({ legend: '¿Tiene mods?', help: 'Solo necesitamos saber si el servidor utiliza mods.', name: 'has_mods', type: 'radio', items: [{ value: 'true', label: 'Sí' }, { value: 'false', label: 'No' }], selected: [String(listing?.has_mods ?? false)] })}
+      ${choiceGroup({ legend: t('servers.maps'), help: t('servers.mapsHelp'), name: 'maps', items: availableForGame(SERVER_MAPS, game), selected: listing?.maps || [] })}
+      ${choiceGroup({ legend: t('servers.platforms'), help: t('servers.platformsHelp'), name: 'platforms', items: availableForGame(SERVER_PLATFORMS, game).map((item) => ({ ...item, value: item.label })), selected: listing?.platforms || [] })}
+      ${choiceGroup({ legend: t('servers.modsQuestion'), help: 'Solo necesitamos saber si el servidor utiliza mods.', name: 'has_mods', type: 'radio', items: [{ value: 'true', label: t('common.yes') }, { value: 'false', label: t('common.no') }], selected: [String(listing?.has_mods ?? false)] })}
       ${ratesSection(listing)}
       <fieldset class="publish-section"><legend>Detalles adicionales</legend>
         <div class="publish-field-pair"><label><span>Cluster (opcional)</span><input name="cluster_name" value="${value(listing, 'cluster_name')}"></label><label><span>Último wipe (opcional)</span><input name="wipe_date" type="date" value="${value(listing, 'wipe_date')}"></label></div>
         <label class="publish-check"><input name="propagators" type="checkbox" ${checked(listing?.uses_propagators)}><span>Este servidor usa propagadores</span></label>
       </fieldset>
     </div>
-    <footer><p>${paidAndActive ? 'Los cambios se publican inmediatamente.' : REAL_STRIPE_BILLING ? 'Serás redirigido a Stripe Checkout.' : 'Se guardará como pendiente para activación administrativa.'}</p><button class="button button-primary" type="submit">${paidAndActive ? 'Guardar cambios' : REAL_STRIPE_BILLING ? 'Continuar al pago' : 'Guardar borrador'}</button></footer>
+    <footer><p>${paidAndActive ? 'Los cambios se publican inmediatamente.' : REAL_STRIPE_BILLING ? 'Serás redirigido a Stripe Checkout.' : 'Se guardará como pendiente para activación administrativa.'}</p><button class="button button-primary" type="submit">${paidAndActive ? 'Guardar cambios' : REAL_STRIPE_BILLING ? t('servers.checkout') : 'Guardar borrador'}</button></footer>
   </form>`;
 }
 
 function dashboard(listings, hasCustomer) {
   if (!listings.length) return `<div class="publish-message"><h2>Aún no tienes publicaciones.</h2><p>Elige Normal o Plus, completa la ficha y continúa al pago seguro.</p><a class="button button-primary" href="/servers/owners" data-link>Ver planes</a></div>`;
-  return `<div class="publish-message"><h2>Tus publicaciones</h2><p>Consulta su estado, edita la ficha o administra la suscripción.</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(listing.status)} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>Editar</a></article>`).join('')}</div><div class="server-card-actions">${hasCustomer && REAL_STRIPE_BILLING ? '<button class="button button-primary" type="button" data-billing-portal>Gestionar facturación</button>' : ''}<a class="button button-quiet" href="/servers/owners" data-link>Nueva publicación</a></div></div>`;
+  return `<div class="publish-message"><h2>Tus publicaciones</h2><p>Consulta su estado, edita la ficha o administra la suscripción.</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(listing.status)} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>Editar</a></article>`).join('')}</div><div class="server-card-actions">${hasCustomer && REAL_STRIPE_BILLING ? `<button class="button button-primary" type="button" data-billing-portal>${t('servers.billing')}</button>` : ''}<a class="button button-quiet" href="/servers/owners" data-link>Nueva publicación</a></div></div>`;
 }
 
 export function render() {
@@ -121,7 +122,7 @@ export function bind({ authService, navigate }) {
     if (!portal) return;
     portal.disabled = true; portal.textContent = 'Abriendo Stripe…';
     const result = await service.openBillingPortal();
-    if (result.error) { showToast(result.error, 'error'); portal.disabled = false; portal.textContent = 'Gestionar facturación'; return; }
+    if (result.error) { showToast(result.error, 'error'); portal.disabled = false; portal.textContent = t('servers.billing'); return; }
     window.location.assign(result.data.url);
   });
 
@@ -153,7 +154,7 @@ export function bind({ authService, navigate }) {
     if (!REAL_STRIPE_BILLING) { showToast('Borrador guardado. La activación será administrativa.'); navigate(`/servers/publish?listing_id=${listingId}`); return; }
     button.textContent = 'Abriendo Stripe…';
     const checkout = await service.startCheckout(listingId, plan);
-    if (checkout.error) { showToast(checkout.error, 'error'); button.disabled = false; button.textContent = 'Continuar al pago'; return; }
+    if (checkout.error) { showToast(checkout.error, 'error'); button.disabled = false; button.textContent = t('servers.checkout'); return; }
     window.location.assign(checkout.data.url);
   });
 

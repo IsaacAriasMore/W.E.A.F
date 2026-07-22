@@ -27,8 +27,8 @@ test('public publish form no longer asks for a slug or mod names', () => {
   assert.doesNotMatch(page, /name="slug"/);
   assert.doesNotMatch(page, /name="mods"/);
   assert.match(page, /name: 'has_mods'/);
-  assert.match(page, /Mapas disponibles/);
-  assert.match(page, /Plataformas disponibles/);
+  assert.match(page, /t\('servers\.maps'\)/);
+  assert.match(page, /t\('servers\.platforms'\)/);
 });
 
 test('database creates the listing slug and stores the mods boolean', () => {

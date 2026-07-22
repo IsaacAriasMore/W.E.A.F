@@ -11,6 +11,8 @@ import './css/phase8.css';
 import './css/responsive.css';
 import { startApp } from './App.js';
 import { initializePwa } from './services/pwaService.js';
+import { initI18n } from './i18n/index.js';
 
+initI18n();
 initializePwa();
 startApp(document.querySelector('#app'));

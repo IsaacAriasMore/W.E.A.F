@@ -115,7 +115,7 @@ export async function startApp(root) {
 
   updateHeaderAuth(initialSession);
   await syncSession(initialSession, { refresh: false, preserveActivity: true });
-  bindPublicHeader(router.navigate);
+  bindPublicHeader(router.navigate, router.refresh);
 
   authService.onAuthStateChange((event, session) => {
     if (event === 'INITIAL_SESSION') return;
