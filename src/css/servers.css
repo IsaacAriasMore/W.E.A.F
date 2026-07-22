@@ -133,3 +133,154 @@
   justify-self: start;
   margin-top: 0.4rem;
 }
+
+/* Public listing form: visible controls and grouped decisions. */
+.publish-fields {
+  gap: 1.25rem;
+}
+
+.publish-section,
+.publish-choice-group {
+  min-width: 0;
+  margin: 0;
+  padding: clamp(1.15rem, 3vw, 1.65rem);
+  border: 1px solid color-mix(in oklch, var(--line) 88%, var(--primary) 12%);
+  border-radius: var(--radius-card);
+  background: color-mix(in oklch, var(--surface) 92%, var(--bg));
+}
+
+.publish-section > legend,
+.publish-choice-group > legend {
+  padding-inline: 0.35rem;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.publish-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.publish-field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.publish-fields label {
+  gap: 0.45rem;
+}
+
+.publish-fields label > span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.publish-fields input:not([type='checkbox']):not([type='radio']),
+.publish-fields select,
+.publish-fields textarea {
+  min-height: 50px;
+  border-color: oklch(0.41 0.03 252);
+  border-radius: var(--radius-control);
+  padding: 0.78rem 0.9rem;
+  background: oklch(0.135 0.017 252);
+  color: var(--ink);
+  caret-color: var(--primary);
+  transition: border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background-color 180ms var(--ease-out);
+}
+
+.publish-fields input::placeholder,
+.publish-fields textarea::placeholder {
+  color: oklch(0.65 0.018 250);
+  opacity: 1;
+}
+
+.publish-fields input:not([type='checkbox']):not([type='radio']):focus,
+.publish-fields select:focus,
+.publish-fields textarea:focus {
+  border-color: var(--primary);
+  outline: 0;
+  background: oklch(0.16 0.02 252);
+  box-shadow: 0 0 0 3px oklch(0.7 0.13 60 / 0.2);
+}
+
+.publish-fields :is(input, select, textarea):user-invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px oklch(0.67 0.16 25 / 0.14);
+}
+
+.field-help {
+  margin: 0 0 1rem;
+  color: var(--subtle);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.publish-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.65rem;
+}
+
+.publish-choices label {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: oklch(0.14 0.017 252);
+  cursor: pointer;
+  transition: border-color 180ms var(--ease-out), background-color 180ms var(--ease-out);
+}
+
+.publish-choices label:hover,
+.publish-choices label:has(input:checked) {
+  border-color: color-mix(in oklch, var(--primary) 70%, var(--line));
+  background: oklch(0.19 0.027 60 / 0.35);
+}
+
+.publish-choices input,
+.publish-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  accent-color: var(--primary);
+}
+
+.publish-choices span {
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.rate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem 1rem;
+  margin-top: 1rem;
+}
+
+.rate-grid[hidden] {
+  display: none;
+}
+
+.rate-grid small {
+  color: var(--subtle);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 620px) {
+  .publish-field-pair,
+  .rate-grid,
+  .publish-choices {
+    grid-template-columns: 1fr;
+  }
+
+  .publish-section,
+  .publish-choice-group {
+    padding: 1rem;
+  }
+}
