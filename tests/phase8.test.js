@@ -24,11 +24,12 @@ test('PWA manifest, service worker and required icons are present', () => {
     assert.equal(existsSync(new URL(`../${path}`, import.meta.url)), true, `${path} is missing`);
   }
   const worker = read('public/sw.js');
-  assert.match(worker, /weaf-shell-v2/);
+  assert.match(worker, /weaf-shell-v3/);
   assert.match(worker, /request\.method !== 'GET'/);
   assert.match(worker, /url\.origin !== self\.location\.origin/);
   assert.match(worker, /request\.headers\.has\('Authorization'\)/);
   assert.match(worker, /response\.clone\(\)/);
+  assert.match(worker, /response\.bodyUsed/);
   assert.match(worker, /!response\.redirected/);
   assert.match(worker, /response\.type !== 'opaque'/);
   assert.match(worker, /safeCachePut/);

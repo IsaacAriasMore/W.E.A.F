@@ -60,9 +60,16 @@ test('server directory and owner plans are public and responsive', async ({ page
   await page.goto('/servers/owners');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Publica con control');
   await expect(page.locator('.owner-plan')).toHaveCount(2);
-  await expect(page.getByRole('link', { name: /Ver planes/ })).toBeVisible();
+  const plansLink = page.getByRole('link', { name: /Ver planes/ });
+  await expect(plansLink).toBeVisible();
   const planTop = await page.locator('#owner-plans').evaluate((element) => element.getBoundingClientRect().top);
   expect(planTop).toBeLessThan(page.viewportSize().height);
+  await plansLink.click();
+  await expect(page).toHaveURL(/\/servers\/owners#owner-plans$/);
+  await expect.poll(() => page.locator('#owner-plans').evaluate((element) => Math.round(element.getBoundingClientRect().top))).toBeLessThan(120);
+
+  await page.goto('/servers/owners#owner-plans');
+  await expect.poll(() => page.locator('#owner-plans').evaluate((element) => Math.round(element.getBoundingClientRect().top))).toBeLessThan(120);
 });
 
 test('all legal routes render a document', async ({ page }) => {

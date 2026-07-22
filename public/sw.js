@@ -1,4 +1,4 @@
-const CACHE_NAME = 'weaf-shell-v2';
+const CACHE_NAME = 'weaf-shell-v3';
 const OFFLINE_URL = '/offline.html';
 const APP_SHELL = ['/', OFFLINE_URL, '/assets/weaf-mark.svg'];
 const PRIVATE_PATHS = [
@@ -35,9 +35,11 @@ function canCache(response) {
 }
 
 async function safeCachePut(key, response) {
+  if (!response || response.bodyUsed || !canCache(response)) return;
   try {
+    const cacheResponse = response.clone();
     const cache = await caches.open(CACHE_NAME);
-    await cache.put(key, response);
+    await cache.put(key, cacheResponse);
   } catch (error) {
     console.warn('weaf_cache_put_failed', error?.message || 'cache_error');
   }
@@ -46,7 +48,7 @@ async function safeCachePut(key, response) {
 async function networkFirstNavigation(request) {
   try {
     const response = await fetch(request);
-    if (canCache(response)) await safeCachePut('/', response.clone());
+    await safeCachePut('/', response);
     return response;
   } catch {
     return (await caches.match(request)) || (await caches.match('/')) || caches.match(OFFLINE_URL);
@@ -57,7 +59,7 @@ async function cacheFirstAsset(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
   const response = await fetch(request);
-  if (canCache(response)) await safeCachePut(request, response.clone());
+  await safeCachePut(request, response);
   return response;
 }
 

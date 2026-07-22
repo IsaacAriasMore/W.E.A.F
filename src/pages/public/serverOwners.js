@@ -11,10 +11,26 @@ function plansMarkup(plans) {
 }
 
 export function render() {
-  return `<div class="owners-fold"><section class="owners-hero container reveal-up"><a href="/servers" data-link>← Volver al directorio</a><div><p>Para dueños de servidores</p><h1>Publica con control y cobro transparente.</h1><span>Elige Normal o Plus, completa la ficha y activa tu anuncio mediante Stripe Checkout.</span><a class="owners-plan-cue" href="#owner-plans">Ver planes ↓</a></div></section><section id="owner-plans" class="owner-plans container" data-owner-plans>${plansMarkup(fallbackPlans)}</section></div><section class="owner-process container reveal-up"><h2>Un flujo corto y transparente.</h2><ol><li><div><strong>Elige el alcance</strong><p>Normal para presencia estable; Plus para destacar.</p></div></li><li><div><strong>Completa la ficha</strong><p>Mapas, plataformas, rates y enlaces quedan guardados como borrador.</p></div></li><li><div><strong>Confirma el pago</strong><p>Stripe procesa la suscripción y el webhook firmado activa la publicación.</p></div></li></ol><p class="owner-policy">Las publicaciones deben cumplir la <a href="/server-listing-policy" data-link>política de servidores</a>. El equipo puede pausar contenido engañoso o inseguro.</p></section>`;
+  return `<div class="owners-fold"><section class="owners-hero container reveal-up"><a href="/servers" data-link>← Volver al directorio</a><div><p>Para dueños de servidores</p><h1>Publica con control y cobro transparente.</h1><span>Elige Normal o Plus, completa la ficha y activa tu anuncio mediante Stripe Checkout.</span><a class="button button-secondary owners-plan-cue" href="#owner-plans" data-owner-plans-link>Ver planes ↓</a></div></section><section id="owner-plans" class="owner-plans container" data-owner-plans tabindex="-1" aria-label="Planes para publicar servidores">${plansMarkup(fallbackPlans)}</section></div><section class="owner-process container reveal-up"><h2>Un flujo corto y transparente.</h2><ol><li><div><strong>Elige el alcance</strong><p>Normal para presencia estable; Plus para destacar.</p></div></li><li><div><strong>Completa la ficha</strong><p>Mapas, plataformas, rates y enlaces quedan guardados como borrador.</p></div></li><li><div><strong>Confirma el pago</strong><p>Stripe procesa la suscripción y el webhook firmado activa la publicación.</p></div></li></ol><p class="owner-policy">Las publicaciones deben cumplir la <a href="/server-listing-policy" data-link>política de servidores</a>. El equipo puede pausar contenido engañoso o inseguro.</p></section>`;
 }
 
 export function bind({ authService }) {
+  const plansSection = document.querySelector('#owner-plans');
+  const scrollToPlans = (behavior = 'smooth') => {
+    plansSection?.scrollIntoView({ behavior, block: 'start' });
+    plansSection?.focus({ preventScroll: true });
+  };
+
+  document.querySelector('[data-owner-plans-link]')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (window.location.hash !== '#owner-plans') window.history.pushState({}, '', '#owner-plans');
+    scrollToPlans(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+  });
+
+  if (window.location.hash === '#owner-plans') {
+    window.requestAnimationFrame(() => scrollToPlans('auto'));
+  }
+
   createServerService(authService.getClient()).listPlans().then(({ data }) => {
     const plans = data.filter((plan) => plan.is_active);
     if (plans.length) document.querySelector('[data-owner-plans]').innerHTML = plansMarkup(plans);
