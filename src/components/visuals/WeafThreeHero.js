@@ -77,6 +77,18 @@ export function mountWeafThreeHero(container) {
       forge.rotation.set(0.28, -0.4, 0.12);
       scene.add(forge);
 
+      const orbitGeometry = new THREE.TorusGeometry(2.08, 0.008, 4, 84);
+      const orbitMaterial = new THREE.MeshBasicMaterial({
+        color: 0xd99a4d,
+        opacity: 0.16,
+        transparent: true,
+        depthWrite: false,
+      });
+      const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+      orbit.position.copy(forge.position);
+      orbit.rotation.set(1.12, 0.2, -0.35);
+      scene.add(orbit);
+
       let pointerX = 0;
       let pointerY = 0;
       let raf = null;
@@ -99,6 +111,7 @@ export function mountWeafThreeHero(container) {
         particles.rotation.x = pointerY * 0.02;
         forge.rotation.y = -0.4 + elapsed * 0.045 + pointerX * 0.08;
         forge.rotation.x = 0.28 + Math.sin(elapsed * 0.35) * 0.04 + pointerY * 0.04;
+        orbit.rotation.z = -0.35 + elapsed * 0.025 + pointerX * 0.025;
         renderer.render(scene, camera);
         raf = window.requestAnimationFrame(tick);
       };
@@ -142,6 +155,8 @@ export function mountWeafThreeHero(container) {
         particlesMaterial.dispose();
         forgeGeometry.dispose();
         forgeMaterial.dispose();
+        orbitGeometry.dispose();
+        orbitMaterial.dispose();
         renderer.dispose();
         renderer.domElement.remove();
       };

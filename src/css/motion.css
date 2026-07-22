@@ -126,6 +126,7 @@ body:is([data-route-kind='public'], [data-route-kind='auth']) main {
 .three-hero-ready .three-hero-fallback-orb { opacity: 0.28; }
 
 .lottie-motion {
+  position: relative;
   display: grid;
   width: 5rem;
   height: 5rem;
@@ -142,10 +143,63 @@ body:is([data-route-kind='public'], [data-route-kind='auth']) main {
   border: 1px solid var(--primary);
   border-radius: 50%;
   color: var(--primary);
+  background: radial-gradient(circle at 35% 28%, oklch(0.75 0.12 67 / 0.12), transparent 58%);
+  box-shadow: inset 0 0 1.4rem oklch(0.7 0.13 60 / 0.08), 0 0 2rem oklch(0.7 0.13 60 / 0.08);
   content: 'WF';
   font-size: 0.75rem;
   font-weight: 850;
   letter-spacing: 0.08em;
+}
+
+.lottie-fallback::after {
+  position: absolute;
+  inset: 0.35rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
+  border-radius: 50%;
+  content: '';
+  opacity: 0.45;
+  animation: lottie-fallback-breathe 2.8s ease-in-out infinite;
+}
+
+.lottie-fallback[data-lottie-variant='success']::before {
+  border-color: oklch(0.72 0.13 154);
+  color: oklch(0.78 0.13 154);
+  content: '\2713';
+  font-size: 1.65rem;
+}
+
+.lottie-fallback[data-lottie-variant='cancel']::before {
+  border-color: oklch(0.68 0.13 34);
+  color: oklch(0.76 0.12 45);
+  content: '\00D7';
+  font-size: 1.8rem;
+}
+
+.lottie-fallback[data-lottie-variant='empty']::before {
+  color: oklch(0.72 0.09 235);
+  content: '\25C7';
+  font-size: 1.3rem;
+}
+
+.lottie-fallback[data-lottie-variant='featured']::before {
+  content: '\2605';
+  font-size: 1.3rem;
+}
+
+@keyframes lottie-fallback-breathe {
+  50% { opacity: 0.14; transform: scale(0.88); }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(105deg, var(--surface) 25%, color-mix(in oklch, var(--surface) 82%, var(--primary)) 46%, var(--surface) 67%);
+  background-size: 220% 100%;
+  animation: weaf-skeleton-sweep 1.55s ease-in-out infinite;
+}
+
+@keyframes weaf-skeleton-sweep {
+  to { background-position-x: -220%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -176,4 +230,7 @@ body:is([data-route-kind='public'], [data-route-kind='auth']) main {
   :is(.cinematic-card, .glow-card, .interactive-card):hover { transform: none; }
 
   .three-hero-layer canvas { display: none; }
+
+  .skeleton,
+  .lottie-fallback::after { animation: none; }
 }

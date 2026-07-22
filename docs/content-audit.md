@@ -85,3 +85,12 @@ No se detectan archivos oficiales de ARK dentro de `public/assets`. Los nombres 
 ## Criterio de salida editorial
 
 Una entidad se considera lista cuando tiene fuente, fecha de revisión, compatibilidad ASE/ASA, copy ES/EN o estrategia de fallback, imagen con procedencia si aplica y revisión de una segunda persona. Hasta entonces debe permanecer privada o identificada como referencia no exhaustiva.
+
+## Cierre visual de Fase 8
+
+- Home mantiene una imagen prioritaria para LCP y añade Three.js como capa decorativa diferida; no se usan modelos ni assets oficiales de ARK.
+- INIs, mapas, criaturas, servidores, planes, Auth y legal comparten jerarquía, estados de entrada y feedback de cards sin ocultar contenido cuando falla JavaScript.
+- Éxito/cancelación de Stripe y estados vacíos de tribu disponen de fallbacks visuales específicos mientras no existan `.lottie` finales licenciados.
+- Los skeletons tienen barrido ligero y se congelan con `prefers-reduced-motion`.
+- La auditoría local a 1440 px y 390 px no detectó overflow horizontal ni errores de consola en las rutas públicas prioritarias.
+- Admin no recibió rediseño animado y mantiene sus permisos, formularios y servicios actuales.

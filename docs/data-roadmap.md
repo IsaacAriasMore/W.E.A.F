@@ -92,3 +92,10 @@ Los seis presets locales son candidatos de revisión, no métricas ni recomendac
 4. INIs probadas y reversibles.
 5. Repetir por mapa, manteniendo fuente y fecha.
 6. Activar contenido solo después de revisión cruzada.
+
+## Controles de plataforma pendientes
+
+- [ ] Activar protección contra contraseñas filtradas cuando el plan de Supabase utilizado lo permita y repetir las pruebas de registro/login.
+- [ ] Mantener RLS habilitado y validar con dos usuarios que una tribu nunca pueda leer datos de otra.
+- [ ] Revisar periódicamente listings activos, banners, fuentes y fechas; ningún registro demo debe volver a producción.
+- [ ] Revalidar SMTP, SPF, DKIM y DMARC antes de volver a activar confirmación obligatoria de correo.

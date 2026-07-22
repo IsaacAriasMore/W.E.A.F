@@ -28,6 +28,10 @@ test('advanced motion is route-scoped and cleaned up', () => {
 
 test('lottie stays optional and keeps a CSS fallback', () => {
   assert.match(lottieMotion, /lottie-fallback/);
+  assert.match(lottieMotion, /getFallbackVariant/);
+  assert.match(lottieMotion, /dataset\.lottieVariant/);
   assert.match(lottieMotion, /import\('@lottiefiles\/dotlottie-web'\)/);
   assert.match(lottieMotion, /animation\?\.destroy\(\)/);
+  assert.match(motionCss, /data-lottie-variant='success'/);
+  assert.match(motionCss, /weaf-skeleton-sweep/);
 });

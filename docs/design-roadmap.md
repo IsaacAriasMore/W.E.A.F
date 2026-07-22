@@ -1,5 +1,11 @@
 # Roadmap de diseño de W.E.A.F
 
+## Estado de cierre de Fase 8
+
+La base visual de Fase 8 queda integrada y verificada localmente en escritorio y móvil: Three.js en Home, GSAP solo en rutas públicas permitidas, motion CSS en contenido y usuario, fallbacks dotLottie diferenciados, estados de carga animados y `prefers-reduced-motion`. Admin conserva su interfaz operativa sin timelines ni WebGL. La siguiente fase no se inicia desde este documento.
+
+Los `.lottie` finales pasan a ser una mejora editorial opcional, no un bloqueo técnico: los fallbacks actuales son ligeros, accesibles y están listos para producción. Si se incorporan assets, deberán reemplazar esos estados sin cambiar contratos de negocio.
+
 ## Aplicado en la fase de diseño y animación
 
 ### Fundamentos
@@ -27,11 +33,11 @@
 - Mejor lectura en configuración, webhook y estados de cooldown.
 - Admin, roles globales, roles de tribu, RLS y contratos de servicios permanecen sin cambios.
 
-## Pendiente antes del lanzamiento público
+## Pendiente editorial y QA de producción
 
 ### Assets y marca
 
-- Diseñar o licenciar los cuatro archivos `.lottie` reservados.
+- Diseñar o licenciar los cuatro archivos `.lottie` reservados solo si aportan más claridad que los fallbacks actuales.
 - Registrar origen, autor y licencia de cada animación e imagen.
 - Medir cada Lottie en móvil de gama media y mantener un fallback estático equivalente.
 - Evitar activos oficiales de ARK en escenas, banners de producto o animaciones.

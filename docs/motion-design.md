@@ -53,7 +53,7 @@ El chunk de Three.js es independiente del bundle inicial. Su tamaño debe vigila
 
 ### dotLottie
 
-`src/components/visuals/LottieMotion.js` comprueba primero que el asset exista. Solo entonces importa `@lottiefiles/dotlottie-web`. Si el archivo falta, hay error de red o el usuario reduce movimiento, se mantiene un sello CSS funcional.
+`src/components/visuals/LottieMotion.js` comprueba primero que el asset exista. Solo entonces importa `@lottiefiles/dotlottie-web`. Si el archivo falta, hay error de red o el usuario reduce movimiento, se mantiene un estado CSS funcional. Los fallbacks ya distinguen éxito, cancelación, vacío y destacado; por eso la interfaz conserva significado visual sin depender de un archivo externo.
 
 Rutas reservadas para assets finales:
 
@@ -84,6 +84,14 @@ El movimiento nunca comunica por sí solo éxito, error, rol o estado. Texto, ic
 ## Service Worker y ciclo de vida
 
 El Service Worker no debe cachear Auth, Supabase, Stripe, Edge Functions ni las rutas dinámicas de publicación/facturación. Cuando se agreguen archivos `.lottie`, se tratarán como assets opcionales: un fallo de cache no puede bloquear el estado CSS.
+
+La versión de cierre es `weaf-shell-v5`. Después de desplegar un cambio visual importante, la comprobación manual recomendada es:
+
+1. Abrir DevTools → Application → Service Workers.
+2. Pulsar **Unregister** para cualquier worker anterior de W.E.A.F.
+3. En Application → Storage, usar **Clear site data**.
+4. Recargar con caché desactivada y confirmar que el worker activo declara `weaf-shell-v5`.
+5. Abrir login, publicación, success/cancel y billing para confirmar que siguen usando red y nunca una respuesta privada cacheada.
 
 Cada ruta debe ejecutar su cleanup antes de renderizar la siguiente. Las vistas privadas, que llegan después de consultas a Supabase, inicializan y limpian sus propios observadores después de reemplazar el DOM.
 

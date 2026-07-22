@@ -4,6 +4,14 @@ function isUsableLottieResponse(response) {
   return !type.includes('text/html') && !type.includes('text/plain');
 }
 
+function getFallbackVariant(src) {
+  if (src.includes('payment-success')) return 'success';
+  if (src.includes('payment-cancel')) return 'cancel';
+  if (src.includes('empty-tribe')) return 'empty';
+  if (src.includes('server-featured')) return 'featured';
+  return 'brand';
+}
+
 export function mountLottieMotion(container, {
   src,
   label = '',
@@ -14,6 +22,7 @@ export function mountLottieMotion(container, {
 
   container.classList.add('lottie-motion', 'lottie-fallback');
   container.dataset.lottieState = 'fallback';
+  container.dataset.lottieVariant = getFallbackVariant(src);
   if (label) container.setAttribute('aria-label', label);
 
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return () => {};

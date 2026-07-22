@@ -1,4 +1,4 @@
-const CACHE_NAME = 'weaf-shell-v4';
+const CACHE_NAME = 'weaf-shell-v5';
 const OFFLINE_URL = '/offline.html';
 const APP_SHELL = ['/', OFFLINE_URL, '/assets/weaf-mark.svg'];
 const PRIVATE_PATHS = [
