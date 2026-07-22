@@ -95,6 +95,8 @@ body[data-route-kind='app'] {
   color: var(--primary);
 }
 
+.app-sidebar nav a[aria-current='page'] span { transform: scale(1.12); }
+
 .app-sidebar nav span {
   width: 1rem;
   color: var(--primary);
@@ -162,6 +164,10 @@ body[data-route-kind='app'] {
 }
 
 .tribe-gateway > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: end;
   max-width: 52rem;
   padding-block: 1.5rem clamp(2.5rem, 6vw, 5rem);
 }
@@ -173,15 +179,26 @@ body[data-route-kind='app'] {
   font-size: 3.5rem;
 }
 
-.tribe-gateway > header > p:last-child {
+.tribe-gateway > header > div:first-child > p:last-child {
   max-width: 58ch;
   margin-top: 1.25rem;
 }
 
+.tribe-gateway-visual {
+  display: grid;
+  width: 7rem;
+  height: 7rem;
+  place-items: center;
+}
+
+.tribe-gateway-visual.lottie-motion { width: 7rem; height: 7rem; }
+
 .gateway-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  overflow: hidden;
   border: 1px solid var(--line);
+  border-radius: var(--radius-card);
 }
 
 .gateway-form {
@@ -315,6 +332,9 @@ body[data-route-kind='app'] {
   border-block: 1px solid var(--line);
 }
 
+.tribe-metrics > div { transition: background-color 180ms var(--ease-out); }
+.tribe-metrics > div:hover { background: oklch(0.7 0.13 60 / 0.035); }
+
 .tribe-metrics > div {
   display: grid;
   min-height: 8.5rem;
@@ -376,6 +396,9 @@ body[data-route-kind='app'] {
   min-height: 74px;
   border-bottom: 1px solid var(--line-soft);
 }
+
+.member-row { padding-inline: 0.55rem; transition: background-color 180ms var(--ease-out); }
+.member-row:hover { background: oklch(0.7 0.13 60 / 0.035); }
 
 .member-avatar {
   display: grid;
@@ -488,6 +511,8 @@ body[data-route-kind='app'] {
   background: var(--bg-raised);
 }
 
+.invite-section.premium-panel { align-self: start; padding: 1.4rem; }
+
 .member-permission-note > span {
   color: var(--primary);
   font-size: 0.7rem;
@@ -539,6 +564,14 @@ body[data-route-kind='app'] {
   align-content: start;
   min-height: 12rem;
   padding: 1.3rem 1.1rem;
+}
+
+.snapshot-columns > div { transition: background-color 180ms var(--ease-out); }
+.snapshot-columns > div:hover { background: oklch(0.7 0.13 60 / 0.03); }
+
+@media (max-width: 720px) {
+  .tribe-gateway > header { grid-template-columns: 1fr; }
+  .tribe-gateway-visual.lottie-motion { width: 5rem; height: 5rem; }
 }
 
 .snapshot-columns > div + div {

@@ -5,6 +5,7 @@ import { formatDateTime } from '../../utils/dates.js';
 import { showToast } from '../../utils/feedback.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { resolvePrivateWorkspace, tribePath } from './privateWorkspace.js';
+import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
 
 function loadingView() {
   return '<div class="app-view-loading"><span class="skeleton skeleton-copy"></span><span class="skeleton skeleton-title"></span><div><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div></div>';
@@ -17,14 +18,14 @@ function settingsView({ workspace, settings }) {
   const webhook = settings.webhook || {};
   return `
     <section class="tribe-settings-workspace">
-      <header class="app-toolbar">
+      <header class="app-toolbar reveal-up">
         <div><p class="section-kicker">Configuración de tribu</p><h1>Reglas del servidor</h1><p>${escapeHtml(tribe.name)} · los cambios críticos corresponden al propietario.</p></div>
         <label class="tribe-switcher"><span>Cambiar de tribu</span><select data-settings-tribe>
           ${workspace.memberships.map((item) => `<option value="${item.tribe_id}" ${item.tribe_id === tribe.id ? 'selected' : ''}>${escapeHtml(item.tribe.name)}</option>`).join('')}
         </select></label>
       </header>
-      <div class="settings-ledger">
-        <section class="settings-section">
+      <div class="settings-ledger stagger-group">
+        <section class="settings-section stagger-item">
           <div class="settings-section-copy">
             <span>01</span><h2>Ritmo de breeding</h2>
             <p>Define la fórmula usada para cada cooldown nuevo. Los registros existentes conservan su fecha.</p>
@@ -43,7 +44,7 @@ function settingsView({ workspace, settings }) {
             </form>
           ` : `<div class="settings-readonly"><span>Configuración activa</span><strong>${settings.uses_propagators ? `Propagator · ${settings.propagator_cooldown_hours} h` : `Breeding ×${settings.breeding_speed_multiplier}`}</strong><p>Solo el propietario puede modificarla.</p></div>`}
         </section>
-        <section class="settings-section">
+        <section class="settings-section stagger-item">
           <div class="settings-section-copy">
             <span>02</span><h2>Canal de Discord</h2>
             <p>El webhook se cifra con Supabase Vault. Después de guardarlo, el navegador solo ve sus últimos cuatro caracteres.</p>
@@ -68,7 +69,7 @@ function settingsView({ workspace, settings }) {
             ` : '<p class="panel-note">Solo el propietario puede guardar o reemplazar este secreto.</p>'}
           </div>
         </section>
-        <section class="settings-section settings-policy">
+        <section class="settings-section settings-policy stagger-item">
           <div class="settings-section-copy"><span>03</span><h2>Límite de confianza</h2><p>Qué ocurre con cada dato sensible.</p></div>
           <dl>
             <div><dt>Webhook</dt><dd>Cifrado en Vault, nunca en una tabla pública.</dd></div>
@@ -89,6 +90,17 @@ export function bind({ state, authService, navigate }) {
   const view = document.querySelector('[data-settings-view]');
   const service = createBreedService(authService.getClient());
   let workspace;
+  let cleanupViewMotion = () => {};
+
+  function refreshViewMotion() {
+    cleanupViewMotion();
+    const cleanupScroll = initScrollAnimations(view);
+    const cleanupCards = initCardHoverEffects(view);
+    cleanupViewMotion = () => {
+      cleanupScroll();
+      cleanupCards();
+    };
+  }
 
   async function load() {
     view.innerHTML = loadingView();
@@ -104,6 +116,7 @@ export function bind({ state, authService, navigate }) {
       return;
     }
     view.innerHTML = settingsView({ workspace, settings: result.data });
+    refreshViewMotion();
   }
 
   const onSubmit = async (event) => {
@@ -174,6 +187,7 @@ export function bind({ state, authService, navigate }) {
   view.addEventListener('click', onClick);
   load();
   return () => {
+    cleanupViewMotion();
     view.removeEventListener('submit', onSubmit);
     view.removeEventListener('change', onChange);
     view.removeEventListener('click', onClick);

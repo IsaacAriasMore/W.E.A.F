@@ -3,6 +3,8 @@ import { createBreedService } from '../../services/breedService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { formatDateTime, formatRelativeTime } from '../../utils/dates.js';
 import { showToast } from '../../utils/feedback.js';
+import { mountLottieMotion } from '../../components/visuals/LottieMotion.js';
+import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { resolvePrivateWorkspace, tribePath } from './privateWorkspace.js';
 
@@ -82,7 +84,7 @@ function mutationDialog(breeds) {
 
 function breedCard(breed, canManage) {
   return `
-    <article class="breed-row" data-breed-id="${breed.id}">
+    <article class="breed-row stagger-item interactive-card" data-breed-id="${breed.id}">
       <div class="breed-species-mark" aria-hidden="true">${escapeHtml(breed.species.name).slice(0, 2).toUpperCase()}</div>
       <div class="breed-row-main">
         <div class="breed-row-heading">
@@ -111,18 +113,18 @@ function breedCard(breed, canManage) {
 function breedsView({ activeMembership, species, breeds }) {
   const canManage = ['owner', 'admin'].includes(activeMembership.role);
   return `
-    <div class="breeding-layout">
+    <div class="breeding-layout reveal-up">
       <section class="breed-list-section">
         <div class="workspace-heading">
           <div><h2>${breeds.length ? `${breeds.length} líneas coordinadas` : 'Aún no hay líneas'}</h2><p>Los datos pertenecen únicamente a esta tribu.</p></div>
         </div>
-        <div class="breed-list">
+        <div class="breed-list stagger-group">
           ${breeds.length
             ? breeds.map((breed) => breedCard(breed, canManage)).join('')
-            : '<div class="breeding-empty"><span>◇</span><h2>Define la primera línea</h2><p>Selecciona una especie, fija los stats objetivo y empieza a registrar mutaciones.</p></div>'}
+            : '<div class="breeding-empty premium-panel"><div data-breeding-empty-lottie aria-hidden="true"></div><h2>Define la primera línea</h2><p>Selecciona una especie, fija los stats objetivo y empieza a registrar mutaciones.</p></div>'}
         </div>
       </section>
-      <aside class="breed-create-panel">
+      <aside class="breed-create-panel premium-panel">
         ${canManage ? `
           <div><p class="section-kicker">Nueva línea</p><h2>Plan de breeding</h2><p>Owner y admins pueden organizar objetivos.</p></div>
           <form data-create-breed-form novalidate>
@@ -147,28 +149,28 @@ function mutationsView({ activeMembership, breeds, mutations, alerts, settings }
   const webhookReady = settings.webhook?.configured && settings.webhook?.enabled;
   const now = Date.now();
   return `
-    <div class="mutation-layout">
+    <div class="mutation-layout reveal-up">
       <section class="mutation-log">
         <div class="workspace-heading">
           <div><h2>Actividad genética</h2><p>Cada registro actualiza el acumulado de su línea.</p></div>
           <button class="button button-primary button-small" type="button" data-open-mutation ${breeds.length ? '' : 'disabled'}>Registrar mutación</button>
         </div>
-        <div class="mutation-timeline">
+        <div class="mutation-timeline stagger-group">
           ${mutations.length ? mutations.map((mutation) => `
-            <article>
+            <article class="stagger-item">
               <time datetime="${mutation.created_at}">${formatRelativeTime(mutation.created_at)}</time>
               <div><small>${escapeHtml(mutation.species.name)}</small><h3>${escapeHtml(mutation.breed.title)}</h3><div class="compact-stats">${statsObject(mutation.stats)}</div>${mutation.notes ? `<p>${escapeHtml(mutation.notes)}</p>` : ''}</div>
               ${webhookReady ? `<button class="text-button" type="button" data-notify-discord data-event="mutation_created" data-entity="${mutation.id}">Enviar a Discord</button>` : ''}
             </article>
-          `).join('') : '<div class="breeding-empty"><span>＋</span><h2>Sin mutaciones todavía</h2><p>El primer registro aparecerá aquí con su cooldown calculado.</p></div>'}
+          `).join('') : '<div class="breeding-empty premium-panel"><div data-breeding-empty-lottie aria-hidden="true"></div><h2>Sin mutaciones todavía</h2><p>El primer registro aparecerá aquí con su cooldown calculado.</p></div>'}
         </div>
       </section>
       <aside class="cooldown-rail">
         <div><p class="section-kicker">Próximas ventanas</p><h2>Cooldowns</h2><p>${settings.uses_propagators ? `Propagator cada ${settings.propagator_cooldown_hours} h.` : `Velocidad de breeding ×${settings.breeding_speed_multiplier}.`}</p></div>
-        <div class="cooldown-list">
+        <div class="cooldown-list stagger-group">
           ${alerts.length ? alerts.map((alert) => {
             const available = new Date(alert.available_at).getTime() <= now;
-            return `<article class="${available ? 'is-ready' : ''}">
+            return `<article class="stagger-item ${available ? 'is-ready' : ''}">
               <span></span><div><strong>${escapeHtml(alert.breed.species.name)}</strong><small>${escapeHtml(alert.breed.title)}</small><time datetime="${alert.available_at}">${available ? 'Disponible ahora' : formatRelativeTime(alert.available_at)}</time></div>
               ${available && webhookReady ? `<button class="text-button" type="button" data-notify-discord data-event="propagator_available" data-entity="${alert.id}">Avisar</button>` : ''}
               ${canManage ? `<button class="text-button danger-action" type="button" data-cancel-alert="${alert.id}">Cancelar</button>` : ''}
@@ -191,6 +193,22 @@ export function bind({ path, state, authService, navigate }) {
   const mode = path.endsWith('/mutations') ? 'mutations' : 'breeds';
   let workspace;
   let data = { species: [], breeds: [], mutations: [], alerts: [], settings: {} };
+  let cleanupViewMotion = () => {};
+
+  function refreshViewMotion() {
+    cleanupViewMotion();
+    const cleanupScroll = initScrollAnimations(view);
+    const cleanupCards = initCardHoverEffects(view);
+    const lottieCleanups = [...view.querySelectorAll('[data-breeding-empty-lottie]')].map((element) => mountLottieMotion(element, {
+      src: '/animations/empty-tribe.lottie',
+      loop: true,
+    }));
+    cleanupViewMotion = () => {
+      cleanupScroll();
+      cleanupCards();
+      lottieCleanups.forEach((cleanup) => cleanup());
+    };
+  }
 
   async function load() {
     view.innerHTML = loadingView();
@@ -223,6 +241,7 @@ export function bind({ path, state, authService, navigate }) {
       </section>
       ${mutationDialog(data.breeds)}
     `;
+    refreshViewMotion();
   }
 
   const onSubmit = async (event) => {
@@ -329,6 +348,7 @@ export function bind({ path, state, authService, navigate }) {
   view.addEventListener('click', onClick);
   load();
   return () => {
+    cleanupViewMotion();
     view.removeEventListener('submit', onSubmit);
     view.removeEventListener('change', onChange);
     view.removeEventListener('click', onClick);

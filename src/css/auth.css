@@ -174,7 +174,8 @@ body[data-route-kind='auth'] main {
   max-width: 44rem;
   margin-top: 2rem;
   padding: .9rem 1rem;
-  border-left: 2px solid var(--primary);
+  border: 1px solid oklch(0.7 0.13 60 / .34);
+  border-radius: var(--radius-control);
   background: oklch(0.7 0.13 60 / .07);
 }
 

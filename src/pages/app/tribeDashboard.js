@@ -7,6 +7,8 @@ import { showToast } from '../../utils/feedback.js';
 import { formatRelativeTime } from '../../utils/dates.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
+import { mountLottieMotion } from '../../components/visuals/LottieMotion.js';
+import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
 
 const roleLabels = { owner: 'Propietario', admin: 'Admin de tribu', member: 'Miembro' };
 const gameLabels = { evolved: 'ASE', ascended: 'ASA', both: 'ASE + ASA' };
@@ -24,13 +26,14 @@ function loadingView() {
 function gatewayView(inviteToken = '', profile = null) {
   return `
     <section class="tribe-gateway">
-      <header>
-        <p class="section-kicker">Tu espacio privado</p>
+      <header class="reveal-up">
+        <div><p class="section-kicker">Tu espacio privado</p>
         <h1>Funda una tribu o toma tu invitación.</h1>
-        <p>Las tribus separan miembros, permisos y datos. Puedes pertenecer a más de una y cambiar entre ellas.</p>
+        <p>Las tribus separan miembros, permisos y datos. Puedes pertenecer a más de una y cambiar entre ellas.</p></div>
+        <div class="tribe-gateway-visual" data-empty-tribe-lottie aria-hidden="true"></div>
       </header>
-      <div class="gateway-columns">
-        <form class="gateway-form" data-create-tribe-form novalidate>
+      <div class="gateway-columns reveal-up">
+        <form class="gateway-form" data-create-tribe-form data-motion="none" novalidate>
           <div><span class="gateway-index">01</span><h2>Crear tribu</h2><p>Quedarás registrado como propietario protegido.</p></div>
           <label><span>Nombre de la tribu</span><input name="name" required minlength="2" maxlength="80" placeholder="Ej. Northern Forge" /></label>
           <label><span>Juego principal</span><select name="gameMode" required>
@@ -49,7 +52,7 @@ function gatewayView(inviteToken = '', profile = null) {
           <p class="form-status" data-form-status role="alert" hidden></p>
           <button class="button button-primary" type="submit">Crear mi tribu</button>
         </form>
-        <form class="gateway-form gateway-form-join" data-join-tribe-form novalidate>
+        <form class="gateway-form gateway-form-join" data-join-tribe-form data-motion="none" novalidate>
           <div><span class="gateway-index">02</span><h2>Unirme</h2><p>Usa el código privado enviado por un owner o admin.</p></div>
           <label><span>Código de invitación</span><input name="token" required minlength="16" value="${escapeHtml(inviteToken)}" autocomplete="off" /></label>
           <label><span>Nombre de personaje</span><input name="characterName" required minlength="2" maxlength="80" autocomplete="nickname" /></label>
@@ -102,21 +105,21 @@ function incomingInviteView(inviteToken) {
 
 function breedingSnapshot(summary, tribeId) {
   return `
-    <section class="dashboard-breeding-snapshot">
+    <section class="dashboard-breeding-snapshot reveal-up">
       <div class="workspace-heading">
         <div><p class="section-kicker">Pulso genético</p><h2>Breeding de la tribu</h2></div>
         <a class="text-link" href="/app/breeds?tribe=${tribeId}" data-link>Abrir workspace</a>
       </div>
-      <div class="snapshot-columns">
-        <div>
+      <div class="snapshot-columns stagger-group">
+        <div class="stagger-item">
           <strong>Líneas activas</strong>
           ${summary.activeBreeds.length ? summary.activeBreeds.map((breed) => `<a href="/app/breeds?tribe=${tribeId}" data-link><span>${escapeHtml(breed.species.name)}</span><small>${escapeHtml(breed.title)}</small></a>`).join('') : '<p>Define la primera línea de breeding.</p>'}
         </div>
-        <div>
+        <div class="stagger-item">
           <strong>Últimas mutaciones</strong>
           ${summary.mutations.length ? summary.mutations.map((mutation) => `<a href="/app/mutations?tribe=${tribeId}" data-link><span>${escapeHtml(mutation.species.name)}</span><small>${formatRelativeTime(mutation.created_at)}</small></a>`).join('') : '<p>Aún no hay actividad genética.</p>'}
         </div>
-        <div>
+        <div class="stagger-item">
           <strong>Próximas ventanas</strong>
           ${summary.alerts.length ? summary.alerts.map((alert) => `<a href="/app/mutations?tribe=${tribeId}" data-link><span>${escapeHtml(alert.breed.species.name)}</span><small>${formatRelativeTime(alert.available_at)}</small></a>`).join('') : '<p>No hay cooldowns pendientes.</p>'}
         </div>
@@ -130,7 +133,7 @@ function dashboardView({ memberships, activeMembership, members, invites, curren
   const canInvite = ['owner', 'admin'].includes(activeMembership.role);
   return `
     <section class="tribe-dashboard">
-      <header class="app-toolbar">
+      <header class="app-toolbar reveal-up">
         <div>
           <p class="section-kicker">Centro de tribu</p>
           <h1>${escapeHtml(tribe.name)}</h1>
@@ -141,19 +144,19 @@ function dashboardView({ memberships, activeMembership, members, invites, curren
         </select></label>
       </header>
       ${incomingInviteView(inviteToken)}
-      <div class="tribe-metrics" aria-label="Resumen de tribu">
-        <div><span>Miembros activos</span><strong>${members.length}</strong></div>
-        <div><span>Universo</span><strong>${gameLabels[tribe.game_mode]}</strong></div>
-        <div><span>Breeds activos</span><strong>${breedingSummary.activeCount}</strong><small>Workspace privado</small></div>
+      <div class="tribe-metrics stagger-group" aria-label="Resumen de tribu">
+        <div class="stagger-item"><span>Miembros activos</span><strong>${members.length}</strong></div>
+        <div class="stagger-item"><span>Universo</span><strong>${gameLabels[tribe.game_mode]}</strong></div>
+        <div class="stagger-item"><span>Breeds activos</span><strong>${breedingSummary.activeCount}</strong><small>Workspace privado</small></div>
       </div>
       ${breedingSnapshot(breedingSummary, tribe.id)}
       <div class="sponsored-break sponsored-break-private">${createSponsoredServerSlot('dashboard_carousel', 'Servidor recomendado para tu tribu')}</div>
-      <div class="tribe-workgrid">
+      <div class="tribe-workgrid reveal-up">
         <section class="member-section">
           <div class="workspace-heading"><div><h2>Miembros</h2><p>Roles separados de la administración global.</p></div></div>
-          <div class="member-list">
+          <div class="member-list stagger-group">
             ${members.map((member) => `
-              <article class="member-row">
+              <article class="member-row stagger-item">
                 <span class="member-avatar">${escapeHtml(member.display_name || member.character_name || '?').slice(0, 1).toUpperCase()}</span>
                 <div class="member-identity"><strong>${escapeHtml(member.display_name)}</strong><span>${escapeHtml(member.character_name || 'Personaje sin definir')}</span></div>
                 <span class="role-badge role-${member.role}">${roleLabels[member.role]}</span>
@@ -163,7 +166,7 @@ function dashboardView({ memberships, activeMembership, members, invites, curren
           </div>
           ${activeMembership.role !== 'owner' ? '<button class="text-button danger-action leave-action" type="button" data-leave-tribe>Abandonar tribu</button>' : ''}
         </section>
-        <aside class="invite-section">
+        <aside class="invite-section premium-panel">
           ${canInvite ? `
             <div class="workspace-heading"><div><h2>Invitar</h2><p>El enlace se muestra una sola vez.</p></div></div>
             <form class="invite-form" data-invite-form novalidate>
@@ -201,6 +204,23 @@ export function bind({ state, authService, navigate }) {
   const service = createTribeService(authService.getClient());
   const breedService = createBreedService(authService.getClient());
   const tribeStore = createTribeStore();
+  let cleanupViewMotion = () => {};
+  let cleanupEmptyMotion = () => {};
+
+  function refreshViewMotion() {
+    cleanupViewMotion();
+    cleanupEmptyMotion();
+    const cleanupScroll = initScrollAnimations(view);
+    const cleanupCards = initCardHoverEffects(view);
+    cleanupViewMotion = () => {
+      cleanupScroll();
+      cleanupCards();
+    };
+    cleanupEmptyMotion = mountLottieMotion(view.querySelector('[data-empty-tribe-lottie]'), {
+      src: '/animations/empty-tribe.lottie',
+      loop: true,
+    });
+  }
 
   async function load() {
     view.innerHTML = loadingView();
@@ -213,6 +233,7 @@ export function bind({ state, authService, navigate }) {
     tribeStore.setMemberships(membershipsResult.data);
     if (!membershipsResult.data.length) {
       view.innerHTML = gatewayView(inviteToken, state.profile);
+      refreshViewMotion();
       return;
     }
 
@@ -241,6 +262,7 @@ export function bind({ state, authService, navigate }) {
       inviteToken,
       breedingSummary: breedingResult.data || { activeCount: 0, activeBreeds: [], mutations: [], alerts: [] },
     });
+    refreshViewMotion();
   }
 
   const onSubmit = async (event) => {
@@ -351,6 +373,8 @@ export function bind({ state, authService, navigate }) {
   view.addEventListener('click', onClick);
   load();
   return () => {
+    cleanupViewMotion();
+    cleanupEmptyMotion();
     view.removeEventListener('submit', onSubmit);
     view.removeEventListener('change', onChange);
     view.removeEventListener('click', onClick);
