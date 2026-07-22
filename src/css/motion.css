@@ -1,0 +1,144 @@
+/* Motion is progressive: every element is visible until JavaScript opts it in. */
+:is(.public-motion-ready, .user-motion-ready) :is(
+  .reveal,
+  .reveal-up,
+  .reveal-left,
+  .reveal-right,
+  .reveal-scale,
+  .stagger-item
+).pending:not(.visible) {
+  opacity: 0;
+}
+
+:is(.public-motion-ready, .user-motion-ready) :is(
+  .reveal,
+  .reveal-up,
+  .reveal-left,
+  .reveal-right,
+  .reveal-scale,
+  .stagger-item
+) {
+  transition: opacity 560ms var(--ease-out), transform 560ms var(--ease-out), filter 560ms var(--ease-out);
+  transition-delay: calc(var(--stagger-index, var(--reveal-index, 0)) * 48ms);
+}
+
+:is(.public-motion-ready, .user-motion-ready) :is(.reveal, .reveal-up, .stagger-item).pending:not(.visible) {
+  transform: translateY(20px);
+}
+
+:is(.public-motion-ready, .user-motion-ready) .reveal-left.pending:not(.visible) { transform: translateX(-22px); }
+:is(.public-motion-ready, .user-motion-ready) .reveal-right.pending:not(.visible) { transform: translateX(22px); }
+:is(.public-motion-ready, .user-motion-ready) .reveal-scale.pending:not(.visible) { transform: scale(0.972); }
+
+.visible,
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+body:is([data-route-kind='public'], [data-route-kind='auth']) main {
+  animation: route-in 260ms var(--ease-out) both;
+  overflow-x: clip;
+}
+
+@keyframes route-in {
+  from { opacity: 0.78; transform: translateY(6px); }
+}
+
+:is(.cinematic-card, .glow-card, .interactive-card) {
+  --pointer-x: 70%;
+  --pointer-y: 20%;
+  position: relative;
+  isolation: isolate;
+  transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out), background-color 220ms var(--ease-out);
+}
+
+:is(.cinematic-card, .glow-card, .interactive-card)::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), oklch(0.7 0.13 60 / 0.13), transparent 42%);
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms var(--ease-out);
+}
+
+:is(.cinematic-card, .glow-card, .interactive-card):hover {
+  border-color: color-mix(in oklch, var(--primary) 46%, var(--line));
+  transform: translateY(-3px);
+}
+
+:is(.cinematic-card, .glow-card, .interactive-card):hover::before { opacity: 1; }
+
+.premium-panel {
+  border: 1px solid color-mix(in oklch, var(--line) 78%, var(--primary));
+  border-radius: var(--radius-card);
+  background: linear-gradient(145deg, oklch(0.2 0.026 252), oklch(0.14 0.018 252));
+}
+
+.floating-soft { animation: floating-soft 5.5s ease-in-out infinite alternate; }
+
+@keyframes floating-soft {
+  to { transform: translate3d(0, -7px, 0); }
+}
+
+.three-hero-layer {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lottie-motion {
+  display: grid;
+  width: 5rem;
+  height: 5rem;
+  place-items: center;
+}
+
+.lottie-motion canvas { width: 100%; height: 100%; }
+
+.lottie-fallback::before {
+  display: grid;
+  width: 3.4rem;
+  height: 3.4rem;
+  place-items: center;
+  border: 1px solid var(--primary);
+  border-radius: 50%;
+  color: var(--primary);
+  content: 'WF';
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  :is(.public-motion-ready, .user-motion-ready) :is(
+    .reveal,
+    .reveal-up,
+    .reveal-left,
+    .reveal-right,
+    .reveal-scale,
+    .stagger-item
+  ) {
+    filter: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  :is(.cinematic-card, .glow-card, .interactive-card):hover { transform: none; }
+}

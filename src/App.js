@@ -14,7 +14,7 @@ import { createProfileService } from './services/profileService.js';
 import { createAppStore } from './stores/appStore.js';
 import { createInactivityLogout } from './utils/inactivityLogout.js';
 import { showToast } from './utils/feedback.js';
-import { initPublicMotion } from './utils/motion.js';
+import { cleanupMotion, initPublicMotion, initUserMotion } from './utils/motion.js';
 
 function createSessionExpiredDialog() {
   return `
@@ -57,7 +57,7 @@ export async function startApp(root) {
   bindSponsoredServerSlots(root.querySelector('#main-content'), authService.getClient());
   let router;
   let inactivity;
-  let cleanupPublicMotion = null;
+  let cleanupRouteMotion = null;
 
   const hydrateProfile = async (session) => {
     if (!session?.user || !authService.isConfigured()) return null;
@@ -76,8 +76,9 @@ export async function startApp(root) {
     outlet: root.querySelector('#main-content'),
     getContext: () => ({ authService, profileService, store, state: store.getState() }),
     onRouteChange(pathname) {
-      cleanupPublicMotion?.();
-      cleanupPublicMotion = null;
+      cleanupRouteMotion?.();
+      cleanupMotion();
+      cleanupRouteMotion = null;
       setActiveNavigation(pathname);
       updateHeaderAuth(store.getState().session, pathname);
       document.body.dataset.routeKind = pathname === '/admin'
@@ -85,7 +86,12 @@ export async function startApp(root) {
         : pathname.startsWith('/app')
           ? 'app'
         : ['/login', '/register', '/reset-password', '/onboarding'].includes(pathname) ? 'auth' : 'public';
-      if (document.body.dataset.routeKind === 'public') cleanupPublicMotion = initPublicMotion(root.querySelector('#main-content'));
+      const motionRoot = root.querySelector('#main-content');
+      if (document.body.dataset.routeKind === 'public') {
+        cleanupRouteMotion = initPublicMotion(motionRoot, { pathname });
+      } else if (['auth', 'app'].includes(document.body.dataset.routeKind)) {
+        cleanupRouteMotion = initUserMotion(motionRoot, { pathname });
+      }
       window.scrollTo({ top: 0, behavior: 'auto' });
     },
   });

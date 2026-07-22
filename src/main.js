@@ -8,6 +8,7 @@ import './css/breeds.css';
 import './css/admin.css';
 import './css/servers.css';
 import './css/phase8.css';
+import './css/motion.css';
 import './css/responsive.css';
 import { startApp } from './App.js';
 import { initializePwa } from './services/pwaService.js';
