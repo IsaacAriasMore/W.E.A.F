@@ -8,6 +8,9 @@ const routeLoaders = {
   '/servers': () => import('./pages/public/servers.js'),
   '/servers/owners': () => import('./pages/public/serverOwners.js'),
   '/servers/publish': () => import('./pages/public/serverPublish.js'),
+  '/servers/success': () => import('./pages/public/serverBillingResult.js'),
+  '/servers/cancel': () => import('./pages/public/serverBillingResult.js'),
+  '/account/billing': () => import('./pages/public/accountBilling.js'),
   '/login': () => import('./pages/auth/login.js'),
   '/register': () => import('./pages/auth/register.js'),
   '/reset-password': () => import('./pages/auth/resetPassword.js'),
@@ -35,6 +38,9 @@ const titles = {
   '/servers': 'Servidores ASE y ASA | W.E.A.F',
   '/servers/owners': 'Publica tu servidor | W.E.A.F',
   '/servers/publish': 'Gestiona tu servidor | W.E.A.F',
+  '/servers/success': 'Pago recibido | W.E.A.F',
+  '/servers/cancel': 'Pago cancelado | W.E.A.F',
+  '/account/billing': 'Facturación | W.E.A.F',
   '/login': 'Ingresar | W.E.A.F',
   '/register': 'Crear cuenta | W.E.A.F',
   '/reset-password': 'Restablecer contraseña | W.E.A.F',
@@ -61,7 +67,8 @@ function normalizePath(pathname) {
 
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
-  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings', '/servers/publish', '/admin',
+  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
+  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/admin',
 ]);
 
 export function createRouter({ outlet, onRouteChange, getContext }) {

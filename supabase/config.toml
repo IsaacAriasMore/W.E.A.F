@@ -456,3 +456,24 @@ entrypoint = "./functions/stripe-webhook/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/stripe-webhook/*.html" ]
+
+[functions.create-server-listing-checkout]
+enabled = true
+# Authentication is enforced by @supabase/server with auth: "user".
+verify_jwt = false
+import_map = "./functions/create-server-listing-checkout/deno.json"
+entrypoint = "./functions/create-server-listing-checkout/index.ts"
+
+[functions.create-billing-portal-session]
+enabled = true
+# Authentication is enforced by @supabase/server with auth: "user".
+verify_jwt = false
+import_map = "./functions/create-billing-portal-session/deno.json"
+entrypoint = "./functions/create-billing-portal-session/index.ts"
+
+[functions.expire-server-listings]
+enabled = true
+# Only a Supabase secret key is accepted by @supabase/server with auth: "secret".
+verify_jwt = false
+import_map = "./functions/expire-server-listings/deno.json"
+entrypoint = "./functions/expire-server-listings/index.ts"

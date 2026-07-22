@@ -27,10 +27,28 @@ test('server event tracking sends only the listing and event type', async () => 
 
 test('checkout starts in a protected Edge Function without exposing Stripe keys', async () => {
   let call;
-  const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { checkoutUrl: 'https://checkout.stripe.com/test' }, error: null }; } } });
-  const result = await service.startCheckout('plus');
-  assert.deepEqual(call, { name: 'create-server-checkout', options: { body: { planCode: 'plus' } } });
-  assert.equal(result.data.checkoutUrl, 'https://checkout.stripe.com/test');
+  const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { url: 'https://checkout.stripe.com/test' }, error: null }; } } });
+  const result = await service.startCheckout('listing-id', 'plus');
+  assert.deepEqual(call, { name: 'create-server-listing-checkout', options: { body: { server_listing_id: 'listing-id', plan_type: 'plus' } } });
+  assert.equal(result.data.url, 'https://checkout.stripe.com/test');
+});
+
+test('listing draft is saved through the owner-scoped RPC before checkout', async () => {
+  let call;
+  const service = createServerService({ async rpc(name, params) { call = { name, params }; return { data: 'listing-id', error: null }; } });
+  await service.saveListingDraft(null, 'normal', { title: 'Servidor Norte' });
+  assert.deepEqual(call, {
+    name: 'save_server_listing_draft',
+    params: { p_listing_id: null, p_plan_type: 'normal', p_payload: { title: 'Servidor Norte' } },
+  });
+});
+
+test('billing portal is created server-side', async () => {
+  let call;
+  const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { url: 'https://billing.stripe.com/test' }, error: null }; } } });
+  const result = await service.openBillingPortal();
+  assert.deepEqual(call, { name: 'create-billing-portal-session', options: { body: {} } });
+  assert.equal(result.data.url, 'https://billing.stripe.com/test');
 });
 
 test('paid listing creation uses the active subscription entitlement', async () => {
