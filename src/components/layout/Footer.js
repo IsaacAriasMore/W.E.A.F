@@ -16,6 +16,7 @@ export function createFooter() {
           <div>
             <strong>Isaac Arias</strong>
             <span>@whiskyzc_</span>
+            <a href="mailto:jisaaccv053@gmail.com">jisaaccv053@gmail.com</a>
           </div>
           <span class="creator-badge" data-i18n="footer.creator">${t('footer.creator')}</span>
         </div>

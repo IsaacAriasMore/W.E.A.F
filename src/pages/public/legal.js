@@ -92,7 +92,7 @@ const relatedLinks = [
 export function render({ path }) {
   const page = pages[path] || pages['/terms'];
   return `
-    <article class="legal-page container">
+    <article class="legal-page container reveal-up">
       <header class="legal-header">
         <p class="section-kicker">Documento base</p>
         <h1>${page.title}</h1>
@@ -102,7 +102,7 @@ export function render({ path }) {
       <div class="legal-layout">
         <div class="legal-content">
           ${page.sections.map(([title, content]) => `
-            <section>
+            <section class="reveal-up">
               <h2>${title}</h2>
               <p>${content}</p>
             </section>

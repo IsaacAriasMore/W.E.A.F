@@ -219,6 +219,13 @@
   font-size: 0.84rem;
 }
 
+.creator-card > div:nth-child(2) a {
+  color: oklch(0.86 0.022 265);
+  font-size: 0.72rem;
+}
+
+.creator-card > div:nth-child(2) a:hover { color: var(--ink); }
+
 .creator-badge {
   padding: 0.25rem 0.48rem;
   border-radius: 5px;

@@ -13,7 +13,7 @@ function creatureCard(creature) {
   const index = creatures.findIndex((item) => item.id === creature.id);
   const gameLabel = creature.game === 'both' ? 'ASE + ASA' : creature.game.toUpperCase();
   return `
-    <article class="creature-card">
+    <article class="creature-card cinematic-card reveal-up">
       <div class="creature-image creature-cell-${index}" role="img" aria-label="Ilustración original de ${creature.name}"></div>
       <div class="creature-card-body">
         <div class="creature-title">
@@ -33,7 +33,7 @@ function creatureCard(creature) {
 
 export function render() {
   return `
-    <section class="page-hero creature-page-hero container">
+    <section class="page-hero creature-page-hero container reveal-up">
       <div>
         <p class="section-kicker">Biblioteca pública</p>
         <h1>Encuentra la criatura que encaja en el plan.</h1>

@@ -27,7 +27,7 @@ function saveChecklist(value) {
 export function render() {
   const initialMap = mapBosses[0];
   return `
-    <section class="page-hero map-page-hero container">
+    <section class="page-hero map-page-hero container reveal-up">
       <div>
         <p class="section-kicker">Preparación local</p>
         <h1>Que el tributo no sea la sorpresa.</h1>
@@ -59,8 +59,8 @@ export function render() {
       </form>
 
       <div class="boss-workspace">
-        <article class="boss-summary" data-boss-summary></article>
-        <section class="checklist-panel" aria-labelledby="checklist-title">
+        <article class="boss-summary cinematic-card reveal-left" data-boss-summary></article>
+        <section class="checklist-panel cinematic-card reveal-right" aria-labelledby="checklist-title">
           <div class="checklist-header">
             <div>
               <span data-checklist-difficulty>Gamma</span>
@@ -76,7 +76,7 @@ export function render() {
 
     <div class="container sponsored-break">${createSponsoredServerSlot('bosses_footer', 'Comunidad para tu próxima batalla')}</div>
 
-    <section class="boss-callout container">
+    <section class="boss-callout container reveal-up">
       <div>
         <h2>Checklist listo. Estrategia en contexto.</h2>
         <p>Las recomendaciones son una base comunitaria de demostración. Contrástalas con la versión y configuración de tu servidor.</p>

@@ -19,7 +19,7 @@ function formatNumber(value) {
 
 function presetCard(preset) {
   return `
-    <article class="ini-card" data-preset-card="${preset.id}">
+    <article class="ini-card cinematic-card reveal-up" data-preset-card="${preset.id}">
       <div class="ini-card-top">
         <span class="game-label">${preset.game === 'both' ? 'ASE + ASA' : preset.game.toUpperCase()}</span>
         <span>${preset.categoryLabel}</span>
@@ -44,7 +44,7 @@ function presetCard(preset) {
 
 export function render() {
   return `
-    <section class="page-hero compact-page-hero container">
+    <section class="page-hero compact-page-hero container reveal-up">
       <p class="section-kicker">Biblioteca pública</p>
       <h1>INIs que puedes revisar antes de copiar.</h1>
       <p>Presets de demostración para ASE y ASA. Comprueba cada valor y adáptalo a tu equipo.</p>
