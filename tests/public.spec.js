@@ -57,9 +57,13 @@ test('server directory and owner plans are public and responsive', async ({ page
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Encuentra un servidor');
   await expect(page.getByRole('heading', { name: 'Servidores disponibles' })).toBeVisible();
   await expect(page.locator('[data-server-empty]')).toBeVisible();
-  await page.goto('/servers/owners');
+  await expect(page.getByRole('link', { name: 'Publicar servidor' })).toHaveAttribute('href', '/servers/publish');
+  await page.getByRole('link', { name: 'Ver cómo funciona' }).click();
+  await expect(page).toHaveURL(/\/servers\/owners#owner-plans$/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Publica con control');
   await expect(page.locator('.owner-plan')).toHaveCount(2);
+  await expect(page.locator('.owner-plan').first()).toBeVisible();
+  await expect(page.locator('.owner-plan').last()).toBeVisible();
   const plansLink = page.getByRole('link', { name: /Ver planes/ });
   await expect(plansLink).toBeVisible();
   const planTop = await page.locator('#owner-plans').evaluate((element) => element.getBoundingClientRect().top);

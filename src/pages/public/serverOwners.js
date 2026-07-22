@@ -31,8 +31,14 @@ export function bind({ authService }) {
     window.requestAnimationFrame(() => scrollToPlans('auto'));
   }
 
-  createServerService(authService.getClient()).listPlans().then(({ data }) => {
+  createServerService(authService.getClient()).listPlans().then(({ data, error }) => {
+    if (error || !plansSection?.isConnected || !Array.isArray(data)) return;
     const plans = data.filter((plan) => plan.is_active);
-    if (plans.length) document.querySelector('[data-owner-plans]').innerHTML = plansMarkup(plans);
+    if (!plans.length) return;
+    plansSection.innerHTML = plansMarkup(plans);
+    plansSection.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-scale')
+      .forEach((element) => element.classList.add('reveal-visible'));
+  }).catch(() => {
+    // Keep the server-rendered fallback plans visible if Supabase is unavailable.
   });
 }

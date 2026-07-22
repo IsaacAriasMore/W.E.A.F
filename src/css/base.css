@@ -14,6 +14,11 @@
   --line-soft: oklch(0.23 0.022 252);
   --danger: oklch(0.67 0.16 25);
   --success: oklch(0.73 0.12 155);
+  --color-text: var(--ink);
+  --color-text-muted: var(--muted);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-accent: var(--primary);
   --radius-card: 14px;
   --radius-control: 10px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

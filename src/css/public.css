@@ -914,7 +914,7 @@
   color: var(--primary);
 }
 /* Public motion is progressive: content stays visible until JS is ready. */
-.public-motion-ready :is(.reveal, .reveal-up, .reveal-left, .reveal-right, .reveal-scale):not(.reveal-visible) {
+.public-motion-ready :is(.reveal, .reveal-up, .reveal-left, .reveal-right, .reveal-scale).reveal-pending:not(.reveal-visible) {
   opacity: 0;
 }
 
@@ -923,11 +923,11 @@
   transition-delay: calc(var(--reveal-index, 0) * 55ms);
 }
 
-.public-motion-ready .reveal-up:not(.reveal-visible),
-.public-motion-ready .reveal:not(.reveal-visible) { transform: translateY(24px); }
-.public-motion-ready .reveal-left:not(.reveal-visible) { transform: translateX(-24px); }
-.public-motion-ready .reveal-right:not(.reveal-visible) { transform: translateX(24px); }
-.public-motion-ready .reveal-scale:not(.reveal-visible) { transform: scale(0.965); }
+.public-motion-ready .reveal-up.reveal-pending:not(.reveal-visible),
+.public-motion-ready .reveal.reveal-pending:not(.reveal-visible) { transform: translateY(24px); }
+.public-motion-ready .reveal-left.reveal-pending:not(.reveal-visible) { transform: translateX(-24px); }
+.public-motion-ready .reveal-right.reveal-pending:not(.reveal-visible) { transform: translateX(24px); }
+.public-motion-ready .reveal-scale.reveal-pending:not(.reveal-visible) { transform: scale(0.965); }
 
 .reveal-visible { opacity: 1; transform: none; }
 
@@ -965,12 +965,22 @@ body[data-route-kind='public'] main {
 .cinematic-card:hover,
 .glow-card:hover {
   border-color: color-mix(in oklch, var(--primary) 48%, var(--line));
-  box-shadow: 0 18px 42px oklch(0.07 0.02 252 / 0.42);
+  box-shadow: 0 6px 8px oklch(0.07 0.02 252 / 0.32);
   transform: translateY(-4px);
 }
 
 .cinematic-card:hover::before,
 .glow-card:hover::before { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .public-motion-ready :is(.reveal, .reveal-up, .reveal-left, .reveal-right, .reveal-scale) {
+    opacity: 1;
+    transform: none;
+  }
+
+  .cinematic-card:hover,
+  .glow-card:hover { transform: none; }
+}
 
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {

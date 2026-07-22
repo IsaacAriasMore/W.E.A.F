@@ -93,7 +93,7 @@ export function bindPublicHeader(navigate, refresh) {
     button.setAttribute('aria-expanded', 'false');
     button.querySelector('.sr-only').textContent = t('nav.menuOpen');
     menu.hidden = true;
-    navigate(`${link.pathname}${link.search}`);
+    navigate(`${link.pathname}${link.search}${link.hash}`);
   });
 }
 

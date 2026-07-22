@@ -13,6 +13,8 @@
 - Service worker de producción y pantalla sin conexión. No cachea Supabase ni otros orígenes.
 - Safe areas para dispositivos con notch y navegación móvil existente conservada.
 
+Después de desplegar una nueva versión del Service Worker, recarga la aplicación. Si el navegador conserva un worker anterior, abre DevTools → Application → Service Workers, pulsa **Unregister** y vuelve a cargar; la versión nueva elimina los caches de shell anteriores durante `activate`.
+
 Los anuncios externos no cargan scripts todavía. La estructura permite incorporarlos más adelante cuando exista proveedor, configuración de privacidad revisada y consentimiento válido.
 
 ## Imprescindible antes de publicar

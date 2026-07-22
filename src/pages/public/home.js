@@ -35,7 +35,7 @@ export function render() {
         <div class="hero-actions"><a class="button button-primary" href="/register" data-link>${t('home.hero.primary')}</a><a class="button button-secondary" href="/inis" data-link>${t('home.hero.secondary')}</a><a class="button button-quiet" href="/servers" data-link>${t('home.hero.servers')}</a></div>
       </div>
       <figure class="hero-visual reveal-right">
-        <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="Criaturas prehistóricas recorren una meseta volcánica al amanecer" fetchpriority="high">
+        <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="Criaturas prehistóricas recorren una meseta volcánica al amanecer" loading="eager" fetchpriority="high">
         <figcaption><span>ASE + ASA</span><strong>Planifica. Cría. Progresa.</strong></figcaption>
       </figure>
     </div>

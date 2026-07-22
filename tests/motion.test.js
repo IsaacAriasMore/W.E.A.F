@@ -8,6 +8,8 @@ const publicCss = readFileSync(new URL('../src/css/public.css', import.meta.url)
 test('public motion uses IntersectionObserver with a cleanup path', () => {
   assert.match(motion, /IntersectionObserver/);
   assert.match(motion, /observer\.disconnect\(\)/);
+  assert.match(motion, /classList\.add\('reveal-pending'\)/);
+  assert.match(publicCss, /\.reveal-pending:not\(\.reveal-visible\)/);
   assert.doesNotMatch(motion, /addEventListener\(['"]scroll/);
 });
 test('public motion has an explicit reduced-motion fallback', () => {

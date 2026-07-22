@@ -75,12 +75,26 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
   let cleanup = null;
   let navigationId = 0;
 
+  function scrollToCurrentHash(behavior = 'auto') {
+    if (!window.location.hash) return false;
+    let targetId;
+    try {
+      targetId = decodeURIComponent(window.location.hash.slice(1));
+    } catch {
+      return false;
+    }
+    const target = document.getElementById(targetId);
+    if (!target) return false;
+    target.scrollIntoView({ behavior, block: 'start' });
+    return true;
+  }
+
   async function render(pathname) {
     const path = normalizePath(pathname);
     const context = getContext();
 
     if (protectedRoutes.has(path) && !context.state.session) {
-      replace(pathWithNext('/login', `${path}${window.location.search}`));
+      replace(pathWithNext('/login', `${path}${window.location.search}${window.location.hash}`));
       return;
     }
 
@@ -137,6 +151,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       document.title = titles[path];
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
+      window.requestAnimationFrame(() => scrollToCurrentHash('auto'));
     } catch (error) {
       outlet.innerHTML = `
         <section class="empty-page container">
@@ -153,14 +168,19 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
   function navigate(destination) {
     const url = new URL(destination, window.location.origin);
     const path = normalizePath(url.pathname);
-    if (`${path}${url.search}` === `${normalizePath(window.location.pathname)}${window.location.search}`) return;
-    window.history.pushState({}, '', `${path}${url.search}`);
+    const nextUrl = `${path}${url.search}${url.hash}`;
+    const currentUrl = `${normalizePath(window.location.pathname)}${window.location.search}${window.location.hash}`;
+    if (nextUrl === currentUrl) {
+      if (url.hash) scrollToCurrentHash('smooth');
+      return;
+    }
+    window.history.pushState({}, '', nextUrl);
     render(path);
   }
 
   function replace(destination) {
     const url = new URL(destination, window.location.origin);
-    window.history.replaceState({}, '', `${normalizePath(url.pathname)}${url.search}`);
+    window.history.replaceState({}, '', `${normalizePath(url.pathname)}${url.search}${url.hash}`);
     render(url.pathname);
   }
 

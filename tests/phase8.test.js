@@ -24,7 +24,7 @@ test('PWA manifest, service worker and required icons are present', () => {
     assert.equal(existsSync(new URL(`../${path}`, import.meta.url)), true, `${path} is missing`);
   }
   const worker = read('public/sw.js');
-  assert.match(worker, /weaf-shell-v3/);
+  assert.match(worker, /weaf-shell-v4/);
   assert.match(worker, /request\.method !== 'GET'/);
   assert.match(worker, /url\.origin !== self\.location\.origin/);
   assert.match(worker, /request\.headers\.has\('Authorization'\)/);
@@ -36,6 +36,18 @@ test('PWA manifest, service worker and required icons are present', () => {
   assert.match(worker, /\/servers\/publish/);
   assert.match(worker, /OFFLINE_URL/);
   assert.match(read('index.html'), /<meta name="mobile-web-app-capable" content="yes" \/>/);
+});
+
+test('production example exposes only client-safe configuration', () => {
+  const example = read('.env.example');
+  assert.match(example, /VITE_SUPABASE_URL=https:\/\/vwxqewpvtucygbaethkv\.supabase\.co/);
+  assert.match(example, /VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_/);
+  assert.match(example, /VITE_BILLING_ENABLED=true/);
+  assert.match(example, /VITE_STRIPE_ENABLED=true/);
+  assert.match(example, /VITE_PUBLIC_SITE_URL=https:\/\/weaf\.vercel\.app/);
+  assert.match(example, /STRIPE_SECRET_KEY=sk_test_xxx/);
+  assert.match(example, /STRIPE_WEBHOOK_SECRET=whsec_xxx/);
+  assert.doesNotMatch(example, /sk_live_[A-Za-z0-9]/);
 });
 
 test('sponsored placements avoid critical forms and checkout', () => {

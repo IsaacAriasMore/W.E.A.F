@@ -21,6 +21,7 @@ export function observeRevealElements(root = document) {
   }, { rootMargin: '0px 0px -8% 0px', threshold: 0.14 });
 
   elements.forEach((element, index) => {
+    element.classList.add('reveal-pending');
     element.style.setProperty('--reveal-index', String(index % 6));
     observer.observe(element);
   });

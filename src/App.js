@@ -131,7 +131,7 @@ export async function startApp(root) {
     const link = event.target.closest('a[data-link]');
     if (link && link.origin === window.location.origin) {
       event.preventDefault();
-      router.navigate(`${link.pathname}${link.search}`);
+      router.navigate(`${link.pathname}${link.search}${link.hash}`);
       return;
     }
 

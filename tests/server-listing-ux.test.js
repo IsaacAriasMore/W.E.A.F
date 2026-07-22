@@ -25,6 +25,7 @@ test('rates support an explicit unspecified state without fake values', () => {
 test('public publish form no longer asks for a slug or mod names', () => {
   const page = read('src/pages/public/serverPublish.js');
   const ownersPage = read('src/pages/public/serverOwners.js');
+  const directoryPage = read('src/pages/public/servers.js');
   assert.doesNotMatch(page, /name="slug"/);
   assert.doesNotMatch(page, /name="mods"/);
   assert.match(page, /name: 'has_mods'/);
@@ -36,6 +37,10 @@ test('public publish form no longer asks for a slug or mod names', () => {
   assert.match(ownersPage, /id="owner-plans"/);
   assert.match(ownersPage, /scrollIntoView\(\{ behavior, block: 'start' \}\)/);
   assert.match(ownersPage, /window\.location\.hash === '#owner-plans'/);
+  assert.match(ownersPage, /\.catch\(\(\) =>/);
+  assert.match(ownersPage, /classList\.add\('reveal-visible'\)/);
+  assert.match(directoryPage, /href="\/servers\/publish" data-link/);
+  assert.match(directoryPage, /href="\/servers\/owners#owner-plans" data-link/);
   assert.match(page, /Cancelación programada/);
   assert.match(page, /canceled: 'Cancelado'/);
 });

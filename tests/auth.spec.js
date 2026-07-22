@@ -68,9 +68,12 @@ test('global administration is protected from guests', async ({ page }) => {
 });
 
 test('server publishing preserves the selected paid plan through login', async ({ page }) => {
-  await page.goto('/servers/publish?plan=plus');
-  await expect(page).toHaveURL(/\/login\?next=%2Fservers%2Fpublish%3Fplan%3Dplus/);
-  await expect(page.getByRole('heading', { name: 'Ingresa a la forja' })).toBeVisible();
+  for (const suffix of ['', '?plan=normal', '?plan=plus']) {
+    await page.goto(`/servers/publish${suffix}`);
+    const encodedDestination = encodeURIComponent(`/servers/publish${suffix}`);
+    await expect(page).toHaveURL(new RegExp(`/login\\?next=${encodedDestination}$`));
+    await expect(page.getByRole('heading', { name: 'Ingresa a la forja' })).toBeVisible();
+  }
 });
 
 test('auth layouts remain contained on mobile', async ({ page }) => {

@@ -15,6 +15,8 @@
 .server-results > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
 .server-results > header span { color: var(--color-accent); font-size: .74rem; }
 .server-results > header h2 { margin: 7px 0 0; font-size: clamp(1.7rem, 3vw, 2.5rem); letter-spacing: -.035em; }
+.server-owner-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px 18px; }
+.server-owner-actions .text-link { font-size: .78rem; }
 .server-list { display: grid; gap: 24px; }
 .server-card { display: grid; grid-template-columns: minmax(210px, .72fr) minmax(0, 1.28fr); border: 1px solid var(--color-line); background: var(--color-surface); }
 .server-card-media { position: relative; min-height: 320px; overflow: hidden; background: #151a18; }
@@ -116,6 +118,7 @@
   .server-filters { position: static; grid-template-columns: 1fr 1fr; padding-bottom: 28px; border-bottom: 1px solid var(--color-line); }
   .server-filters > div { grid-column: 1 / -1; }
   .server-results > header { align-items: flex-start; flex-direction: column; }
+  .server-owner-actions { justify-content: flex-start; }
   .server-card { grid-template-columns: 1fr; }
   .server-card-media { min-height: 200px; }
   .server-card dl { grid-template-columns: 1fr; }
@@ -297,6 +300,20 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .publish-plan-option { animation: publish-plan-enter 460ms var(--ease-out) backwards; }
+  .publish-plan-option:nth-child(2) { animation-delay: 70ms; }
+  .server-card { animation: server-card-enter 480ms var(--ease-out) backwards; }
+  .server-card:nth-child(2) { animation-delay: 55ms; }
+  .server-card:nth-child(3) { animation-delay: 110ms; }
+
+  @keyframes publish-plan-enter {
+    from { opacity: .65; transform: translateY(12px) scale(.985); }
+  }
+
+  @keyframes server-card-enter {
+    from { opacity: .65; transform: translateY(14px); }
+  }
+
   .server-badges b:first-child {
     background-image: linear-gradient(100deg, transparent 20%, oklch(0.96 0.03 80 / 0.22) 46%, transparent 72%);
     background-size: 220% 100%;
