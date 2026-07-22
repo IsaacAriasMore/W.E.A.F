@@ -932,6 +932,7 @@
 .reveal-visible { opacity: 1; transform: none; }
 
 body[data-route-kind='public'] main {
+  overflow-x: clip;
   animation: public-route-in 280ms var(--ease-out) both;
 }
 

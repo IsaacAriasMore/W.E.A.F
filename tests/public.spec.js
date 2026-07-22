@@ -58,7 +58,7 @@ test('server directory and owner plans are public and responsive', async ({ page
   await expect(page.getByRole('heading', { name: 'Servidores disponibles' })).toBeVisible();
   await expect(page.locator('[data-server-empty]')).toBeVisible();
   await page.goto('/servers/owners');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Publica primero');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Publica con control');
   await expect(page.locator('.owner-plan')).toHaveCount(2);
 });
 
