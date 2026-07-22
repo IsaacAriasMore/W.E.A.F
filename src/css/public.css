@@ -913,3 +913,64 @@
 .legal-nav a[aria-current='page'] {
   color: var(--primary);
 }
+/* Public motion is progressive: content stays visible until JS is ready. */
+.public-motion-ready :is(.reveal, .reveal-up, .reveal-left, .reveal-right, .reveal-scale):not(.reveal-visible) {
+  opacity: 0;
+}
+
+.public-motion-ready :is(.reveal, .reveal-up, .reveal-left, .reveal-right, .reveal-scale) {
+  transition: opacity 620ms var(--ease-out), transform 620ms var(--ease-out);
+  transition-delay: calc(var(--reveal-index, 0) * 55ms);
+}
+
+.public-motion-ready .reveal-up:not(.reveal-visible),
+.public-motion-ready .reveal:not(.reveal-visible) { transform: translateY(24px); }
+.public-motion-ready .reveal-left:not(.reveal-visible) { transform: translateX(-24px); }
+.public-motion-ready .reveal-right:not(.reveal-visible) { transform: translateX(24px); }
+.public-motion-ready .reveal-scale:not(.reveal-visible) { transform: scale(0.965); }
+
+.reveal-visible { opacity: 1; transform: none; }
+
+.cinematic-card,
+.glow-card {
+  position: relative;
+  isolation: isolate;
+  transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
+}
+
+.cinematic-card::before,
+.glow-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 78% 12%, oklch(0.7 0.13 60 / 0.11), transparent 46%);
+  content: '';
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out);
+}
+
+.cinematic-card:hover,
+.glow-card:hover {
+  border-color: color-mix(in oklch, var(--primary) 48%, var(--line));
+  box-shadow: 0 18px 42px oklch(0.07 0.02 252 / 0.42);
+  transform: translateY(-4px);
+}
+
+.cinematic-card:hover::before,
+.glow-card:hover::before { opacity: 1; }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-visual img {
+      animation: public-hero-drift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+
+    @keyframes public-hero-drift {
+      from { transform: scale(1.04) translateY(-1.5%); }
+      to { transform: scale(1.08) translateY(1.5%); }
+    }
+  }
+}
