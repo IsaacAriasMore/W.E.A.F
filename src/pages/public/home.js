@@ -4,7 +4,7 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { t } from '../../i18n/index.js';
 import { mountWeafThreeHero } from '../../components/visuals/WeafThreeHero.js';
 
-const tool = (href, code, title, body, link) => `<a class="home-tool cinematic-card reveal-up" href="${href}" data-link><span>${code}</span><h3>${title}</h3><p>${body}</p><strong>${link} →</strong></a>`;
+const tool = (href, code, title, body, link) => `<a class="home-tool interactive-card" href="${href}" data-link data-gsap-item><span>${code}</span><h3>${title}</h3><p>${body}</p><strong>${link} →</strong></a>`;
 
 const faqKeys = ['1', '2', '3', '4', '5', '6'];
 
@@ -19,17 +19,17 @@ function featuredCard(server) {
 }
 
 export function render() {
-  return `<section class="hero home-hero">
+  return `<section class="hero home-hero" data-gsap-hero>
     <div class="hero-atmosphere" aria-hidden="true"></div>
     <div class="three-hero-layer" data-three-hero aria-hidden="true"><span class="three-hero-fallback-orb"></span></div>
     <div class="hero-inner container">
-      <div class="hero-copy reveal-left">
+      <div class="hero-copy" data-gsap-hero-item>
         <p class="hero-kicker">${t('home.hero.eyebrow')}</p>
         <h1>${t('home.hero.title')}</h1>
         <p>${t('home.hero.subtitle')}</p>
         <div class="hero-actions"><a class="button button-primary" href="/register" data-link>${t('home.hero.primary')}</a><a class="button button-secondary" href="/inis" data-link>${t('home.hero.secondary')}</a><a class="button button-quiet" href="/servers" data-link>${t('home.hero.servers')}</a></div>
       </div>
-      <figure class="hero-visual reveal-right">
+      <figure class="hero-visual" data-gsap-hero-item>
         <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="${t('home.heroAlt')}" loading="eager" fetchpriority="high">
         <figcaption><span>ASE + ASA</span><strong>${t('home.heroCaption')}</strong></figcaption>
       </figure>
@@ -39,7 +39,7 @@ export function render() {
 
   <section id="public-tools" class="home-section container">
     <div class="home-heading reveal-up"><h2>${t('home.tools.title')}</h2><p>${t('home.tools.body')}</p></div>
-    <div class="home-tool-grid">
+    <div class="home-tool-grid" data-gsap-stagger>
       ${tool('/inis', 'INI', t('home.tools.inisTitle'), t('home.tools.inisBody'), t('home.tools.inisLink'))}
       ${tool('/maps-bosses', 'BOSS', t('home.tools.bossesTitle'), t('home.tools.bossesBody'), t('home.tools.bossesLink'))}
       ${tool('/creatures', 'DEX', t('home.tools.creaturesTitle'), t('home.tools.creaturesBody'), t('home.tools.creaturesLink'))}

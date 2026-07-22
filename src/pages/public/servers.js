@@ -17,7 +17,7 @@ function rateLabel(rates = {}) {
 
 function card(server) {
   const isNew = Date.now() - new Date(server.created_at).getTime() < 14 * 86400000;
-  return `<article class="server-card cinematic-card reveal-up reveal-visible" data-server-card data-game="${escapeHtml(server.game)}" data-type="${escapeHtml(server.server_type)}" data-region="${escapeHtml(server.region)}" data-language="${escapeHtml(server.language)}" data-mods="${server.has_mods}" data-propagators="${server.uses_propagators}" data-platforms="${escapeHtml(server.platforms?.join('|').toLowerCase() || '')}" data-cluster="${server.cluster_name ? 'true' : 'false'}">
+  return `<article class="server-card interactive-card reveal-up reveal-visible" data-server-card data-game="${escapeHtml(server.game)}" data-type="${escapeHtml(server.server_type)}" data-region="${escapeHtml(server.region)}" data-language="${escapeHtml(server.language)}" data-mods="${server.has_mods}" data-propagators="${server.uses_propagators}" data-platforms="${escapeHtml(server.platforms?.join('|').toLowerCase() || '')}" data-cluster="${server.cluster_name ? 'true' : 'false'}">
     <div class="server-card-media">${server.banner_url ? `<img src="${escapeHtml(server.banner_url)}" alt="" loading="lazy">` : '<span>W.E.A.F / SERVER</span>'}<div class="server-badges">${server.is_featured ? `<b>${t('servers.featured')}</b>` : ''}${server.is_verified ? `<b>${t('servers.directory.verified')}</b>` : ''}${isNew ? `<b>${t('servers.directory.new')}</b>` : ''}</div></div>
     <div class="server-card-body">
       <div class="server-card-title"><div><span>${escapeHtml(server.game.toUpperCase())} · ${escapeHtml(server.server_type)}</span><h2>${escapeHtml(server.title)}</h2></div><small>${escapeHtml(server.region)} / ${escapeHtml(server.language)}</small></div>
@@ -30,8 +30,8 @@ function card(server) {
 }
 
 export function render() {
-  return `<section class="servers-hero reveal-up"><div class="container"><p>${t('servers.directory.eyebrow')}</p><h1>${t('servers.directory.title')}</h1><div><span>${t('servers.directory.gameCoverage')}</span><span>${t('servers.directory.directInfo')}</span><span>${t('servers.directory.noRankings')}</span></div></div></section>
-    <section class="servers-directory container">
+  return `<section class="servers-hero" data-gsap-hero><div class="container" data-gsap-hero-item><p>${t('servers.directory.eyebrow')}</p><h1>${t('servers.directory.title')}</h1><div><span>${t('servers.directory.gameCoverage')}</span><span>${t('servers.directory.directInfo')}</span><span>${t('servers.directory.noRankings')}</span></div></div></section>
+    <section class="servers-directory container reveal-up">
       <aside class="server-filters" aria-label="${t('servers.directory.filters')}"><div><h2>${t('servers.directory.filter')}</h2><button type="button" data-clear-server-filters>${t('common.clear')}</button></div>
         ${options(t('servers.directory.game'), [['evolved','ASE'],['ascended','ASA']])}${options(t('servers.directory.mode'), [['pvp','PvP'],['pve','PvE'],['pvpve','PvPvE']])}${options(t('servers.mods'), [['true',t('servers.directory.withMods')],['false',t('servers.directory.withoutMods')]])}${options(t('servers.directory.platform'), [['steam','Steam'],['epic','Epic'],['console',t('servers.directory.console')],['crossplay','Crossplay']])}
         <label><span>${t('servers.directory.region')}</span><input type="search" data-server-search="region" placeholder="${t('servers.directory.regionExample')}"></label><label><span>${t('servers.directory.language')}</span><input type="search" data-server-search="language" placeholder="${t('servers.directory.languageExample')}"></label>

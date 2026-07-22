@@ -22,8 +22,8 @@ body[data-route-kind='auth'] main {
   padding: clamp(2rem, 4vw, 3.5rem);
   border: 1px solid var(--line-soft);
   background:
-    linear-gradient(160deg, oklch(0.23 0.055 255 / 0.7), oklch(0.12 0.02 250 / 0.25)),
-    repeating-linear-gradient(90deg, transparent 0 51px, oklch(0.7 0.13 60 / 0.05) 52px);
+    radial-gradient(circle at 82% 18%, oklch(0.7 0.13 60 / 0.1), transparent 16rem),
+    linear-gradient(160deg, oklch(0.23 0.055 255 / 0.7), oklch(0.12 0.02 250 / 0.25));
   overflow: hidden;
 }
 
@@ -72,6 +72,7 @@ body[data-route-kind='auth'] main {
 
 .auth-card {
   width: min(100%, 35rem);
+  padding-block: 1rem;
 }
 
 .auth-heading h1,
@@ -418,6 +419,9 @@ body[data-route-kind='auth'] main {
   background: linear-gradient(150deg, var(--surface), var(--bg-raised));
   transition: border-color 180ms ease, transform 180ms var(--ease-out);
 }
+
+.mode-card.interactive-card::before { z-index: 0; }
+.mode-card.interactive-card > span { position: relative; z-index: 1; }
 
 .mode-card:hover > span {
   transform: translateY(-3px);

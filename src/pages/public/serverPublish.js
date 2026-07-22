@@ -49,7 +49,7 @@ function ratesSection(listing) {
 function form(plan, listing) {
   const paidAndActive = listing?.status === 'active';
   const game = listing?.game || 'ascended';
-  return `<form class="publish-form" data-publish-form data-listing="${listing?.id || ''}" data-plan="${plan}" novalidate>
+  return `<form class="publish-form" data-publish-form data-motion="none" data-listing="${listing?.id || ''}" data-plan="${plan}" novalidate>
     <header><p>${t(listing ? 'servers.form.editEyebrow' : 'servers.form.newEyebrow')}</p><h2>${listing ? escapeHtml(listing.title) : planLabel(plan)}</h2><span>${paidAndActive ? t('servers.form.activeUntil', { date: listing.expires_at ? formatDate(listing.expires_at) : t('servers.form.activeNotice') }) : t('servers.form.paymentGate')}</span></header>
     <div class="publish-fields">
       <fieldset class="publish-section"><legend>${t('servers.form.basic')}</legend>
@@ -79,18 +79,18 @@ function dashboard(listings, hasCustomer) {
 }
 
 function planSelector(listings, hasCustomer) {
-  return `<section class="publish-plan-selector" aria-labelledby="publish-plan-title">
+  return `<section class="publish-plan-selector" aria-labelledby="publish-plan-title" data-gsap-stagger>
     <div><p>${t('servers.form.selectorEyebrow')}</p><h2 id="publish-plan-title">${t('servers.form.selectorTitle')}</h2><span>${t('servers.form.selectorBody')}</span></div>
     <div class="publish-plan-options">
-      <button class="publish-plan-option cinematic-card" type="button" data-select-publish-plan="normal"><span>${t('servers.owner.essential')}</span><strong>Normal</strong><b>$3 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.normalBody')}</em></button>
-      <button class="publish-plan-option cinematic-card is-plus" type="button" data-select-publish-plan="plus"><span>${t('servers.owner.visibility')}</span><strong>Plus</strong><b>$7 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.plusBody')}</em></button>
+      <button class="publish-plan-option interactive-card" type="button" data-select-publish-plan="normal" data-gsap-item><span>${t('servers.owner.essential')}</span><strong>Normal</strong><b>$3 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.normalBody')}</em></button>
+      <button class="publish-plan-option interactive-card is-plus" type="button" data-select-publish-plan="plus" data-gsap-item><span>${t('servers.owner.visibility')}</span><strong>Plus</strong><b>$7 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.plusBody')}</em></button>
     </div>
     ${listings.length ? dashboard(listings, hasCustomer) : ''}
   </section>`;
 }
 
 export function render() {
-  return `<section class="publish-shell container"><header><a href="/servers/owners" data-link>← ${t('servers.form.plansBack')}</a><p>${t('servers.form.accountEyebrow')}</p><h1>${t('servers.form.pageTitle')}</h1></header><div data-publish-workspace class="publish-loading"><span></span><p>${t('servers.form.loading')}</p></div></section>`;
+  return `<section class="publish-shell container"><header data-gsap-hero><a href="/servers/owners" data-link data-gsap-hero-item>← ${t('servers.form.plansBack')}</a><p data-gsap-hero-item>${t('servers.form.accountEyebrow')}</p><h1 data-gsap-hero-item>${t('servers.form.pageTitle')}</h1></header><div data-publish-workspace class="publish-loading"><span></span><p>${t('servers.form.loading')}</p></div></section>`;
 }
 
 function updateGameChoices(formElement) {

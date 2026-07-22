@@ -7,12 +7,12 @@ export function render({ state }) {
   const destination = destinationFromSearch(window.location.search, null);
   return `
     <section class="auth-shell auth-shell-register container">
-      <div class="auth-context" aria-hidden="true">
+      <div class="auth-context premium-panel reveal-left" aria-hidden="true">
         <span class="auth-coordinate">W.E.A.F / NUEVO PERFIL</span>
         <div class="auth-mark-frame"><img src="/assets/weaf-mark.svg" alt="" width="96" height="96" /></div>
         <p>Empieza con tu identidad de juego y entra al espacio privado de tu tribu.</p>
       </div>
-      <div class="auth-card">
+      <div class="auth-card reveal-right">
         <div class="auth-heading">
           <p class="section-kicker">Tu primera coordenada</p>
           <h1>Crea tu cuenta</h1>

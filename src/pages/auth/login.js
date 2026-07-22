@@ -9,12 +9,12 @@ export function render({ state }) {
   const accountCreated = search.get('registered') === '1';
   return `
     <section class="auth-shell container">
-      <div class="auth-context" aria-hidden="true">
+      <div class="auth-context premium-panel reveal-left" aria-hidden="true">
         <span class="auth-coordinate">W.E.A.F / ACCESO</span>
         <div class="auth-mark-frame"><img src="/assets/weaf-mark.svg" alt="" width="96" height="96" /></div>
         <p>Un solo acceso para tu perfil, tus criaturas y el espacio privado de tu tribu.</p>
       </div>
-      <div class="auth-card">
+      <div class="auth-card reveal-right">
         <div class="auth-heading">
           <p class="section-kicker">Bienvenido de vuelta</p>
           <h1>Ingresa a la forja</h1>

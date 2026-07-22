@@ -930,7 +930,7 @@
 .home-hero .hero-inner { position: relative; z-index: 1; }
 .home-hero .hero-copy > p:not(.hero-kicker) { max-width: 58ch; font-size: clamp(1rem, 1.5vw, 1.16rem); }
 .home-hero .hero-actions { flex-wrap: wrap; }
-.home-hero .hero-visual { overflow: hidden; border: 1px solid oklch(0.45 0.04 252 / 0.65); border-radius: var(--radius-card); box-shadow: 0 30px 90px oklch(0.04 0.018 252 / 0.58); }
+.home-hero .hero-visual { overflow: hidden; border: 1px solid oklch(0.45 0.04 252 / 0.65); border-radius: var(--radius-card); box-shadow: none; }
 
 .home-scroll-cue {
   position: absolute;
@@ -957,7 +957,7 @@
 .home-heading p { max-width: 58ch; margin-top: 1rem; }
 
 .home-tool-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
-.home-tool { min-height: 260px; display: flex; flex-direction: column; align-items: flex-start; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--line); border-radius: var(--radius-card); background: linear-gradient(145deg, oklch(0.18 0.022 252), oklch(0.135 0.016 252)); }
+.home-tool { min-height: 260px; display: flex; flex-direction: column; align-items: flex-start; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--line); border-radius: var(--radius-card); background: linear-gradient(145deg, oklch(0.18 0.022 252), oklch(0.135 0.016 252)); contain: layout paint; }
 .home-tool:nth-child(1), .home-tool:nth-child(4) { grid-column: span 7; }
 .home-tool:nth-child(2), .home-tool:nth-child(3) { grid-column: span 5; }
 .home-tool > span { color: var(--primary); font-size: 0.72rem; font-weight: 850; }

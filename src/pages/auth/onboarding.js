@@ -23,7 +23,7 @@ export function render({ state }) {
 
   if (completed) {
     return `
-      <section class="onboarding-complete container">
+      <section class="onboarding-complete container reveal-up">
         <div class="completion-seal" aria-hidden="true">WF</div>
         <p class="section-kicker">Perfil operativo</p>
         <h1>La forja te reconoce, ${escapeHtml(displayName)}.</h1>
@@ -38,7 +38,7 @@ export function render({ state }) {
   }
 
   return `
-    <section class="onboarding-shell container">
+    <section class="onboarding-shell container reveal-up">
       <div class="onboarding-progress" aria-label="Progreso de configuración">
         <span>Perfil</span>
         <div><i></i></div>
@@ -55,10 +55,10 @@ export function render({ state }) {
           <span>Nombre visible</span>
           <input name="displayName" type="text" required minlength="2" maxlength="60" autocomplete="nickname" value="${escapeHtml(displayName)}" />
         </label>
-        <fieldset class="mode-grid">
+        <fieldset class="mode-grid stagger-group">
           <legend class="sr-only">Juego principal</legend>
           ${modes.map((mode) => `
-            <label class="mode-card">
+            <label class="mode-card stagger-item interactive-card">
               <input type="radio" name="gameMode" value="${mode.value}" ${mode.value === selectedMode ? 'checked' : ''} required />
               <span>
                 <small>${mode.code}</small>
