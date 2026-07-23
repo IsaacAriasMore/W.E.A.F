@@ -70,7 +70,7 @@ function bossCard(boss, map, game, difficulty, checklist) {
   const source = requirements?.source_url || boss.source_url;
   const description = boss.description || copy(boss, 'description');
 
-  return `<article class="boss-battle-card" data-boss-card="${escapeHtml(boss.slug)}">
+  return `<article class="boss-battle-card premium-card-glow" data-boss-card="${escapeHtml(boss.slug)}">
     <div class="boss-portrait">
       <img src="${escapeHtml(imageUrl(boss.image_url))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.bossImageAlt', { boss: boss.name }))}" loading="lazy" width="1536" height="1024">
       <span>${escapeHtml(t(`bosses.bossTypes.${boss.boss_type || 'other'}`))}</span>
@@ -111,7 +111,7 @@ function workspace(state) {
   return `
     <div class="map-selector-head"><div><strong>${gameLabel(state.game)}</strong><span>${t('bosses.chooseMap')}</span></div><span>${t('bosses.mapCount', { count: maps.length })}</span></div>
     <div class="map-selector" data-map-selector>${mapSelector(maps, selectedMap.slug, state.game)}</div>
-    <article class="selected-map-banner">
+    <article class="selected-map-banner media-frame-glow">
       <img src="${escapeHtml(imageUrl(selectedMap.image_url))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.mapImageAlt', { map: selectedMap.name }))}" loading="lazy" width="1536" height="1024">
       <div><div class="selected-map-badges">${statusBadge(selectedMap)}<span class="content-badge">${gameLabel(state.game)}</span>${selectedMap.is_canonical ? '<span class="content-badge">Canon</span>' : ''}</div><h2>${escapeHtml(selectedMap.name)}</h2><p>${escapeHtml(selectedMap.description || copy(selectedMap, 'description'))}</p><strong>${t('bosses.bossCount', { count: bosses.length })}</strong></div>
     </article>
@@ -131,8 +131,8 @@ export function render() {
     </section>
     <section class="boss-command container">
       <div class="game-switch" role="group" aria-label="${t('bosses.chooseGame')}">
-        <button type="button" data-game="evolved" aria-pressed="true"><span>ASE</span>${t('bosses.evolved')}</button>
-        <button type="button" data-game="ascended" aria-pressed="false"><span>ASA</span>${t('bosses.ascended')}</button>
+        <button type="button" data-game="evolved" aria-pressed="true">${t('bosses.evolved')}</button>
+        <button type="button" data-game="ascended" aria-pressed="false">${t('bosses.ascended')}</button>
       </div>
       <div data-boss-workspace aria-live="polite"></div>
     </section>

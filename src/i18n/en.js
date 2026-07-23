@@ -3,6 +3,12 @@ export default {
     yes: 'Yes', no: 'No', all: 'All', loading: 'Loading…', signIn: 'Sign in', signUp: 'Sign up',
     signOut: 'Sign out', myTribe: 'My tribe', clear: 'Clear', optional: 'optional', language: 'Language',
     edit: 'Edit', saveChanges: 'Save changes', website: 'Website', back: 'Back', new: 'New', verified: 'Verified',
+    profile: 'Profile', admin: 'Admin', createAccount: 'Create account',
+  },
+  profile: {
+    eyebrow: 'W.E.A.F account', title: 'Your profile, in one place.', body: 'Update how your tribe recognizes you without changing sensitive permissions.',
+    avatarAlt: 'Profile avatar', email: 'Email', emailHelp: 'Your sign-in email cannot be changed from this form.', displayName: 'Display name', discord: 'Discord username', avatarUrl: 'Avatar URL', gameMode: 'Default game',
+    backToTribe: 'Back to my tribe', accountSummary: 'Account summary', memberSince: 'Member since', activeTribe: 'Active tribe', globalRole: 'Global role', roleAdmin: 'Global administrator', roleUser: 'User', noActiveTribe: 'No active tribe', securityNote: 'Your global role, email, and security status are read-only.', saved: 'Profile updated successfully.',
   },
   nav: { home: 'Home', inis: 'INIs', mapsBosses: 'Maps & Bosses', creatures: 'Creatures', servers: 'Servers', menuOpen: 'Open menu', menuClose: 'Close menu' },
   ads: {
@@ -93,6 +99,7 @@ export default {
     warningTitle: 'Apply changes with a backup.', warningBody: 'An update, mod, or platform can change the result. Back up the file and test one variable at a time.',
     fileTarget: 'Target file', reviewed: 'Reviewed', pendingDate: 'Pending', statusLabel: 'Status', risk: 'Risk', rollback: 'How to revert', riskFallback: 'Review the impact in a test environment.', rollbackFallback: 'Restore the file backup.',
     empty: 'No presets match this filter.', emptyBody: 'Switch game or category. The editorial catalog will continue to grow.',
+    advanced: 'Advanced filters', moreCategories: 'More categories', contributeTitle: 'Want to contribute your custom INI to W.E.A.F?', contributeBody: 'Send us your configuration with an image showing how it looks or what it improves.', reviewNotice: 'Every contribution is reviewed before publication. Never send passwords, tokens, or private files.', copyEmail: 'Copy email', copyDiscord: 'Copy Discord', contactCopied: 'Contact channel copied.',
     status: { verified: 'Verified', pending: 'Pending', experimental: 'Experimental' },
   },
   creatures: {

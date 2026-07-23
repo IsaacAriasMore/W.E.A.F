@@ -80,7 +80,7 @@ export async function startApp(root) {
       cleanupMotion();
       cleanupRouteMotion = null;
       setActiveNavigation(pathname);
-      updateHeaderAuth(store.getState().session, pathname);
+      updateHeaderAuth(store.getState().session, store.getState().profile, pathname);
       document.body.dataset.routeKind = pathname === '/admin'
         ? 'admin'
         : pathname.startsWith('/app')
@@ -99,7 +99,7 @@ export async function startApp(root) {
   const syncSession = async (session, { refresh = true, preserveActivity = false } = {}) => {
     const previousUserId = store.getState().session?.user?.id;
     store.setState({ session, profile: session ? store.getState().profile : null });
-    updateHeaderAuth(session, window.location.pathname);
+    updateHeaderAuth(session, store.getState().profile, window.location.pathname);
 
     inactivity?.stop();
     inactivity = null;
@@ -110,7 +110,7 @@ export async function startApp(root) {
         onExpire: async () => {
           await authService.signOut({ localOnly: true });
           store.setState({ session: null, profile: null });
-          updateHeaderAuth(null, '/login');
+          updateHeaderAuth(null, null, '/login');
           router.replace('/login');
           root.querySelector('[data-session-dialog]')?.showModal();
         },
@@ -120,11 +120,12 @@ export async function startApp(root) {
 
     if (session?.user?.id && session.user.id !== previousUserId) {
       store.setState({ profile: await hydrateProfile(session) });
+      updateHeaderAuth(session, store.getState().profile, window.location.pathname);
     }
     if (refresh) router.refresh();
   };
 
-  updateHeaderAuth(initialSession);
+  updateHeaderAuth(initialSession, store.getState().profile);
   await syncSession(initialSession, { refresh: false, preserveActivity: true });
   bindPublicHeader(router.navigate, router.refresh);
 

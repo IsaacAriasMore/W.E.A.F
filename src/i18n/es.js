@@ -3,6 +3,12 @@ export default {
     yes: 'Sí', no: 'No', all: 'Todos', loading: 'Cargando…', signIn: 'Ingresar', signUp: 'Crear cuenta',
     signOut: 'Salir', myTribe: 'Mi tribu', clear: 'Limpiar', optional: 'opcional', language: 'Idioma',
     edit: 'Editar', saveChanges: 'Guardar cambios', website: 'Sitio web', back: 'Volver', new: 'Nuevo', verified: 'Verificado',
+    profile: 'Perfil', admin: 'Admin', createAccount: 'Crear cuenta',
+  },
+  profile: {
+    eyebrow: 'Cuenta W.E.A.F', title: 'Tu perfil, en un solo lugar.', body: 'Actualiza cómo te reconoce tu tribu sin alterar permisos sensibles.',
+    avatarAlt: 'Avatar del perfil', email: 'Correo', emailHelp: 'El correo de acceso no se modifica desde este formulario.', displayName: 'Nombre visible', discord: 'Usuario de Discord', avatarUrl: 'URL del avatar', gameMode: 'Juego predeterminado',
+    backToTribe: 'Volver a mi tribu', accountSummary: 'Resumen de la cuenta', memberSince: 'Miembro desde', activeTribe: 'Tribu activa', globalRole: 'Rol global', roleAdmin: 'Administrador global', roleUser: 'Usuario', noActiveTribe: 'Sin tribu activa', securityNote: 'Tu rol global, correo y estado de seguridad son de solo lectura.', saved: 'Perfil actualizado correctamente.',
   },
   nav: { home: 'Inicio', inis: 'INIs', mapsBosses: 'Mapas & Bosses', creatures: 'Criaturas', servers: 'Servidores', menuOpen: 'Abrir menú', menuClose: 'Cerrar menú' },
   ads: {
@@ -93,6 +99,7 @@ export default {
     warningTitle: 'Aplica cambios con respaldo.', warningBody: 'Una actualización, un mod o la plataforma pueden cambiar el resultado. Guarda una copia del archivo y prueba una variable a la vez.',
     fileTarget: 'Archivo destino', reviewed: 'Revisado', pendingDate: 'Pendiente', statusLabel: 'Estado', risk: 'Riesgo', rollback: 'Cómo revertir', riskFallback: 'Revisa el impacto en un entorno de prueba.', rollbackFallback: 'Restaura la copia de seguridad del archivo.',
     empty: 'No hay presets para este filtro.', emptyBody: 'Cambia de juego o categoría. El catálogo editorial seguirá creciendo.',
+    advanced: 'Filtros avanzados', moreCategories: 'Más categorías', contributeTitle: '¿Quieres aportar tu INI personalizado a W.E.A.F?', contributeBody: 'Envíanos tu configuración con una imagen de cómo se ve o qué mejora aporta.', reviewNotice: 'Cada aporte se revisa antes de publicarse. No envíes contraseñas, tokens ni archivos privados.', copyEmail: 'Copiar correo', copyDiscord: 'Copiar Discord', contactCopied: 'Canal de contacto copiado.',
     status: { verified: 'Verificado', pending: 'Pendiente', experimental: 'Experimental' },
   },
   creatures: {

@@ -78,6 +78,16 @@ body:is([data-route-kind='public'], [data-route-kind='auth']) main {
   background: linear-gradient(145deg, oklch(0.2 0.026 252), oklch(0.14 0.018 252));
 }
 
+:is(.premium-card-glow, .premium-panel-glow, .media-frame-glow) {
+  outline: 1px solid color-mix(in oklch, var(--line) 76%, var(--primary));
+  outline-offset: -1px;
+  box-shadow: 0 6px 8px oklch(0.03 0.01 252 / 0.24), 0 0 7px oklch(0.7 0.13 60 / 0.07);
+}
+
+.media-frame-glow {
+  box-shadow: 0 0 0 1px oklch(0.7 0.13 60 / 0.2), 0 5px 8px oklch(0.03 0.01 252 / 0.3);
+}
+
 .floating-soft { animation: floating-soft 5.5s ease-in-out infinite alternate; }
 
 @keyframes floating-soft {

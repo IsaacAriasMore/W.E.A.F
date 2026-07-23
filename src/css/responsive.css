@@ -101,6 +101,8 @@
     display: none;
   }
 
+  .header-auth { display: none; }
+
   .menu-button {
     display: block;
   }
@@ -536,9 +538,7 @@
     width: 100%;
   }
 
-  body[data-route-kind='app'] .menu-button {
-    display: none;
-  }
+  body[data-route-kind='app'] .menu-button { display: block; }
 
   .private-app-main {
     padding-inline: 0.9rem;

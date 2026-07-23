@@ -913,11 +913,13 @@
 .legal-nav a[aria-current='page'] {
   color: var(--primary);
 }
-/* 2026 public home: nocturnal planning room, image-led and asymmetric. */
+/* Phase 11 home: a lightweight animated forge, with no photographic hero. */
 .home-hero {
   position: relative;
   min-height: calc(100dvh - 70px);
-  background: linear-gradient(115deg, oklch(0.105 0.012 252) 0 46%, oklch(0.105 0.012 252 / 0.72) 68%, transparent 100%);
+  display: grid;
+  align-items: center;
+  background: linear-gradient(145deg, oklch(0.095 0.012 252), oklch(0.12 0.022 248));
 }
 
 .hero-atmosphere {
@@ -927,10 +929,40 @@
   pointer-events: none;
 }
 
-.home-hero .hero-inner { position: relative; z-index: 1; }
-.home-hero .hero-copy > p:not(.hero-kicker) { max-width: 58ch; font-size: clamp(1rem, 1.5vw, 1.16rem); }
+.home-hero .hero-inner {
+  position: relative;
+  z-index: 1;
+  display: block;
+  padding-block: clamp(3.5rem, 6vw, 5.5rem);
+}
+.home-hero .hero-copy { max-width: 66rem; }
+.home-hero h1 { max-width: 13ch; margin-top: clamp(1rem, 2vw, 1.5rem); font-size: clamp(2.8rem, 6vw, 5.2rem); line-height: .94; }
 .home-hero .hero-actions { flex-wrap: wrap; }
-.home-hero .hero-visual { overflow: hidden; border: 1px solid oklch(0.45 0.04 252 / 0.65); border-radius: var(--radius-card); box-shadow: none; }
+
+.home-hero-brand {
+  display: inline-flex;
+  gap: clamp(0.8rem, 2vw, 1.3rem);
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.home-hero-brand img {
+  width: clamp(68px, 7vw, 88px);
+  height: clamp(68px, 7vw, 88px);
+  object-fit: contain;
+  filter: drop-shadow(0 4px 7px oklch(0.72 0.13 60 / 0.18));
+}
+
+.home-hero-brand > span { display: grid; line-height: 0.83; }
+.home-hero-brand strong { color: var(--ink); font-size: clamp(2.2rem, 5vw, 4.6rem); letter-spacing: -0.04em; }
+.home-hero-brand strong:last-of-type { color: var(--primary); }
+.home-hero-brand small { margin-top: 0.9rem; color: var(--muted); font-size: 0.72rem; font-weight: 850; letter-spacing: 0.18em; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero-brand strong { animation: home-brand-enter 700ms var(--ease-out) both; }
+  .home-hero-brand strong:nth-child(2) { animation-delay: 100ms; }
+  @keyframes home-brand-enter { from { opacity: 0; transform: translateY(16px); } }
+}
 
 .home-scroll-cue {
   position: absolute;
@@ -1062,15 +1094,33 @@
 .boss-briefing header { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
 .boss-briefing h3 { margin: .35rem 0 .55rem; }
 .boss-progress { display: grid; grid-template-columns: 1fr auto; gap: .45rem .75rem; margin: 1.25rem 0; }
+.boss-progress > div:first-child { display: flex; justify-content: space-between; gap: 1rem; grid-column: 1 / -1; }
+.boss-progress-track { grid-column: 1 / -1; height: .55rem; overflow: hidden; border-radius: 999px; background: var(--surface-strong); }
+.boss-progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width 220ms var(--ease-out); }
 .boss-progress progress { grid-column: 1 / -1; width: 100%; accent-color: var(--primary); }
 .requirements-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.2rem; }
 .requirement-list { display: grid; gap: .4rem; margin-top: .65rem; }
 .requirement-row { min-height: 44px; display: flex; gap: .7rem; align-items: center; padding: .55rem .65rem; border: 1px solid var(--line-soft); border-radius: 8px; color: var(--muted); cursor: pointer; }
 .requirement-row:has(input:checked) { color: var(--ink); background: color-mix(in oklch, var(--primary) 9%, transparent); }
-.requirement-row input { accent-color: var(--primary); }
+.requirement-row input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.requirement-check { display: grid; width: 1.2rem; height: 1.2rem; flex: 0 0 1.2rem; place-items: center; border: 1px solid var(--line); border-radius: 4px; background: var(--bg-raised); }
+.requirement-row input:checked + .requirement-check { border-color: var(--primary); background: var(--primary); color: var(--bg); }
+.requirement-row input:checked + .requirement-check::after { content: '\2713'; font-size: .8rem; font-weight: 900; }
+.requirement-row:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 2px; }
 .requirement-row strong { margin-left: auto; color: var(--primary); }
 .boss-empty, .ini-empty { padding: 1.5rem; border: 1px dashed var(--line); color: var(--muted); }
 .ini-control-row { grid-template-columns: auto minmax(220px, 1fr); align-items: end; }
+.ini-category-controls { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; }
+.ini-category-controls .filter-bar { flex: 1 1 34rem; }
+.ini-advanced-filter { flex: 0 1 13rem; }
+.ini-advanced-filter span { font-size: .72rem; }
+.ini-advanced-filter select { min-height: 42px; }
+.ini-contribution { display: flex; gap: 1.25rem; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding: 1.25rem; border-radius: var(--radius-card); background: var(--surface); }
+.ini-contribution p { max-width: 62ch; margin-top: .35rem; }
+.ini-contribution address { display: flex; flex-wrap: wrap; gap: .35rem 1rem; margin-top: .65rem; color: var(--text); font-style: normal; }
+.ini-contribution address a { color: var(--accent); }
+.ini-contribution small { display: block; max-width: 68ch; margin-top: .65rem; color: var(--subtle); }
+.ini-contribution > div:last-child { display: flex; gap: .5rem; flex: 0 0 auto; }
 .ini-card-badges { display: flex; flex-wrap: wrap; gap: .45rem; }
 .ini-metadata { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; margin-block: .9rem; }
 .ini-metadata span, .ini-safety { padding: .65rem; border: 1px solid var(--line-soft); border-radius: 8px; color: var(--muted); font-size: .76rem; }
@@ -1088,4 +1138,6 @@
   .map-select-card { scroll-snap-align: start; }
   .requirements-columns, .ini-risk-grid, .ini-control-row, .ini-metadata { grid-template-columns: 1fr; }
   .boss-briefing header { display: block; }
+  .ini-contribution { align-items: stretch; flex-direction: column; }
+  .ini-contribution > div:last-child { flex-direction: column; }
 }

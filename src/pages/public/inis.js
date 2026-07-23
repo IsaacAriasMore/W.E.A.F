@@ -4,8 +4,10 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 import { getLanguage, t } from '../../i18n/index.js';
+import { OFFICIAL_DISCORD, SUPPORT_EMAIL } from '../../config/contact.js';
 
-const categories = ['all', 'general', 'fps', 'pvp', 'farming', 'breeding', 'visibility', 'clean', 'server', 'client'];
+const mainCategories = ['all', 'general', 'pvp', 'farming', 'breeding', 'visibility'];
+const advancedCategories = ['fps', 'clean', 'server', 'client'];
 const categoryLabel = (category) => t(`inis.categories.${category}`);
 const supportsGame = (preset, game) => ['both', game].includes(preset.game_availability || preset.game);
 const copy = (row, field) => row?.[`${field}_${getLanguage()}`] || row?.[`${field}_es`] || row?.[`${field}_en`] || row?.[field] || '';
@@ -25,7 +27,7 @@ function verificationLabel(status) {
 
 function presetCard(preset) {
   const game = preset.game_availability || preset.game;
-  return `<article class="ini-card" data-preset-card="${escapeHtml(preset.id)}">
+  return `<article class="ini-card premium-card-glow" data-preset-card="${escapeHtml(preset.id)}">
     <div class="ini-card-top"><span class="game-label">${game === 'both' ? 'ASE + ASA' : game === 'evolved' ? 'ASE' : 'ASA'}</span><span>${escapeHtml(preset.file_target || 'Engine.ini')}</span></div>
     <div><div class="ini-card-badges"><span>${categoryLabel(preset.category)}</span><span data-status="${escapeHtml(preset.verification_status || 'pending')}">${verificationLabel(preset.verification_status)}</span></div><h2>${escapeHtml(preset.title)}</h2><p>${escapeHtml(preset.description || copy(preset, 'description'))}</p></div>
     <pre aria-label="${escapeHtml(t('inis.preview', { title: preset.title }))}"><code>${escapeHtml(preset.content.split('\n').slice(0, 4).join('\n'))}</code></pre>
@@ -37,10 +39,13 @@ function presetCard(preset) {
 function filterControls(state) {
   return `<div class="ini-control-row">
     <div class="game-switch ini-game-switch" role="group" aria-label="${t('inis.chooseGame')}">
-      <button type="button" data-ini-game="evolved" aria-pressed="${state.game === 'evolved'}"><span>ASE</span>${t('bosses.evolved')}</button>
-      <button type="button" data-ini-game="ascended" aria-pressed="${state.game === 'ascended'}"><span>ASA</span>${t('bosses.ascended')}</button>
+      <button type="button" data-ini-game="evolved" aria-pressed="${state.game === 'evolved'}">${t('bosses.evolved')}</button>
+      <button type="button" data-ini-game="ascended" aria-pressed="${state.game === 'ascended'}">${t('bosses.ascended')}</button>
     </div>
-    <div class="filter-bar" role="group" aria-label="${t('inis.filters')}">${categories.map((value) => `<button class="filter-chip" type="button" data-category="${value}" aria-pressed="${state.category === value}">${categoryLabel(value)}</button>`).join('')}</div>
+    <div class="ini-category-controls">
+      <div class="filter-bar" role="group" aria-label="${t('inis.filters')}">${mainCategories.map((value) => `<button class="filter-chip" type="button" data-category="${value}" aria-pressed="${state.category === value}">${categoryLabel(value)}</button>`).join('')}</div>
+      <label class="ini-advanced-filter"><span>${t('inis.advanced')}</span><select data-advanced-category><option value="">${t('inis.moreCategories')}</option>${advancedCategories.map((value) => `<option value="${value}" ${state.category === value ? 'selected' : ''}>${categoryLabel(value)}</option>`).join('')}</select></label>
+    </div>
   </div>`;
 }
 
@@ -59,7 +64,7 @@ export function render() {
     <section class="tool-page ini-tool container" aria-label="${t('inis.aria')}">
       <aside class="ini-safety"><strong>${t('inis.warningTitle')}</strong><p>${t('inis.warningBody')}</p></aside>
       <div data-ini-controls>${filterControls(state)}</div>
-      <div class="tool-layout"><div data-ini-library></div>${createSponsoredServerSlot('inis_sidebar', { label: t('ads.plusServer'), variant: 'sidebar' })}</div>
+      <div class="tool-layout"><div><div data-ini-library></div><aside class="ini-contribution premium-panel-glow"><div><strong>${t('inis.contributeTitle')}</strong><p>${t('inis.contributeBody')}</p><address><a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a><span>${OFFICIAL_DISCORD}</span></address><small>${t('inis.reviewNotice')}</small></div><div><button class="button button-secondary button-small" type="button" data-copy-contact="${SUPPORT_EMAIL}">${t('inis.copyEmail')}</button><button class="button button-quiet button-small" type="button" data-copy-contact="${OFFICIAL_DISCORD}">${t('inis.copyDiscord')}</button></div></aside></div>${createSponsoredServerSlot('inis_sidebar', { label: t('ads.plusServer'), variant: 'sidebar' })}</div>
     </section>
     <dialog class="content-dialog ini-dialog" data-ini-dialog aria-labelledby="ini-dialog-title">
       <div class="dialog-header"><div><span data-dialog-category></span><h2 id="ini-dialog-title" data-dialog-title></h2></div><button class="dialog-close" type="button" data-dialog-close aria-label="${t('inis.close')}">×</button></div>
@@ -121,6 +126,17 @@ export function bind({ authService }) {
     if (game) { state.game = game; state.category = 'all'; draw(); return; }
     const category = event.target.closest('[data-category]')?.dataset.category;
     if (category) { state.category = category; draw(); }
+  }, { signal });
+
+  controls.addEventListener('change', (event) => {
+    const category = event.target.closest('[data-advanced-category]')?.value;
+    if (category) { state.category = category; draw(); }
+  }, { signal });
+
+  document.querySelector('.ini-tool')?.addEventListener('click', async (event) => {
+    const value = event.target.closest('[data-copy-contact]')?.dataset.copyContact;
+    if (!value) return;
+    try { await copyText(value); showToast(t('inis.contactCopied')); } catch { showToast(t('inis.copyError'), 'error'); }
   }, { signal });
 
   libraryRoot.addEventListener('click', (event) => {

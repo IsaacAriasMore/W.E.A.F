@@ -6,21 +6,22 @@ const tool = (href, code, title, body, link) => `<a class="home-tool interactive
 
 const faqKeys = ['1', '2', '3', '4', '5', '6'];
 
-export function render() {
+export function render({ state }) {
+  const primaryHref = state.session ? '/app' : '/register';
+  const primaryLabel = state.session ? t('common.myTribe') : t('home.hero.primary');
   return `<section class="hero home-hero" data-gsap-hero>
     <div class="hero-atmosphere" aria-hidden="true"></div>
     <div class="three-hero-layer" data-three-hero aria-hidden="true"><span class="three-hero-fallback-orb"></span></div>
     <div class="hero-inner container">
       <div class="hero-copy" data-gsap-hero-item>
         <p class="hero-kicker">${t('home.hero.eyebrow')}</p>
+        <div class="home-hero-brand" aria-label="Wild Evolution">
+          <img src="/assets/wild-evolution-emblem.png" width="112" height="112" alt="Wild Evolution emblem" loading="eager" fetchpriority="high" />
+          <span><strong>Wild</strong><strong>Evolution</strong><small>Ascension Forge</small></span>
+        </div>
         <h1>${t('home.hero.title')}</h1>
-        <p>${t('home.hero.subtitle')}</p>
-        <div class="hero-actions"><a class="button button-primary" href="/register" data-link>${t('home.hero.primary')}</a><a class="button button-secondary" href="/inis" data-link>${t('home.hero.secondary')}</a><a class="button button-quiet" href="/servers" data-link>${t('home.hero.servers')}</a></div>
+        <div class="hero-actions"><a class="button button-primary" href="${primaryHref}" data-link>${primaryLabel}</a><a class="button button-secondary" href="/inis" data-link>${t('home.hero.secondary')}</a><a class="button button-quiet" href="/servers" data-link>${t('home.hero.servers')}</a></div>
       </div>
-      <figure class="hero-visual" data-gsap-hero-item>
-        <img src="/assets/weaf-hero.webp" width="1536" height="1024" alt="${t('home.heroAlt')}" loading="eager" fetchpriority="high">
-        <figcaption><span>ASE + ASA</span><strong>${t('home.heroCaption')}</strong></figcaption>
-      </figure>
     </div>
     <a class="home-scroll-cue" href="#public-tools">${t('home.scroll')} <span aria-hidden="true">↓</span></a>
   </section>
@@ -37,7 +38,7 @@ export function render() {
 
   <section class="home-private home-section">
     <div class="container home-private-grid">
-      <div class="home-private-copy reveal-left"><h2>${t('home.private.title')}</h2><p>${t('home.private.body')}</p><a class="button button-primary" href="/register" data-link>${t('common.signUp')}</a></div>
+      <div class="home-private-copy reveal-left"><h2>${t('home.private.title')}</h2><p>${t('home.private.body')}</p><a class="button button-primary" href="${primaryHref}" data-link>${primaryLabel}</a></div>
       <div class="home-ledger reveal-right" aria-label="${t('home.private.title')}"><div><strong>${t('home.private.roles')}</strong><span>${t('home.private.rolesValue')}</span></div><div><strong>${t('home.private.breeds')}</strong><span>${t('home.private.breedsValue')}</span></div><div><strong>${t('home.private.discord')}</strong><span>${t('home.private.discordValue')}</span></div></div>
     </div>
   </section>
@@ -63,7 +64,7 @@ export function render() {
 
   <section class="home-section container home-faq"><div class="home-heading reveal-up"><h2>${t('home.faq.title')}</h2></div><div class="home-faq-list">${faqKeys.map((key) => `<details class="reveal-up"><summary>${t(`home.faq.q${key}`)}</summary><p>${t(`home.faq.a${key}`)}</p></details>`).join('')}</div></section>
 
-  <section class="home-final container reveal-scale"><h2>${t('home.final.title')}</h2><div><a class="button button-primary" href="/register" data-link>${t('home.hero.primary')}</a><a class="button button-secondary" href="/servers" data-link>${t('home.final.servers')}</a></div></section>`;
+  <section class="home-final container reveal-scale"><h2>${t('home.final.title')}</h2><div><a class="button button-primary" href="${primaryHref}" data-link>${primaryLabel}</a><a class="button button-secondary" href="/servers" data-link>${t('home.final.servers')}</a></div></section>`;
 }
 
 export function bind() {

@@ -19,8 +19,8 @@ test('home loads without errors and renders its primary actions', async ({ page 
 
 test('INI filters, preview and download work', async ({ page }) => {
   await page.goto('/inis');
-  await page.getByRole('button', { name: /ASA/ }).click();
-  await page.getByRole('button', { name: 'FPS' }).click();
+  await page.getByRole('button', { name: 'ARK: Survival Ascended' }).click();
+  await page.locator('[data-advanced-category]').selectOption('fps');
   await expect(page.locator('[data-preset-card]')).toHaveCount(1);
   await page.getByRole('button', { name: 'Ver INI' }).click();
   await expect(page.locator('[data-ini-dialog]')).toHaveJSProperty('open', true);
