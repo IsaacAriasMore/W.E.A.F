@@ -43,11 +43,14 @@ test('production example exposes only client-safe configuration', () => {
   assert.match(example, /VITE_SUPABASE_URL=https:\/\/vwxqewpvtucygbaethkv\.supabase\.co/);
   assert.match(example, /VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_/);
   assert.match(example, /VITE_BILLING_ENABLED=true/);
-  assert.match(example, /VITE_STRIPE_ENABLED=true/);
+  assert.match(example, /VITE_PAYPAL_ENABLED=true/);
+  assert.match(example, /VITE_PAYPAL_MODE=sandbox/);
   assert.match(example, /VITE_PUBLIC_SITE_URL=https:\/\/weaf\.vercel\.app/);
-  assert.match(example, /STRIPE_SECRET_KEY=sk_test_xxx/);
-  assert.match(example, /STRIPE_WEBHOOK_SECRET=whsec_xxx/);
+  assert.match(example, /PAYPAL_CLIENT_ID=/);
+  assert.match(example, /PAYPAL_CLIENT_SECRET=/);
+  assert.match(example, /PAYPAL_WEBHOOK_ID=/);
   assert.doesNotMatch(example, /sk_live_[A-Za-z0-9]/);
+  assert.doesNotMatch(example, /pk_live_[A-Za-z0-9]/);
 });
 
 test('sponsored placements avoid critical forms and checkout', () => {

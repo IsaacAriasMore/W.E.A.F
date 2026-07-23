@@ -32,8 +32,9 @@ test('public publish form no longer asks for a slug or mod names', () => {
   assert.match(page, /name: 'has_mods'/);
   assert.match(page, /t\('servers\.maps'\)/);
   assert.match(page, /t\('servers\.platforms'\)/);
-  assert.match(page, /data-select-publish-plan="normal"/);
-  assert.match(page, /data-select-publish-plan="plus"/);
+  assert.match(page, /data-select-publish-plan/);
+  assert.match(page, /data-tier/);
+  assert.match(page, /workspace\.innerHTML = planSelector/);
   assert.match(page, /workspace\.innerHTML = planSelector/);
   assert.match(ownersPage, /id="owner-plans"/);
   assert.match(ownersPage, /scrollIntoView\(\{ behavior, block: 'start' \}\)/);

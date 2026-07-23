@@ -16,7 +16,7 @@ const pages = {
     title: 'Política de privacidad',
     intro: 'Resumen preliminar de los datos que W.E.A.F trata y por qué.',
     sections: [
-      ['Datos tratados', 'Cuenta, perfil, membresías de tribu, preferencias, actividad funcional y aceptaciones legales. Los pagos son procesados por Stripe y los secretos se gestionan fuera del navegador.'],
+      ['Datos tratados', 'Cuenta, perfil, membresías de tribu, preferencias, actividad funcional y aceptaciones legales. Los pagos son procesados por PayPal y los secretos se gestionan fuera del navegador.'],
       ['Finalidad', 'Autenticar usuarios, aislar contenido por tribu, operar herramientas, prevenir abuso y mejorar estabilidad. No se venderán datos personales.'],
       ['Conservación y control', 'Las ventanas de conservación y el procedimiento formal de acceso o eliminación requieren revisión legal antes del lanzamiento comercial. Mientras tanto, las solicitudes se reciben por el canal de contacto.'],
       ['Seguridad', 'La arquitectura usa Row Level Security, privilegios mínimos, logs de auditoría y Edge Functions para operaciones con secretos.'],
@@ -46,8 +46,8 @@ const pages = {
     title: 'Política de reembolsos',
     intro: 'Base preliminar para las publicaciones pagadas de servidores.',
     sections: [
-      ['Estado actual', 'Stripe procesa las suscripciones cuando la facturación está habilitada. Estas condiciones aún requieren revisión profesional antes de considerarse definitivas.'],
-      ['Servicios digitales', 'Los planes mensuales se renuevan mediante Stripe hasta su cancelación. La jurisdicción, los plazos y las excepciones de reembolso requieren revisión legal final.'],
+      ['Estado actual', 'PayPal procesa las suscripciones cuando la facturación está habilitada. Estas condiciones aún requieren revisión profesional antes de considerarse definitivas.'],
+      ['Servicios digitales', 'Los planes mensuales se renuevan mediante PayPal hasta su cancelación. La jurisdicción, los plazos y las excepciones de reembolso requieren revisión legal final.'],
       ['Revisión manual', 'El administrador podrá evaluar reembolsos por cobro duplicado, fallo técnico o retiro justificado de una publicación.'],
     ],
   },
