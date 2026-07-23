@@ -1,4 +1,5 @@
 import { t } from '../../i18n/index.js';
+import { OFFICIAL_DISCORD, SUPPORT_EMAIL } from '../../config/contact.js';
 
 const pages = {
   '/terms': {
@@ -66,15 +67,15 @@ const pages = {
     sections: [
       ['Qué incluir', 'Envía la URL, el nombre del servidor o contenido, el motivo del reporte y cualquier evidencia relevante.'],
       ['Privacidad', 'No compartas contraseñas, tokens, webhooks ni datos personales innecesarios.'],
-      ['Contacto', 'Mientras el formulario moderado se implementa, escribe a jisaaccv053@gmail.com con el asunto Reporte W.E.A.F.'],
+      ['Contacto', `Mientras el formulario moderado se implementa, escribe a ${SUPPORT_EMAIL} con el asunto Reporte W.E.A.F.`],
     ],
   },
   '/contact': {
     title: 'Contacto',
     intro: 'Habla directamente con el creador de W.E.A.F.',
     sections: [
-      ['Correo', 'Para soporte, privacidad, reportes o colaboración: jisaaccv053@gmail.com.'],
-      ['Discord', 'Encuentra al creador como @whiskyzc_. No envíes secretos, contraseñas o webhooks por mensajes directos.'],
+      ['Correo', `Para soporte, privacidad, reportes o colaboración: ${SUPPORT_EMAIL}.`],
+      ['Discord', `Encuentra al creador como ${OFFICIAL_DISCORD}. No envíes secretos, contraseñas o webhooks por mensajes directos.`],
       ['Creador', 'W.E.A.F es creado y mantenido por Isaac Arias.'],
     ],
   },

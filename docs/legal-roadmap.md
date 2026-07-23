@@ -55,7 +55,9 @@ Las páginas actuales son borradores informativos. No constituyen asesoría lega
 
 ### Contacto y reportes
 
-- [ ] Correo o formulario dedicado.
+- [x] Correo dedicado publicado: `waefservice@outlook.com`.
+- [x] Canal Discord publicado: `@whiskyzc_`.
+- [ ] Formulario moderado y número interno de caso.
 - [ ] Plazo interno de respuesta.
 - [ ] Datos que no deben enviarse.
 - [ ] Flujo para seguridad, privacidad y contenido ilegal.

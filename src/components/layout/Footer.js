@@ -1,4 +1,5 @@
 import { t } from '../../i18n/index.js';
+import { OFFICIAL_DISCORD, SUPPORT_EMAIL, SUPPORT_MAILTO } from '../../config/contact.js';
 
 export function createFooter() {
   return `
@@ -6,8 +7,8 @@ export function createFooter() {
       <div class="footer-grid container">
         <div class="footer-brand">
           <a class="brand" href="/" data-link>
-            <img src="/assets/weaf-mark.svg" width="42" height="42" alt="" />
-            <span><strong>W.E.A.F</strong><small>Wild Evolution & Ascension Forge</small></span>
+            <img src="/assets/wild-evolution-emblem.png" width="48" height="48" alt="Wild Evolution emblem" />
+            <span><strong>Wild Evolution</strong><small>W.E.A.F · Ascension Forge</small></span>
           </a>
           <p data-i18n="footer.tagline">${t('footer.tagline')}</p>
         </div>
@@ -15,8 +16,8 @@ export function createFooter() {
           <div class="creator-avatar" aria-hidden="true">IA<span></span></div>
           <div>
             <strong>Isaac Arias</strong>
-            <span>@whiskyzc_</span>
-            <a href="mailto:jisaaccv053@gmail.com">jisaaccv053@gmail.com</a>
+            <span>${OFFICIAL_DISCORD}</span>
+            <a href="${SUPPORT_MAILTO}">${SUPPORT_EMAIL}</a>
           </div>
           <span class="creator-badge" data-i18n="footer.creator">${t('footer.creator')}</span>
         </div>
