@@ -1,8 +1,16 @@
 # Auditoría de contenido público - Fase 8
 
+> **Cierre de Fase 10:** Fase 10 implementada y desplegada. El contenido verificado inicial cubre The Island y 3 INIs editoriales. El resto del catálogo queda como trabajo editorial progresivo.
+
 > Actualización Fase 10 (22 de julio de 2026): la migración de Fase 10 carga 14 mapas, 20 bosses, 12 dificultades verificadas de The Island y 3 presets INI editoriales. El Admin ya permite editar estas entidades con campos estructurados. El resto de este documento conserva el corte histórico de Fase 8; el estado vigente está en `docs/phase-10-content-bosses-inis.md`.
 
 Fecha de corte: 22 de julio de 2026.
+
+## Corte operativo de Fase 11
+
+La consulta remota de cierre devolvió 14 mapas, 20 bosses, 12 requisitos de The Island y 3 INIs. En ese mismo corte hubo cero publicaciones de servidor, por lo que no existe una ficha `TEST` visible que pausar. Los cinco pagos históricos sin listing asociado y dos Customers quedan documentados como candidatos de QA en `phase-11-test-data-cleanup.md`; no se eliminaron.
+
+El trabajo editorial pendiente es completar bosses fuera de The Island, revalidar disponibilidad ASA a cada fecha de publicación, mantener Aquatica claramente clasificado, ampliar INIs verificadas, completar especies y conservar evidencia de licencia de imágenes.
 
 ## Resumen ejecutivo
 
@@ -52,7 +60,7 @@ Consulta de solo lectura realizada al proyecto `vwxqewpvtucygbaethkv`:
 - Listo: directorio, filtros, planes, formulario público, Stripe Checkout, portal y estados de confirmación.
 - Corregido: navegación, estados, errores, selector de planes y formularios prioritarios usan ES/EN.
 - Corregido en Admin: slug automático, checklists de mapas/plataformas, mods Sí/No, rates explicados y duración manual clara.
-- Riesgo: revisar las dos fichas activas remotas para confirmar propiedad, enlaces, licencia de banner y actualidad de rates/mapas.
+- Estado Fase 11: no hay fichas remotas. La primera publicación real debe revisar propiedad, enlaces, licencia de banner y actualidad de rates/mapas antes de activarse.
 
 ### Legal y footer
 

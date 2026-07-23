@@ -2,6 +2,14 @@
 
 Las páginas actuales son borradores informativos. No constituyen asesoría legal ni sustituyen la revisión de un profesional de la jurisdicción aplicable.
 
+## Puerta operativa de Fase 11
+
+- [ ] Obtener revisión profesional de términos, privacidad, cookies, reembolsos, política de servidores y contacto/reportes antes de producción comercial.
+- [ ] Verificar el disclaimer de independencia y no afiliación con ARK, Studio Wildcard y Snail Games.
+- [ ] Investigar disponibilidad y estrategia de marca W.E.A.F en los territorios relevantes.
+- [ ] Definir entidad responsable, jurisdicción, soporte y procedimiento de reembolso antes de Stripe live.
+- [ ] Mantener publicidad externa desactivada hasta completar revisión legal, consentimiento y proveedores.
+
 ## Checklist de revisión profesional
 
 ### Términos

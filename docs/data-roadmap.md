@@ -1,5 +1,7 @@
 # Roadmap de datos reales
 
+> **Cierre de Fase 10:** Fase 10 implementada y desplegada. El contenido verificado inicial cubre The Island y 3 INIs editoriales. El resto del catálogo queda como trabajo editorial progresivo.
+
 ## Avance de Fase 10
 
 - [x] Clasificar mapas ASE/ASA publicados al 22 de julio de 2026, incluidos Aquatica, Astraeos y Genesis: Part 1 Ascended.
@@ -10,6 +12,13 @@
 - [ ] Completar requisitos contrastados de los 16 bosses fuera de The Island.
 - [ ] Validar los tres presets en una matriz limpia de versión, plataforma y hardware antes de marcarlos `verified`.
 - [ ] Completar criaturas por juego y mapa; el catálogo actual sigue siendo parcial.
+
+## Corte de Fase 11
+
+- El remoto conserva 14 mapas, 20 bosses, 12 requisitos publicados de The Island y 3 INIs editoriales.
+- No se añadió contenido sin fuente ni se inventaron requisitos.
+- Prioridad editorial: bosses fuera de The Island, disponibilidad ASA vigente, clasificación de Aquatica, más INIs verificadas, especies completas y licencias de imágenes.
+- Cada alta debe conservar fuente, fecha de revisión y estado editorial; usar `draft` mientras falte verificación.
 
 
 Este documento es la lista operativa para sustituir el contenido local inicial por datos mantenibles en Supabase. No publicar una fila solo para llenar una pantalla.
@@ -62,7 +71,7 @@ Lista local que debe verificarse: The Island, Scorched Earth, Aberration, Extinc
 - [ ] Diferencias ASE/ASA verificadas.
 - [ ] Fuente y fecha por dificultad.
 
-Bloqueo actual: `boss_requirements` está vacío y el Admin aún no ofrece edición estructurada por dificultad. No presentar el fallback local como lista exhaustiva.
+Estado actual: The Island tiene 12 dificultades estructuradas y el Admin permite editarlas. Los requisitos de los bosses restantes siguen pendientes; no presentar esas fichas como exhaustivas.
 
 ## INIs públicas
 
@@ -75,7 +84,7 @@ Bloqueo actual: `boss_requirements` está vacío y el Admin aún no ofrece edici
 - [ ] Evitar promesas de rendimiento sin medición.
 - [ ] Añadir fecha de revisión y versión.
 
-Los seis presets locales son candidatos de revisión, no métricas ni recomendaciones definitivas.
+Los tres presets editoriales remotos son candidatos de validación, no métricas ni recomendaciones definitivas. Permanecen `experimental` o `pending` hasta probarlos en la matriz definida.
 
 ## Rates recomendados
 
