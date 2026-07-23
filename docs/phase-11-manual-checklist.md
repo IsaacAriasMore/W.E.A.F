@@ -1,5 +1,24 @@
 # Fase 11 - Checklist manual accionable
 
+## Perfil, navegación y tribus múltiples
+
+- [ ] A 360 px, abrir/cerrar el menú y probar Inicio, Perfil, Admin condicional, Mi tribu y Salir.
+- [ ] Confirmar que un usuario normal no ve Admin y que `/admin` lo redirige.
+- [ ] Editar nombre visible, Discord, avatar y juego; confirmar que email, rol y suspensión no cambian.
+- [ ] Crear una segunda tribu, cambiar entre ambas y confirmar que la primera conserva miembros y breeding.
+- [ ] Renombrar como owner; repetir como admin/member y confirmar rechazo.
+- [ ] Archivar escribiendo el nombre exacto y marcando la confirmación; comprobar que desaparece del selector.
+
+## Breeding, cuidadores y wipe
+
+- [ ] Crear línea con stats base y cuidador activo; probar también Sin asignar.
+- [ ] Confirmar que member puede ver y registrar mutación, pero no crear línea ni cambiar cuidador.
+- [ ] Probar 55→57 = 1 y 55→75 = 10.
+- [ ] Probar delta cero/negativo, delta 1 y delta impar sin confirmación.
+- [ ] Verificar actor, cuidador, totales por stat, total y último registro.
+- [ ] Reiniciar breeding como owner/admin; confirmar snapshot, stats actuales=base, acumulados vacíos y cooldowns cancelados.
+- [ ] Confirmar que una tribu distinta no puede leer líneas, mutaciones ni snapshots.
+
 ## Datos y Admin
 
 - [ ] Abrir Admin y confirmar que no hay listing `TEST`, Normal o Plus publicado por error.
@@ -16,6 +35,7 @@
 - [ ] Simular `invoice.payment_failed` y confirmar pausa.
 - [ ] Revisar entregas y reintentos del webhook en Stripe Dashboard.
 - [ ] Mantener Live mode desactivado.
+- [ ] Completar `docs/stripe-live-readiness.md`; no cambiar secrets ni flags Live durante esta fase.
 
 ## Seguridad, Auth y SMTP
 
@@ -41,5 +61,5 @@
 - [ ] Investigar disponibilidad de marca W.E.A.F y confirmar disclaimer de independencia.
 - [ ] Revisar licencia de banners y assets antes de publicar.
 - [ ] No publicar requisitos de bosses, mapas o INIs sin fuente y fecha.
-- [ ] Ejecutar `npm run check`, `npm run test:unit`, `npm run build` y `npm run test:e2e`.
+- [x] Ejecutar `npm run check`, `npm run test:unit`, `npm run build` y `npm run test:e2e` (77 archivos, 82 unitarias y 19 E2E; 22-07-2026).
 - [ ] Hacer push, esperar CI verde y repetir smoke de producción.

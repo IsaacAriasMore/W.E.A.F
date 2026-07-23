@@ -31,7 +31,8 @@ Consulta de solo lectura realizada al proyecto `vwxqewpvtucygbaethkv`:
 
 ### Home
 
-- Listo: propuesta de valor, jerarquía, FAQ, CTA, imagen hero prioritaria y disclaimer de independencia.
+- Listo: propuesta de valor, jerarquía, FAQ, CTA contextual, emblema original prioritario y disclaimer de independencia.
+- Fase 11: la fotografía principal fue retirada. El fondo Three.js es decorativo, diferido, opcional y tiene fallback CSS.
 - Corregido: FAQ y textos principales migrados a ES/EN; el escaparate vacío ya no simula servidores.
 - Falta: sustituir la imagen repetida de la sección de breeding cuando exista una segunda pieza original con procedencia documentada.
 
@@ -85,7 +86,8 @@ Consulta de solo lectura realizada al proyecto `vwxqewpvtucygbaethkv`:
 
 | Asset | Uso | Carga | Procedencia conocida | Acción |
 | --- | --- | --- | --- | --- |
-| `public/assets/weaf-hero.webp` | Hero y referencias visuales | Hero eager + `fetchpriority=high`; repeticiones lazy | Arte original generado para W.E.A.F según `DESIGN.md` | Conservar evidencia de generación y licencia interna |
+| `public/assets/weaf-hero.webp` | Referencia secundaria de breeding | lazy | Arte original generado para W.E.A.F según `DESIGN.md` | Conservar evidencia de generación y licencia interna |
+| `public/assets/wild-evolution-emblem.png` | Navbar, hero y footer | Hero eager + `fetchpriority=high`; navegación local | Emblema aportado para Wild Evolution | Registrar autor, fecha y derechos de uso |
 | `public/assets/creature-sheet.webp` | Biblioteca de criaturas | CSS por cards | Arte conceptual original del proyecto | Conservar evidencia de generación y licencia interna |
 | `public/assets/weaf-mark.svg` | Marca y navegación | Inline image local | Marca W.E.A.F | Registrar autor y fecha |
 | Banners de servidores | Contenido de usuarios | lazy | Declarada por cada propietario | Añadir confirmación de derechos y moderación |
@@ -98,7 +100,14 @@ Una entidad se considera lista cuando tiene fuente, fecha de revisión, compatib
 
 ## Cierre visual de Fase 8
 
-- Home mantiene una imagen prioritaria para LCP y añade Three.js como capa decorativa diferida; no se usan modelos ni assets oficiales de ARK.
+- Home prioriza el emblema propio para LCP y añade Three.js como capa decorativa diferida; no se usan modelos ni assets oficiales de ARK.
+
+## Actualización Fase 11
+
+- El correo público oficial es `waefservice@outlook.com`; Discord oficial: `@whiskyzc_`.
+- Los aportes de INIs se reciben como propuesta y requieren revisión antes de publicarse.
+- Los nombres completos ARK: Survival Evolved y ARK: Survival Ascended sustituyen abreviaturas redundantes en selectores principales.
+- El contenido ARK pendiente continúa siendo trabajo editorial; el pulido visual no cambia su nivel de verificación.
 - INIs, mapas, criaturas, servidores, planes, Auth y legal comparten jerarquía, estados de entrada y feedback de cards sin ocultar contenido cuando falla JavaScript.
 - Éxito/cancelación de Stripe y estados vacíos de tribu disponen de fallbacks visuales específicos mientras no existan `.lottie` finales licenciados.
 - Los skeletons tienen barrido ligero y se congelan con `prefers-reduced-motion`.

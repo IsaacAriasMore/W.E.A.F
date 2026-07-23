@@ -129,3 +129,13 @@ Los tres presets editoriales remotos son candidatos de validación, no métricas
 - [ ] Definir límites de rotación si el catálogo supera tres servidores Plus simultáneos.
 - [ ] Mantener `home_hero_secondary` desactivado hasta confirmar que Home no queda saturada.
 - [ ] No habilitar providers externos sin revisión legal, CMP, CSP y migración dedicada.
+
+## Datos privados incorporados en Fase 11
+
+- Stats base y actuales por línea, con compatibilidad para `target_stats` heredado.
+- Cuidador opcional validado contra miembros activos.
+- Registro estructurado de mutación: stat, anterior, nuevo, delta, conteo, actor, cuidador y ciclo.
+- Snapshot de reinicio por wipe, conservando líneas, especies y log histórico.
+- Archivo de tribu por soft delete; no se borran membresías ni breeding.
+
+Pendiente editorial y operativo: definir retención de snapshots y logs antes del lanzamiento comercial, y documentar el procedimiento de restauración asistida.

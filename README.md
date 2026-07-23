@@ -6,6 +6,8 @@
 
 > Fase 10 incorpora catálogos bilingües de mapas, bosses y presets INI alimentados por Supabase, checklist local por dificultad y un editor administrativo estructurado. Consulta [docs/phase-10-content-bosses-inis.md](docs/phase-10-content-bosses-inis.md).
 
+> **Fase 11:** pulido premium, perfil directo, navegación autenticada, tribus múltiples, cuidadores, mutaciones calculadas y herramientas seguras de rename/archive/reset. Consulta [docs/phase-11-premium-polish-and-tribe-tools.md](docs/phase-11-premium-polish-and-tribe-tools.md).
+
 Wild Evolution & Ascension Forge es una plataforma comunitaria independiente para jugadores y tribus de ARK: Survival Evolved y ARK: Survival Ascended.
 
 Las Fases 0 a 10 están implementadas y la Fase 11 de preparación operativa está iniciada. La experiencia incluye el sitio público, Supabase Auth, tribus multi-tenant, breeding privado, administración global, marketplace de servidores, ciclo de pagos Stripe, consentimiento granular, promociones internas Plus y una PWA instalable.
@@ -66,8 +68,10 @@ Antes de activar Auth en producción, registra la URL de `/onboarding` entre las
 - [Fase 8: privacidad, anuncios, PWA y checklist](docs/phase-8-pwa-ads-and-launch-checklist.md)
 - [Fase 9: anuncios internos Plus](docs/internal-ads.md)
 - [Fase 10: contenido ARK, bosses e INIs](docs/phase-10-content-bosses-inis.md)
+- [Fase 11: pulido premium y herramientas de tribu](docs/phase-11-premium-polish-and-tribe-tools.md)
 - [Fase 11: QA de producción](docs/phase-11-production-qa.md)
 - [Checklist manual de Fase 11](docs/phase-11-manual-checklist.md)
+- [Preparación para Stripe live](docs/stripe-live-readiness.md)
 - [Auditoría técnica y editorial vigente](docs/repository-audit.md)
 - [Autenticación y registro directo](docs/auth.md)
 - [Guía del centro de comando](docs/admin-guide.md)
