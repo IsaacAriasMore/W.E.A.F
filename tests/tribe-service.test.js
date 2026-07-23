@@ -53,3 +53,16 @@ test('invite creation sends the raw target only to the protected RPC', async () 
   assert.equal(call.params.p_invited_steam_id, null);
   assert.equal('token_hash' in call.params, false);
 });
+
+test('rename and archive use owner-scoped RPCs with explicit confirmation', async () => {
+  const calls = [];
+  const service = createTribeService({
+    async rpc(name, params) { calls.push({ name, params }); return { data: null, error: null }; },
+  });
+  await service.renameTribe('tribe-id', 'New Forge');
+  await service.archiveTribe('tribe-id', 'New Forge', true);
+  assert.deepEqual(calls, [
+    { name: 'rename_tribe', params: { p_tribe_id: 'tribe-id', p_name: 'New Forge' } },
+    { name: 'archive_tribe', params: { p_tribe_id: 'tribe-id', p_confirmation_name: 'New Forge', p_acknowledged: true } },
+  ]);
+});

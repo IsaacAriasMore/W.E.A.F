@@ -131,10 +131,13 @@
 
 .breed-stat-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-top: 1rem;
 }
+
+.caretaker-badge { display: inline-flex; width: fit-content; margin-top: .55rem; padding: .24rem .48rem; border-radius: 999px; background: color-mix(in oklch, var(--primary) 12%, var(--surface)); color: var(--primary); font-size: .66rem; font-weight: 800; }
+.caretaker-badge.is-empty { background: var(--surface); color: var(--subtle); }
 
 .breed-stat-columns > div > strong {
   color: var(--subtle);
@@ -313,6 +316,22 @@
 
 .breed-dialog-form > div > p:last-child {
   margin-top: 0.55rem;
+}
+
+.mutation-value-grid { display: grid; grid-template-columns: 1fr .65fr .65fr; gap: .7rem; }
+.mutation-calculation { display: grid; gap: .3rem; padding: .9rem; border-radius: var(--radius-control); background: color-mix(in oklch, var(--primary) 8%, var(--surface)); outline: 1px solid color-mix(in oklch, var(--primary) 28%, var(--line)); }
+.mutation-calculation span { color: var(--muted); font-size: .74rem; }
+.mutation-summary { display: flex; gap: .6rem; flex-wrap: wrap; margin-block: 1rem; }
+.mutation-summary > div { display: grid; min-width: 7rem; gap: .15rem; padding: .7rem .85rem; border: 1px solid var(--line-soft); border-radius: 8px; background: var(--surface); }
+.mutation-summary span { color: var(--subtle); font-size: .64rem; text-transform: uppercase; }
+.mutation-summary strong { color: var(--ink); font-size: 1.15rem; }
+.mutation-delta > strong { color: var(--ink); }
+.mutation-delta > span { color: var(--primary); }
+.mutation-actors { color: var(--subtle); }
+
+@media (max-width: 700px) {
+  .breed-stat-columns,
+  .mutation-value-grid { grid-template-columns: 1fr; }
 }
 
 .dialog-close-form {

@@ -11,6 +11,13 @@ const breedErrors = {
   invalid_notes: 'Las notas superan el límite permitido.',
   breed_not_found: 'La línea de breeding no existe en esta tribu.',
   species_not_available: 'Esa especie no está disponible para el juego de la tribu.',
+  caretaker_not_member: 'El cuidador debe ser un miembro activo de esta tribu.',
+  current_stat_missing: 'La línea no tiene un valor actual para ese stat.',
+  mutation_not_improved: 'El nuevo valor debe ser mayor que el valor actual.',
+  mutation_delta_too_small: 'La mejora debe ser de al menos 2 puntos.',
+  odd_mutation_requires_confirmation: 'La diferencia es impar. Confirma que deseas redondear el conteo hacia abajo.',
+  invalid_stat: 'Selecciona un stat válido.',
+  invalid_reset_reason: 'Explica el motivo del reinicio en al menos 3 caracteres.',
   invalid_discord_webhook: 'La URL no corresponde con un webhook válido de Discord.',
   webhook_not_configured: 'La tribu todavía no tiene un webhook activo.',
   discord_rate_limit: 'Se alcanzó el límite temporal de avisos a Discord.',
@@ -50,7 +57,7 @@ export function createBreedService(client) {
       if (!client) return unavailable;
       const { data, error } = await client
         .from('breeds')
-        .select('id, tribe_id, title, status, target_stats, current_mutations, notes, created_at, updated_at, species:species!inner(id, name, slug, image_url, category, vanilla_mating_cooldown_hours)')
+        .select('id, tribe_id, title, status, target_stats, base_stats, current_stats, current_mutations, caretaker_user_id, caretaker_display_name, breeding_cycle, notes, created_at, updated_at, species:species!inner(id, name, slug, image_url, category, vanilla_mating_cooldown_hours)')
         .eq('tribe_id', tribeId)
         .order('updated_at', { ascending: false });
       return { data: data || [], error: friendly(error, 'No pudimos cargar las líneas de breeding.') };
@@ -60,7 +67,7 @@ export function createBreedService(client) {
       if (!client) return unavailable;
       const { data, error } = await client
         .from('mutations')
-        .select('id, tribe_id, stats, notes, created_at, breed:breeds!inner(id, title), species:species!inner(id, name, slug)')
+        .select('id, tribe_id, stats, stat_key, previous_value, new_value, delta, mutation_count, registered_by, registered_by_display_name, line_owner_user_id, line_owner_display_name, breeding_cycle, notes, created_at, breed:breeds!inner(id, title), species:species!inner(id, name, slug)')
         .eq('tribe_id', tribeId)
         .order('created_at', { ascending: false })
         .limit(60);
@@ -79,14 +86,14 @@ export function createBreedService(client) {
       return { data: data || [], error: friendly(error, 'No pudimos cargar los cooldowns.') };
     },
 
-    async createBreed({ tribeId, speciesId, title, targetStats, notes }) {
+    async createBreed({ tribeId, speciesId, title, baseStats, caretakerUserId, notes }) {
       if (!client) return unavailable;
-      const { data, error } = await client.rpc('create_breed', {
+      const { data, error } = await client.rpc('create_breed_v2', {
         p_tribe_id: tribeId,
         p_species_id: speciesId,
         p_title: title,
-        p_target_stats: targetStats,
-        p_current_mutations: {},
+        p_base_stats: baseStats,
+        p_caretaker_user_id: caretakerUserId || null,
         p_notes: notes || null,
       });
       return { data, error: friendly(error) };
@@ -117,6 +124,37 @@ export function createBreedService(client) {
         p_breed_id: breedId,
         p_stats: stats,
         p_notes: notes || null,
+      });
+      return { data, error: friendly(error) };
+    },
+
+    async registerStatMutation({ tribeId, breedId, statKey, newValue, notes, allowOdd = false }) {
+      if (!client) return unavailable;
+      const { data, error } = await client.rpc('register_breed_stat_mutation', {
+        p_tribe_id: tribeId,
+        p_breed_id: breedId,
+        p_stat_key: statKey,
+        p_new_value: Number(newValue),
+        p_notes: notes || null,
+        p_allow_odd: allowOdd,
+      });
+      return { data, error: friendly(error) };
+    },
+
+    async setCaretaker(breedId, caretakerUserId) {
+      if (!client) return unavailable;
+      const { error } = await client.rpc('set_breed_caretaker', {
+        p_breed_id: breedId,
+        p_caretaker_user_id: caretakerUserId || null,
+      });
+      return { error: friendly(error) };
+    },
+
+    async resetTribeBreeding(tribeId, reason) {
+      if (!client) return unavailable;
+      const { data, error } = await client.rpc('reset_tribe_breeding', {
+        p_tribe_id: tribeId,
+        p_reason: reason,
       });
       return { data, error: friendly(error) };
     },

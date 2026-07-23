@@ -1,5 +1,6 @@
 import { createAppNavigation } from '../../components/layout/AppNavigation.js';
 import { createBreedService } from '../../services/breedService.js';
+import { createTribeService } from '../../services/tribeService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { formatDateTime, formatRelativeTime } from '../../utils/dates.js';
 import { showToast } from '../../utils/feedback.js';
@@ -7,6 +8,7 @@ import { mountLottieMotion } from '../../components/visuals/LottieMotion.js';
 import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { resolvePrivateWorkspace, tribePath } from './privateWorkspace.js';
+import { calculateMutationCount } from '../../utils/mutationCalculator.js';
 
 const statLabels = {
   health: 'Vida',
@@ -70,10 +72,16 @@ function mutationDialog(breeds) {
       <form method="dialog" class="dialog-close-form"><button type="submit" aria-label="Cerrar">×</button></form>
       <form class="breed-dialog-form" data-mutation-form novalidate>
         <div><p class="section-kicker">Nuevo registro</p><h2>Registrar mutación</h2><p>El cooldown se calcula al guardar.</p></div>
-        <label><span>Línea de breeding</span><select name="breedId" required>
+        <label><span>Línea de breeding</span><select name="breedId" data-mutation-breed required>
           ${breeds.map((breed) => `<option value="${breed.id}">${escapeHtml(breed.species.name)} · ${escapeHtml(breed.title)}</option>`).join('')}
         </select></label>
-        <fieldset class="stat-entry-grid"><legend>Incrementos observados</legend>${statsInputs('mutation-')}</fieldset>
+        <div class="mutation-value-grid">
+          <label><span>Stat mejorado</span><select name="statKey" data-mutation-stat required>${Object.entries(statLabels).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}</select></label>
+          <label><span>Valor actual</span><input name="previousValue" data-mutation-previous type="number" readonly aria-readonly="true" /></label>
+          <label><span>Nuevo valor</span><input name="newValue" data-mutation-new type="number" min="0" max="10000" step="1" required inputmode="numeric" /></label>
+        </div>
+        <div class="mutation-calculation" data-mutation-calculation><strong>Selecciona una línea y actualiza el stat.</strong><span>El conteo usa Δ ÷ 2, redondeado hacia abajo.</span></div>
+        <label class="confirmation-check" data-odd-confirmation hidden><input name="allowOdd" type="checkbox" /><span>La diferencia es impar. Confirmo que el conteo se redondee hacia abajo.</span></label>
         <label><span>Notas <small>Opcional</small></span><textarea name="notes" maxlength="2000" rows="3"></textarea></label>
         <p class="form-status" data-form-status role="alert" hidden></p>
         <button class="button button-primary" type="submit">Guardar mutación</button>
@@ -82,17 +90,43 @@ function mutationDialog(breeds) {
   `;
 }
 
-function breedCard(breed, canManage) {
+function updateMutationCalculation(form, breeds, resetNewValue = false) {
+  if (!form) return null;
+  const breed = breeds.find((item) => item.id === form.elements.breedId.value);
+  const statKey = form.elements.statKey.value;
+  const currentStats = breed?.current_stats || breed?.base_stats || breed?.target_stats || {};
+  const previousValue = currentStats[statKey];
+  form.elements.previousValue.value = previousValue ?? '';
+  if (resetNewValue) form.elements.newValue.value = previousValue ?? '';
+  form.elements.newValue.min = previousValue === undefined ? '0' : String(Number(previousValue) + 2);
+  const result = calculateMutationCount(previousValue, form.elements.newValue.value);
+  const output = form.querySelector('[data-mutation-calculation]');
+  const odd = form.querySelector('[data-odd-confirmation]');
+  odd.hidden = !result.valid || !result.isOdd;
+  odd.querySelector('input').required = Boolean(result.valid && result.isOdd);
+  if (!result.valid) {
+    const message = result.error === 'not_improved' ? 'El nuevo valor debe superar al actual.'
+      : result.error === 'delta_too_small' ? 'La mejora mínima es de 2 puntos.'
+        : 'Completa valores enteros para calcular el cambio.';
+    output.innerHTML = `<strong>${message}</strong><span>Base/actual: ${escapeHtml(previousValue ?? 'sin definir')}</span>`;
+    return result;
+  }
+  output.innerHTML = `<strong>${result.previous} → ${result.next} = ${result.mutationCount} mutación${result.mutationCount === 1 ? '' : 'es'}</strong><span>Δ ${result.delta}${result.isOdd ? ' · diferencia impar, se redondeará hacia abajo' : ''}</span>`;
+  return result;
+}
+
+function breedCard(breed, canManage, members) {
   return `
     <article class="breed-row stagger-item interactive-card" data-breed-id="${breed.id}">
       <div class="breed-species-mark" aria-hidden="true">${escapeHtml(breed.species.name).slice(0, 2).toUpperCase()}</div>
       <div class="breed-row-main">
         <div class="breed-row-heading">
-          <div><small>${escapeHtml(breed.species.category)}</small><h2>${escapeHtml(breed.title)}</h2><p>${escapeHtml(breed.species.name)}</p></div>
+          <div><small>${escapeHtml(breed.species.category)}</small><h2>${escapeHtml(breed.species.name)}</h2><p>${escapeHtml(breed.title)}</p>${breed.caretaker_display_name ? `<span class="caretaker-badge">Cuidador · ${escapeHtml(breed.caretaker_display_name)}</span>` : '<span class="caretaker-badge is-empty">Sin cuidador</span>'}</div>
           <span class="breed-status status-${breed.status}">${statusLabels[breed.status]}</span>
         </div>
         <div class="breed-stat-columns">
-          <div><strong>Objetivo</strong><div class="compact-stats">${statsObject(breed.target_stats)}</div></div>
+          <div><strong>Base</strong><div class="compact-stats">${statsObject(breed.base_stats || breed.target_stats)}</div></div>
+          <div><strong>Actual</strong><div class="compact-stats">${statsObject(breed.current_stats || breed.target_stats)}</div></div>
           <div><strong>Mutaciones</strong><div class="compact-stats">${statsObject(breed.current_mutations)}</div></div>
         </div>
         ${breed.notes ? `<p class="breed-notes">${escapeHtml(breed.notes)}</p>` : ''}
@@ -100,6 +134,7 @@ function breedCard(breed, canManage) {
       <div class="breed-row-actions">
         <button class="button button-secondary button-small" type="button" data-open-mutation="${breed.id}">Registrar mutación</button>
         ${canManage ? `
+          <label><span class="sr-only">Cuidador de ${escapeHtml(breed.title)}</span><select data-breed-caretaker><option value="">Sin cuidador</option>${members.map((member) => `<option value="${member.user_id}" ${breed.caretaker_user_id === member.user_id ? 'selected' : ''}>${escapeHtml(member.display_name || member.character_name)}</option>`).join('')}</select></label>
           <label><span class="sr-only">Estado de ${escapeHtml(breed.title)}</span><select data-breed-status>
             ${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}" ${breed.status === value ? 'selected' : ''}>${label}</option>`).join('')}
           </select></label>
@@ -110,7 +145,7 @@ function breedCard(breed, canManage) {
   `;
 }
 
-function breedsView({ activeMembership, species, breeds }) {
+function breedsView({ activeMembership, species, breeds, members }) {
   const canManage = ['owner', 'admin'].includes(activeMembership.role);
   return `
     <div class="breeding-layout reveal-up">
@@ -120,7 +155,7 @@ function breedsView({ activeMembership, species, breeds }) {
         </div>
         <div class="breed-list stagger-group">
           ${breeds.length
-            ? breeds.map((breed) => breedCard(breed, canManage)).join('')
+            ? breeds.map((breed) => breedCard(breed, canManage, members)).join('')
             : '<div class="breeding-empty premium-panel"><div data-breeding-empty-lottie aria-hidden="true"></div><h2>Define la primera línea</h2><p>Selecciona una especie, fija los stats objetivo y empieza a registrar mutaciones.</p></div>'}
         </div>
       </section>
@@ -132,7 +167,8 @@ function breedsView({ activeMembership, species, breeds }) {
               ${species.map((item) => `<option value="${item.id}">${escapeHtml(item.name)} · ${item.game_availability === 'both' ? 'ASE + ASA' : item.game_availability.toUpperCase()}</option>`).join('')}
             </select></label>
             <label><span>Nombre de la línea</span><input name="title" required minlength="2" maxlength="120" placeholder="Ej. Boss Rex · Vida/Melee" /></label>
-            <fieldset class="stat-entry-grid"><legend>Stats objetivo</legend>${statsInputs('target-')}</fieldset>
+            <fieldset class="stat-entry-grid"><legend>Stats base actuales</legend>${statsInputs('base-')}</fieldset>
+            <label><span>Cuidador <small>Opcional</small></span><select name="caretakerUserId"><option value="">Sin asignar</option>${members.map((member) => `<option value="${member.user_id}">${escapeHtml(member.display_name || member.character_name)}</option>`).join('')}</select></label>
             <label><span>Notas <small>Opcional</small></span><textarea name="notes" maxlength="5000" rows="4"></textarea></label>
             <p class="form-status" data-form-status role="alert" hidden></p>
             <button class="button button-primary" type="submit" ${species.length ? '' : 'disabled'}>Crear línea</button>
@@ -148,6 +184,18 @@ function mutationsView({ activeMembership, breeds, mutations, alerts, settings }
   const canManage = ['owner', 'admin'].includes(activeMembership.role);
   const webhookReady = settings.webhook?.configured && settings.webhook?.enabled;
   const now = Date.now();
+  const totals = mutations.reduce((summary, mutation) => {
+    if (mutation.stat_key && mutation.mutation_count) {
+      summary.total += Number(mutation.mutation_count);
+      summary.byStat[mutation.stat_key] = (summary.byStat[mutation.stat_key] || 0) + Number(mutation.mutation_count);
+    } else {
+      Object.entries(mutation.stats || {}).forEach(([key, value]) => {
+        summary.total += Number(value) || 0;
+        summary.byStat[key] = (summary.byStat[key] || 0) + (Number(value) || 0);
+      });
+    }
+    return summary;
+  }, { total: 0, byStat: {} });
   return `
     <div class="mutation-layout reveal-up">
       <section class="mutation-log">
@@ -155,11 +203,12 @@ function mutationsView({ activeMembership, breeds, mutations, alerts, settings }
           <div><h2>Actividad genética</h2><p>Cada registro actualiza el acumulado de su línea.</p></div>
           <button class="button button-primary button-small" type="button" data-open-mutation ${breeds.length ? '' : 'disabled'}>Registrar mutación</button>
         </div>
+        <div class="mutation-summary"><div><span>Mutaciones totales</span><strong>${totals.total}</strong></div>${Object.entries(totals.byStat).map(([key, value]) => `<div><span>${statLabels[key] || escapeHtml(key)}</span><strong>${value}</strong></div>`).join('')}</div>
         <div class="mutation-timeline stagger-group">
           ${mutations.length ? mutations.map((mutation) => `
             <article class="stagger-item">
               <time datetime="${mutation.created_at}">${formatRelativeTime(mutation.created_at)}</time>
-              <div><small>${escapeHtml(mutation.species.name)}</small><h3>${escapeHtml(mutation.breed.title)}</h3><div class="compact-stats">${statsObject(mutation.stats)}</div>${mutation.notes ? `<p>${escapeHtml(mutation.notes)}</p>` : ''}</div>
+              <div><small>${escapeHtml(mutation.species.name)} · ciclo ${mutation.breeding_cycle || 1}</small><h3>${escapeHtml(mutation.breed.title)}</h3>${mutation.stat_key ? `<p class="mutation-delta"><strong>${statLabels[mutation.stat_key]}</strong> ${mutation.previous_value} → ${mutation.new_value} <span>Δ ${mutation.delta} · ${mutation.mutation_count} mut.</span></p>` : `<div class="compact-stats">${statsObject(mutation.stats)}</div>`}<p class="mutation-actors">Registró: <strong>${escapeHtml(mutation.registered_by_display_name || 'Registro heredado')}</strong>${mutation.line_owner_display_name ? ` · Cuidador: <strong>${escapeHtml(mutation.line_owner_display_name)}</strong>` : ''}</p>${mutation.notes ? `<p>${escapeHtml(mutation.notes)}</p>` : ''}</div>
               ${webhookReady ? `<button class="text-button" type="button" data-notify-discord data-event="mutation_created" data-entity="${mutation.id}">Enviar a Discord</button>` : ''}
             </article>
           `).join('') : '<div class="breeding-empty premium-panel"><div data-breeding-empty-lottie aria-hidden="true"></div><h2>Sin mutaciones todavía</h2><p>El primer registro aparecerá aquí con su cooldown calculado.</p></div>'}
@@ -190,9 +239,10 @@ export function render({ state }) {
 export function bind({ path, state, authService, navigate }) {
   const view = document.querySelector('[data-breeding-view]');
   const service = createBreedService(authService.getClient());
+  const tribeService = createTribeService(authService.getClient());
   const mode = path.endsWith('/mutations') ? 'mutations' : 'breeds';
   let workspace;
-  let data = { species: [], breeds: [], mutations: [], alerts: [], settings: {} };
+  let data = { species: [], breeds: [], mutations: [], alerts: [], members: [], settings: {} };
   let cleanupViewMotion = () => {};
 
   function refreshViewMotion() {
@@ -219,24 +269,25 @@ export function bind({ path, state, authService, navigate }) {
     }
     if (workspace.empty) { navigate('/app'); return; }
     const tribeId = workspace.activeMembership.tribe_id;
-    const [settings, species, breeds, mutations, alerts] = await Promise.all([
+    const [settings, species, breeds, mutations, alerts, members] = await Promise.all([
       service.getSettings(tribeId),
       service.listSpecies(workspace.activeMembership.tribe.game_mode),
       service.listBreeds(tribeId),
       service.listMutations(tribeId),
       service.listAlerts(tribeId),
+      tribeService.getMembers(tribeId),
     ]);
-    const error = settings.error || species.error || breeds.error || mutations.error || alerts.error;
+    const error = settings.error || species.error || breeds.error || mutations.error || alerts.error || members.error;
     if (error) {
       view.innerHTML = `<section class="app-error"><h1>No pudimos sincronizar breeding.</h1><p>${escapeHtml(error)}</p><button class="button button-primary" data-retry-breeding>Reintentar</button></section>`;
       return;
     }
-    data = { settings: settings.data, species: species.data, breeds: breeds.data, mutations: mutations.data, alerts: alerts.data };
+    data = { settings: settings.data, species: species.data, breeds: breeds.data, mutations: mutations.data, alerts: alerts.data, members: members.data };
     view.innerHTML = `
       <section class="breeding-workspace">
         ${workspaceHeader({ ...workspace, mode })}
         ${mode === 'breeds'
-          ? breedsView({ activeMembership: workspace.activeMembership, species: data.species, breeds: data.breeds })
+          ? breedsView({ activeMembership: workspace.activeMembership, species: data.species, breeds: data.breeds, members: data.members })
           : mutationsView({ activeMembership: workspace.activeMembership, ...data })}
       </section>
       ${mutationDialog(data.breeds)}
@@ -254,10 +305,12 @@ export function bind({ path, state, authService, navigate }) {
     const tribeId = workspace.activeMembership.tribe_id;
 
     if (form.matches('[data-create-breed-form]')) {
+      const baseStats = readStats(values, 'base-');
+      if (!Object.keys(baseStats).length) { setFormStatus(form, 'Registra al menos un stat base para la línea.'); return; }
       setSubmitting(form, true, 'Crear línea');
       const result = await service.createBreed({
         tribeId, speciesId: values.get('speciesId'), title: values.get('title').trim(),
-        targetStats: readStats(values, 'target-'), notes: values.get('notes').trim(),
+        baseStats, caretakerUserId: values.get('caretakerUserId'), notes: values.get('notes').trim(),
       });
       if (result.error) { setFormStatus(form, result.error); setSubmitting(form, false, 'Crear línea'); return; }
       showToast('Línea de breeding creada.');
@@ -265,10 +318,13 @@ export function bind({ path, state, authService, navigate }) {
     }
 
     if (form.matches('[data-mutation-form]')) {
+      const calculation = updateMutationCalculation(form, data.breeds);
+      if (!calculation?.valid) { setFormStatus(form, 'Revisa el valor nuevo antes de guardar.'); return; }
+      if (calculation.isOdd && !values.get('allowOdd')) { setFormStatus(form, 'Confirma el redondeo de la diferencia impar.'); return; }
       setSubmitting(form, true, 'Guardar mutación');
-      const result = await service.registerMutation({
-        tribeId, breedId: values.get('breedId'), stats: readStats(values, 'mutation-'),
-        notes: values.get('notes').trim(),
+      const result = await service.registerStatMutation({
+        tribeId, breedId: values.get('breedId'), statKey: values.get('statKey'), newValue: values.get('newValue'),
+        notes: values.get('notes').trim(), allowOdd: values.get('allowOdd') === 'on',
       });
       if (result.error) { setFormStatus(form, result.error); setSubmitting(form, false, 'Guardar mutación'); return; }
       form.closest('dialog').close();
@@ -285,6 +341,22 @@ export function bind({ path, state, authService, navigate }) {
   const onChange = async (event) => {
     if (event.target.matches('[data-workspace-tribe]')) {
       navigate(tribePath(path, event.target.value));
+      return;
+    }
+    if (event.target.matches('[data-mutation-breed], [data-mutation-stat]')) {
+      updateMutationCalculation(event.target.form, data.breeds, true);
+      return;
+    }
+    if (event.target.matches('[data-mutation-new]')) {
+      updateMutationCalculation(event.target.form, data.breeds);
+      return;
+    }
+    if (event.target.matches('[data-breed-caretaker]')) {
+      const row = event.target.closest('[data-breed-id]');
+      const result = await service.setCaretaker(row.dataset.breedId, event.target.value);
+      if (result.error) { showToast(result.error, 'error'); await load(); return; }
+      showToast('Cuidador de la línea actualizado.');
+      await load();
       return;
     }
     if (event.target.matches('[data-breed-status]')) {
@@ -310,6 +382,7 @@ export function bind({ path, state, authService, navigate }) {
     if (open) {
       const dialog = document.querySelector('[data-mutation-dialog]');
       if (open.dataset.openMutation) dialog.querySelector('[name="breedId"]').value = open.dataset.openMutation;
+      updateMutationCalculation(dialog.querySelector('[data-mutation-form]'), data.breeds, true);
       dialog.showModal();
       return;
     }
@@ -345,12 +418,14 @@ export function bind({ path, state, authService, navigate }) {
 
   view.addEventListener('submit', onSubmit);
   view.addEventListener('change', onChange);
+  view.addEventListener('input', onChange);
   view.addEventListener('click', onClick);
   load();
   return () => {
     cleanupViewMotion();
     view.removeEventListener('submit', onSubmit);
     view.removeEventListener('change', onChange);
+    view.removeEventListener('input', onChange);
     view.removeEventListener('click', onClick);
   };
 }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createBreedService } from '../src/services/breedService.js';
 
-test('breed creation is scoped to a tribe and starts with empty mutations', async () => {
+test('breed creation is scoped to a tribe with base stats and caretaker', async () => {
   let call;
   const service = createBreedService({
     async rpc(name, params) {
@@ -15,20 +15,38 @@ test('breed creation is scoped to a tribe and starts with empty mutations', asyn
     tribeId: 'tribe-id',
     speciesId: 'species-id',
     title: 'Rex health line',
-    targetStats: { health: 50 },
+    baseStats: { health: 50 },
+    caretakerUserId: 'member-id',
     notes: 'Prioridad de la tribu',
   });
 
   assert.equal(result.data, 'breed-id');
   assert.deepEqual(call, {
-    name: 'create_breed',
+    name: 'create_breed_v2',
     params: {
       p_tribe_id: 'tribe-id',
       p_species_id: 'species-id',
       p_title: 'Rex health line',
-      p_target_stats: { health: 50 },
-      p_current_mutations: {},
+      p_base_stats: { health: 50 },
+      p_caretaker_user_id: 'member-id',
       p_notes: 'Prioridad de la tribu',
+    },
+  });
+});
+
+test('stat mutation registration sends the improved value and odd confirmation', async () => {
+  let call;
+  const service = createBreedService({
+    async rpc(name, params) { call = { name, params }; return { data: { mutation_count: 3 }, error: null }; },
+  });
+  await service.registerStatMutation({
+    tribeId: 'tribe-id', breedId: 'breed-id', statKey: 'health', newValue: '61', notes: 'new baby', allowOdd: true,
+  });
+  assert.deepEqual(call, {
+    name: 'register_breed_stat_mutation',
+    params: {
+      p_tribe_id: 'tribe-id', p_breed_id: 'breed-id', p_stat_key: 'health', p_new_value: 61,
+      p_notes: 'new baby', p_allow_odd: true,
     },
   });
 });

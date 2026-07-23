@@ -1,6 +1,6 @@
 const tribeErrors = {
   authentication_required: 'Tu sesión ya no es válida. Vuelve a ingresar.',
-  invalid_tribe_name: 'El nombre de la tribu debe tener entre 2 y 80 caracteres.',
+  invalid_tribe_name: 'El nombre de la tribu debe tener entre 2 y 60 caracteres.',
   invalid_character_name: 'El nombre del personaje debe tener entre 2 y 80 caracteres.',
   invalid_steam_id: 'El Steam ID no tiene un formato válido.',
   invalid_propagator_cooldown: 'El cooldown debe estar entre 0.25 y 720 horas.',
@@ -19,6 +19,7 @@ const tribeErrors = {
   member_not_found_or_protected: 'Ese miembro no existe o está protegido.',
   not_authorized_or_protected_member: 'No puedes expulsar a ese miembro.',
   owner_cannot_leave_or_membership_missing: 'El propietario no puede abandonar la tribu.',
+  archive_confirmation_mismatch: 'Escribe exactamente el nombre de la tribu y confirma la advertencia.',
 };
 
 function friendlyError(error, fallback = 'No pudimos completar la acción. Inténtalo de nuevo.') {
@@ -125,6 +126,22 @@ export function createTribeService(client) {
     async leaveTribe(tribeId) {
       if (!client) return unavailable;
       const { error } = await client.rpc('leave_tribe', { p_tribe_id: tribeId });
+      return { error: friendlyError(error) };
+    },
+
+    async renameTribe(tribeId, name) {
+      if (!client) return unavailable;
+      const { data, error } = await client.rpc('rename_tribe', { p_tribe_id: tribeId, p_name: name });
+      return { data, error: friendlyError(error) };
+    },
+
+    async archiveTribe(tribeId, confirmationName, acknowledged) {
+      if (!client) return unavailable;
+      const { error } = await client.rpc('archive_tribe', {
+        p_tribe_id: tribeId,
+        p_confirmation_name: confirmationName,
+        p_acknowledged: acknowledged,
+      });
       return { error: friendlyError(error) };
     },
   };

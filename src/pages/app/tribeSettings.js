@@ -1,5 +1,6 @@
 import { createAppNavigation } from '../../components/layout/AppNavigation.js';
 import { createBreedService } from '../../services/breedService.js';
+import { createTribeService } from '../../services/tribeService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { formatDateTime } from '../../utils/dates.js';
 import { showToast } from '../../utils/feedback.js';
@@ -15,6 +16,7 @@ function settingsView({ workspace, settings }) {
   const membership = workspace.activeMembership;
   const tribe = membership.tribe;
   const owner = membership.role === 'owner';
+  const canReset = ['owner', 'admin'].includes(membership.role);
   const webhook = settings.webhook || {};
   return `
     <section class="tribe-settings-workspace">
@@ -77,7 +79,17 @@ function settingsView({ workspace, settings }) {
             <div><dt>Envíos</dt><dd>Autenticados, limitados y registrados desde una Edge Function.</dd></div>
           </dl>
         </section>
+        ${canReset ? `<section class="settings-section settings-danger stagger-item">
+          <div class="settings-section-copy"><span>04</span><h2>Nuevo wipe</h2><p>Conserva especies y líneas, crea un snapshot y reinicia stats actuales, conteos y cooldowns.</p></div>
+          <div class="settings-readonly"><strong>Reinicio auditable</strong><p>Los registros históricos no se eliminan.</p><button class="button button-secondary button-small reset-breeding-button" type="button" data-open-breeding-reset>Reiniciar breeding</button></div>
+        </section>` : ''}
+        ${owner ? `<section class="settings-section settings-danger stagger-item">
+          <div class="settings-section-copy"><span>05</span><h2>Archivar tribu</h2><p>La oculta de los selectores y bloquea el acceso sin borrar miembros ni historial.</p></div>
+          <div class="settings-readonly"><strong>${escapeHtml(tribe.name)}</strong><p>Solo el propietario puede realizar esta acción.</p><button class="text-button danger-action" type="button" data-open-archive-tribe>Archivar tribu</button></div>
+        </section>` : ''}
       </div>
+      ${canReset ? `<dialog class="content-dialog" data-breeding-reset-dialog><div class="dialog-header"><div><span>Nuevo ciclo</span><h2>Reiniciar breeding</h2></div><button class="dialog-close" type="button" data-close-settings-dialog aria-label="Cerrar">×</button></div><p>Se guardará un snapshot antes del reinicio. Esta acción afecta solo a ${escapeHtml(tribe.name)}.</p><form class="settings-form" data-breeding-reset-form novalidate><label><span>Motivo del wipe</span><textarea name="reason" minlength="3" maxlength="500" required placeholder="Ej. Wipe de temporada 4"></textarea></label><label class="confirmation-check"><input name="acknowledge" type="checkbox" required /><span>Entiendo que los stats actuales, mutaciones acumuladas y cooldowns volverán al inicio del ciclo.</span></label><p class="form-status" data-form-status role="alert" hidden></p><button class="button button-secondary reset-breeding-button" type="submit">Confirmar reinicio</button></form></dialog>` : ''}
+      ${owner ? `<dialog class="content-dialog" data-archive-tribe-dialog><div class="dialog-header"><div><span>Zona de riesgo</span><h2>Archivar tribu</h2></div><button class="dialog-close" type="button" data-close-settings-dialog aria-label="Cerrar">×</button></div><p>Escribe exactamente <strong>${escapeHtml(tribe.name)}</strong>. Podrás conservar la información en el historial, pero la tribu dejará de estar activa.</p><form class="settings-form" data-archive-tribe-form novalidate><label><span>Nombre exacto</span><input name="confirmationName" required autocomplete="off" /></label><label class="confirmation-check"><input name="acknowledge" type="checkbox" required /><span>Entiendo que todos los miembros perderán acceso a esta tribu activa.</span></label><p class="form-status" data-form-status role="alert" hidden></p><button class="button button-secondary danger-button" type="submit">Archivar definitivamente</button></form></dialog>` : ''}
     </section>
   `;
 }
@@ -89,6 +101,7 @@ export function render({ state }) {
 export function bind({ state, authService, navigate }) {
   const view = document.querySelector('[data-settings-view]');
   const service = createBreedService(authService.getClient());
+  const tribeService = createTribeService(authService.getClient());
   let workspace;
   let cleanupViewMotion = () => {};
 
@@ -151,6 +164,23 @@ export function bind({ state, authService, navigate }) {
       showToast('Webhook cifrado y conectado.');
       await load();
     }
+
+    if (form.matches('[data-breeding-reset-form]')) {
+      setSubmitting(form, true, 'Confirmar reinicio');
+      const result = await service.resetTribeBreeding(tribeId, values.get('reason').trim());
+      if (result.error) { setFormStatus(form, result.error); setSubmitting(form, false, 'Confirmar reinicio'); return; }
+      showToast(`Breeding reiniciado: ${result.data?.affected_breeds || 0} líneas actualizadas.`);
+      await load();
+    }
+
+    if (form.matches('[data-archive-tribe-form]')) {
+      setSubmitting(form, true, 'Archivar definitivamente');
+      const result = await tribeService.archiveTribe(tribeId, values.get('confirmationName'), values.get('acknowledge') === 'on');
+      if (result.error) { setFormStatus(form, result.error); setSubmitting(form, false, 'Archivar definitivamente'); return; }
+      window.localStorage.removeItem('weaf:active-tribe');
+      showToast('Tribu archivada.');
+      navigate('/app');
+    }
   };
 
   const onChange = (event) => {
@@ -173,6 +203,9 @@ export function bind({ state, authService, navigate }) {
 
   const onClick = async (event) => {
     if (event.target.closest('[data-retry-settings]')) { await load(); return; }
+    if (event.target.closest('[data-open-breeding-reset]')) { view.querySelector('[data-breeding-reset-dialog]')?.showModal(); return; }
+    if (event.target.closest('[data-open-archive-tribe]')) { view.querySelector('[data-archive-tribe-dialog]')?.showModal(); return; }
+    if (event.target.closest('[data-close-settings-dialog]')) { event.target.closest('dialog')?.close(); return; }
     const toggle = event.target.closest('[data-toggle-webhook]');
     if (!toggle) return;
     toggle.disabled = true;

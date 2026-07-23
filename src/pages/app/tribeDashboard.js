@@ -36,7 +36,7 @@ function gatewayView(inviteToken = '', profile = null) {
       <div class="gateway-columns reveal-up">
         <form class="gateway-form" data-create-tribe-form data-motion="none" novalidate>
           <div><span class="gateway-index">01</span><h2>Crear tribu</h2><p>Quedarás registrado como propietario protegido.</p></div>
-          <label><span>Nombre de la tribu</span><input name="name" required minlength="2" maxlength="80" placeholder="Ej. Northern Forge" /></label>
+          <label><span>Nombre de la tribu</span><input name="name" required minlength="2" maxlength="60" placeholder="Ej. Northern Forge" /></label>
           <label><span>Juego principal</span><select name="gameMode" required>
             <option value="evolved" ${profile?.default_game_mode === 'evolved' ? 'selected' : ''}>ARK: Survival Evolved</option>
             <option value="ascended" ${profile?.default_game_mode === 'ascended' ? 'selected' : ''}>ARK: Survival Ascended</option>
@@ -137,13 +137,32 @@ function dashboardView({ memberships, activeMembership, members, invites, curren
       <header class="app-toolbar reveal-up">
         <div>
           <p class="section-kicker">Centro de tribu</p>
-          <h1>${escapeHtml(tribe.name)}</h1>
+          <div class="tribe-title-row"><h1>${escapeHtml(tribe.name)}</h1>${activeMembership.role === 'owner' ? `<button class="tribe-title-edit" type="button" data-open-rename-tribe aria-label="Renombrar ${escapeHtml(tribe.name)}">✎</button>` : ''}</div>
           <span class="role-badge role-${activeMembership.role}">${roleLabels[activeMembership.role]}</span>
         </div>
-        <label class="tribe-switcher"><span>Cambiar de tribu</span><select data-tribe-switcher>
+        <div class="tribe-switcher-actions"><label class="tribe-switcher"><span>Cambiar de tribu</span><select data-tribe-switcher>
           ${memberships.map((item) => `<option value="${item.tribe_id}" ${item.tribe_id === tribe.id ? 'selected' : ''}>${escapeHtml(item.tribe.name)}</option>`).join('')}
-        </select></label>
+        </select></label><button class="button button-secondary button-small" type="button" data-open-create-tribe>Nueva tribu</button></div>
       </header>
+      <dialog class="content-dialog tribe-action-dialog" data-create-tribe-dialog>
+        <div class="dialog-header"><div><span>Otra comunidad</span><h2>Crear nueva tribu</h2></div><button class="dialog-close" type="button" data-close-tribe-dialog aria-label="Cerrar">×</button></div>
+        <p>La tribu actual seguirá intacta. Al terminar, cambiaremos a la nueva.</p>
+        <form class="settings-form" data-create-tribe-form novalidate>
+          <label><span>Nombre de la tribu</span><input name="name" required minlength="2" maxlength="60" /></label>
+          <label><span>Juego principal</span><select name="gameMode" required><option value="evolved">ARK: Survival Evolved</option><option value="ascended">ARK: Survival Ascended</option><option value="both">Ambos</option></select></label>
+          <label><span>Nombre de personaje</span><input name="characterName" required minlength="2" maxlength="80" autocomplete="nickname" /></label>
+          <label><span>Steam ID <small>Opcional</small></span><input name="steamId" maxlength="40" inputmode="numeric" /></label>
+          <label><span>Ritmo del servidor</span><select name="breedingMode" data-new-tribe-breeding-mode><option value="multiplier">Multiplicador de breeding</option><option value="propagators">Usa propagators</option></select></label>
+          <label data-new-tribe-multiplier><span>Multiplicador</span><input name="breedingMultiplier" type="number" min="0.001" max="1000" step="0.001" value="1" required /></label>
+          <label data-new-tribe-cooldown hidden><span>Cooldown del propagator <small>Horas</small></span><input name="cooldownHours" type="number" min="0.25" max="720" step="0.25" value="12" /></label>
+          <p class="form-status" data-form-status role="alert" hidden></p>
+          <button class="button button-primary" type="submit">Crear mi tribu</button>
+        </form>
+      </dialog>
+      ${activeMembership.role === 'owner' ? `<dialog class="content-dialog tribe-action-dialog" data-rename-tribe-dialog>
+        <div class="dialog-header"><div><span>Identidad de tribu</span><h2>Renombrar tribu</h2></div><button class="dialog-close" type="button" data-close-tribe-dialog aria-label="Cerrar">×</button></div>
+        <form class="settings-form" data-rename-tribe-form novalidate><label><span>Nuevo nombre</span><input name="name" required minlength="2" maxlength="60" value="${escapeHtml(tribe.name)}" /></label><p class="form-status" data-form-status role="alert" hidden></p><button class="button button-primary" type="submit">Guardar nombre</button></form>
+      </dialog>` : ''}
       ${incomingInviteView(inviteToken)}
       <div class="tribe-metrics stagger-group" aria-label="Resumen de tribu">
         <div class="stagger-item"><span>Miembros activos</span><strong>${members.length}</strong></div>
@@ -287,6 +306,14 @@ export function bind({ state, authService, navigate }) {
       navigate(`/app?tribe=${result.data}`);
     }
 
+    if (form.matches('[data-rename-tribe-form]')) {
+      setSubmitting(form, true, 'Guardar nombre');
+      const result = await service.renameTribe(tribeStore.getState().activeTribeId, values.get('name').trim());
+      if (result.error) { setFormStatus(form, result.error); setSubmitting(form, false, 'Guardar nombre'); return; }
+      showToast('Nombre de tribu actualizado.');
+      await load();
+    }
+
     if (form.matches('[data-join-tribe-form]')) {
       const submitLabel = form.querySelector('[type="submit"]')?.textContent || 'Aceptar invitación';
       setSubmitting(form, true, submitLabel);
@@ -342,6 +369,9 @@ export function bind({ state, authService, navigate }) {
 
   const onClick = async (event) => {
     if (event.target.closest('[data-retry-tribes]')) load();
+    if (event.target.closest('[data-open-create-tribe]')) view.querySelector('[data-create-tribe-dialog]')?.showModal();
+    if (event.target.closest('[data-open-rename-tribe]')) view.querySelector('[data-rename-tribe-dialog]')?.showModal();
+    if (event.target.closest('[data-close-tribe-dialog]')) event.target.closest('dialog')?.close();
     const copy = event.target.closest('[data-copy-invite]');
     if (copy) {
       try {
