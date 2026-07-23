@@ -20,7 +20,6 @@ export function createAppNavigation(profile) {
       ${profile?.global_role === 'admin'
         ? '<a class="app-admin-link" href="/admin" data-link>Administración global</a>'
         : ''}
-      <a class="app-profile-link" href="/onboarding" data-link>Editar perfil</a>
     </aside>
     <nav class="app-mobile-nav" aria-label="Navegación privada móvil">
       <a href="/app" data-link${current('/app')}><span aria-hidden="true">◆</span>Tribu</a>

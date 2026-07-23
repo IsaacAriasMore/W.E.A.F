@@ -15,6 +15,7 @@ const routeLoaders = {
   '/register': () => import('./pages/auth/register.js'),
   '/reset-password': () => import('./pages/auth/resetPassword.js'),
   '/onboarding': () => import('./pages/auth/onboarding.js'),
+  '/profile': () => import('./pages/app/profile.js'),
   '/app': () => import('./pages/app/tribeDashboard.js'),
   '/app/breeds': () => import('./pages/app/breedingWorkspace.js'),
   '/app/mutations': () => import('./pages/app/breedingWorkspace.js'),
@@ -45,6 +46,7 @@ const titles = {
   '/register': 'Crear cuenta | W.E.A.F',
   '/reset-password': 'Restablecer contraseña | W.E.A.F',
   '/onboarding': 'Configurar perfil | W.E.A.F',
+  '/profile': 'Perfil | W.E.A.F',
   '/app': 'Centro de tribu | W.E.A.F',
   '/app/breeds': 'Breeding privado | W.E.A.F',
   '/app/mutations': 'Mutaciones | W.E.A.F',
@@ -67,7 +69,7 @@ function normalizePath(pathname) {
 
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
-  '/onboarding', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
+  '/onboarding', '/profile', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
   '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/admin',
 ]);
 

@@ -11,9 +11,25 @@ export function createProfileService(client) {
       if (!client || !userId) return { profile: null, error: null };
       const { data, error } = await client
         .from('profiles')
-        .select('id, display_name, avatar_url, discord_username, default_game_mode, global_role, onboarding_completed, is_suspended')
+        .select('id, email, display_name, avatar_url, discord_username, default_game_mode, global_role, onboarding_completed, is_suspended, created_at')
         .eq('id', userId)
         .maybeSingle();
+      return { profile: data, error: databaseError(error) };
+    },
+
+    async updateProfile(userId, { displayName, discordUsername, avatarUrl, gameMode }) {
+      if (!client || !userId) return { profile: null, error: databaseError(new Error('Not configured')) };
+      const { data, error } = await client
+        .from('profiles')
+        .update({
+          display_name: displayName,
+          discord_username: discordUsername || null,
+          avatar_url: avatarUrl || null,
+          default_game_mode: gameMode,
+        })
+        .eq('id', userId)
+        .select('id, email, display_name, avatar_url, discord_username, default_game_mode, global_role, onboarding_completed, is_suspended, created_at')
+        .single();
       return { profile: data, error: databaseError(error) };
     },
 
