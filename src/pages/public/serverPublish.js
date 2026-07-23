@@ -1,4 +1,4 @@
-import { REAL_STRIPE_BILLING } from '../../config/billing.js';
+import { REAL_PAYPAL_BILLING } from '../../config/billing.js';
 import {
   RATE_FIELDS,
   RATE_PRESETS,
@@ -12,9 +12,10 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import { getLanguage, t } from '../../i18n/index.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
+import { billingCadence, billingPrice, formatBillingMoney } from '../../utils/billingPlans.js';
 
 const value = (item, key, fallback = '') => escapeHtml(String(item?.[key] ?? fallback));
-const planLabel = (plan) => plan === 'plus' ? `Plus - $7 ${t('servers.owner.perMonth')}` : `Normal - $3 ${t('servers.owner.perMonth')}`;
+const planLabel = (plan) => plan ? `${plan.offer_name || plan.name} · ${formatBillingMoney(billingPrice(plan), plan.currency, getLanguage() === 'es' ? 'es-CR' : 'en-US')} ${billingCadence(plan, getLanguage())}` : t('servers.form.planUnavailable');
 const checked = (condition) => condition ? 'checked' : '';
 const formatDate = (date) => new Date(date).toLocaleDateString(getLanguage() === 'es' ? 'es-CR' : 'en-US');
 const billingStatusLabel = (listing) => {
@@ -50,8 +51,9 @@ function ratesSection(listing) {
 function form(plan, listing) {
   const paidAndActive = listing?.status === 'active';
   const game = listing?.game || 'ascended';
-  return `<form class="publish-form" data-publish-form data-motion="none" data-listing="${listing?.id || ''}" data-plan="${plan}" novalidate>
-    <header><p>${t(listing ? 'servers.form.editEyebrow' : 'servers.form.newEyebrow')}</p><h2>${listing ? escapeHtml(listing.title) : planLabel(plan)}</h2><span>${paidAndActive ? t('servers.form.activeUntil', { date: listing.expires_at ? formatDate(listing.expires_at) : t('servers.form.activeNotice') }) : t('servers.form.paymentGate')}</span></header>
+  const tier = listing?.plan_type || listing?.plan || plan?.code || 'normal';
+  return `<form class="publish-form" data-publish-form data-motion="none" data-listing="${listing?.id || ''}" data-plan="${tier}" data-plan-version="${plan?.plan_version_id || listing?.billing_plan_version_id || ''}" novalidate>
+    <header><p>${t(listing ? 'servers.form.editEyebrow' : 'servers.form.newEyebrow')}</p><h2>${listing ? escapeHtml(listing.title) : planLabel(plan)}</h2><span>${paidAndActive ? t('servers.form.activeUntil', { date: listing.expires_at ? formatDate(listing.expires_at) : t('servers.form.activeNotice') }) : t('servers.form.paymentGate')}</span>${plan?.offer_name ? `<small>${escapeHtml(t('servers.form.offerTerms', { cycles: plan.benefit_cycles || plan.total_cycles || '∞', behavior: plan.end_behavior }))}</small>` : ''}</header>
     <div class="publish-fields">
       <fieldset class="publish-section"><legend>${t('servers.form.basic')}</legend>
         <label><span>${t('servers.form.name')}</span><input name="title" value="${value(listing, 'title')}" minlength="2" maxlength="100" placeholder="${t('servers.form.nameExample')}" required></label>
@@ -70,24 +72,24 @@ function form(plan, listing) {
         <label class="publish-check"><input name="propagators" type="checkbox" ${checked(listing?.uses_propagators)}><span>${t('servers.form.propagators')}</span></label>
       </fieldset>
     </div>
-    <footer><p>${t(paidAndActive ? 'servers.form.immediate' : REAL_STRIPE_BILLING ? 'servers.form.redirectStripe' : 'servers.form.adminPending')}</p><button class="button button-primary" type="submit">${paidAndActive ? t('common.saveChanges') : REAL_STRIPE_BILLING ? t('servers.checkout') : t('servers.form.saveDraft')}</button></footer>
+    <footer><p>${t(paidAndActive ? 'servers.form.immediate' : REAL_PAYPAL_BILLING ? 'servers.form.redirectPayPal' : 'servers.form.adminPending')}</p><button class="button button-primary" type="submit">${paidAndActive ? t('common.saveChanges') : REAL_PAYPAL_BILLING ? t('servers.checkout') : t('servers.form.saveDraft')}</button></footer>
   </form>`;
 }
 
-function dashboard(listings, hasCustomer) {
+function dashboard(listings) {
   if (!listings.length) return `<div class="publish-message"><h2>${t('servers.form.noneTitle')}</h2><p>${t('servers.form.noneBody')}</p><a class="button button-primary" href="/servers/owners" data-link>${t('servers.form.viewPlans')}</a></div>`;
-  return `<div class="publish-message"><h2>${t('servers.form.yours')}</h2><p>${t('servers.form.yoursBody')}</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(billingStatusLabel(listing))} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>${t('common.edit')}</a></article>`).join('')}</div><div class="server-card-actions">${hasCustomer && REAL_STRIPE_BILLING ? `<button class="button button-primary" type="button" data-billing-portal>${t('servers.billing')}</button>` : ''}<a class="button button-quiet" href="/servers/owners" data-link>${t('servers.form.newListing')}</a></div></div>`;
+  return `<div class="publish-message"><h2>${t('servers.form.yours')}</h2><p>${t('servers.form.yoursBody')}</p><div class="billing-list">${listings.map((listing) => `<article><strong>${escapeHtml(listing.title)}</strong><span>${escapeHtml(billingStatusLabel(listing))} - ${escapeHtml(listing.plan_type || listing.plan)}</span><a class="button button-secondary" href="/servers/publish?listing_id=${listing.id}" data-link>${t('common.edit')}</a></article>`).join('')}</div><div class="server-card-actions"><a class="button button-primary" href="/account/billing" data-link>${t('servers.billing')}</a><a class="button button-quiet" href="/servers/owners" data-link>${t('servers.form.newListing')}</a></div></div>`;
 }
 
-function planSelector(listings, hasCustomer) {
+function planSelector(plans, listings) {
   return `<section class="publish-plan-selector" aria-labelledby="publish-plan-title" data-gsap-stagger>
     <div><p>${t('servers.form.selectorEyebrow')}</p><h2 id="publish-plan-title">${t('servers.form.selectorTitle')}</h2><span>${t('servers.form.selectorBody')}</span></div>
-    <div class="publish-plan-options">
-      <button class="publish-plan-option interactive-card" type="button" data-select-publish-plan="normal" data-gsap-item><span>${t('servers.owner.essential')}</span><strong>Normal</strong><b>$3 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.normalBody')}</em></button>
-      <button class="publish-plan-option interactive-card is-plus" type="button" data-select-publish-plan="plus" data-gsap-item><span>${t('servers.owner.visibility')}</span><strong>Plus</strong><b>$7 <small>${t('servers.owner.perMonth')}</small></b><em>${t('servers.form.plusBody')}</em></button>
-    </div>
+    <div class="publish-plan-options">${plans.map((plan) => {
+      const plus = plan.code === 'plus'; const discounted = billingPrice(plan) < Number(plan.base_price_minor || 0);
+      return `<button class="publish-plan-option interactive-card ${plus ? 'is-plus' : ''}" type="button" data-select-publish-plan="${plan.plan_version_id}" data-tier="${plan.code}" data-gsap-item><span>${escapeHtml(plan.offer_name || t(plus ? 'servers.owner.visibility' : 'servers.owner.essential'))}</span><strong>${escapeHtml(plan.name)}</strong><b>${discounted ? `<del>${formatBillingMoney(plan.base_price_minor, plan.currency, getLanguage() === 'es' ? 'es-CR' : 'en-US')}</del>` : ''}${formatBillingMoney(billingPrice(plan), plan.currency, getLanguage() === 'es' ? 'es-CR' : 'en-US')} <small>${billingCadence(plan, getLanguage())}</small></b><em>${escapeHtml(plan.offer_description || t(`servers.form.${plus ? 'plusBody' : 'normalBody'}`))}</em>${plan.acquisition_ends_at ? `<small>${t('servers.form.offerEnds', { date: formatDate(plan.acquisition_ends_at) })}</small>` : ''}</button>`;
+    }).join('')}</div>
     ${createSponsoredServerSlot('server_publish_example', { variant: 'preview', preview: true })}
-    ${listings.length ? dashboard(listings, hasCustomer) : ''}
+    ${listings.length ? dashboard(listings) : ''}
   </section>`;
 }
 
@@ -111,22 +113,29 @@ export function bind({ authService, navigate }) {
   const workspace = document.querySelector('[data-publish-workspace]');
   const query = new URLSearchParams(window.location.search);
   let chosenPlan = ['normal', 'plus'].includes(query.get('plan')) ? query.get('plan') : null;
+  const requestedOfferId = query.get('offer');
   const requestedListingId = query.get('listing_id');
   let selectedListing = null;
+  let catalog = [];
 
   async function load() {
-    const result = await service.getMyBilling();
+    const [result, plansResult] = await Promise.all([service.getMyBilling(), service.listPlans()]);
     if (result.error) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.accountError')}</h2><p>${escapeHtml(result.error)}</p>`; return; }
+    if (plansResult.error || !plansResult.data?.length) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.plansUnavailable')}</h2><p>${escapeHtml(plansResult.error || t('servers.form.syncRequired'))}</p>`; return; }
+    catalog = plansResult.data;
     const listings = result.data?.listings || [];
     selectedListing = requestedListingId ? listings.find((item) => item.id === requestedListingId) : null;
     if (requestedListingId && !selectedListing) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.unavailable')}</h2><p>${t('servers.form.ownershipError')}</p>`; return; }
     workspace.className = 'publish-workspace';
     if (selectedListing || chosenPlan) {
-      const plan = selectedListing?.plan_type || selectedListing?.plan || chosenPlan;
-      workspace.innerHTML = form(plan === 'manual' ? 'normal' : plan, selectedListing);
+      const tier = selectedListing?.plan_type || selectedListing?.plan || chosenPlan;
+      const plan = catalog.find((item) => item.plan_version_id === selectedListing?.billing_plan_version_id)
+        || catalog.find((item) => item.offer_id === requestedOfferId)
+        || catalog.find((item) => item.code === (tier === 'manual' ? 'normal' : tier) && !item.offer_id);
+      workspace.innerHTML = form(plan, selectedListing);
       return;
     }
-    workspace.innerHTML = planSelector(listings, Boolean(result.data?.has_customer));
+    workspace.innerHTML = planSelector(catalog, listings);
   }
 
   workspace.addEventListener('change', (event) => {
@@ -139,18 +148,13 @@ export function bind({ authService, navigate }) {
   workspace.addEventListener('click', async (event) => {
     const planChoice = event.target.closest('[data-select-publish-plan]');
     if (planChoice) {
-      chosenPlan = planChoice.dataset.selectPublishPlan;
-      window.history.replaceState({}, '', `/servers/publish?plan=${chosenPlan}`);
-      workspace.innerHTML = form(chosenPlan, null);
+      chosenPlan = planChoice.dataset.tier;
+      const selectedPlan = catalog.find((item) => item.plan_version_id === planChoice.dataset.selectPublishPlan);
+      window.history.replaceState({}, '', `/servers/publish?plan=${chosenPlan}${selectedPlan?.offer_id ? `&offer=${selectedPlan.offer_id}` : ''}`);
+      workspace.innerHTML = form(selectedPlan, null);
       workspace.querySelector('[name="title"]')?.focus();
       return;
     }
-    const portal = event.target.closest('[data-billing-portal]');
-    if (!portal) return;
-    portal.disabled = true; portal.textContent = t('servers.form.openingStripe');
-    const result = await service.openBillingPortal();
-    if (result.error) { showToast(result.error, 'error'); portal.disabled = false; portal.textContent = t('servers.billing'); return; }
-    window.location.assign(result.data.url);
   });
 
   workspace.addEventListener('submit', async (event) => {
@@ -178,9 +182,13 @@ export function bind({ authService, navigate }) {
     if (result.error) { showToast(result.error, 'error'); button.disabled = false; return; }
     const listingId = result.data;
     if (selectedListing?.status === 'active') { showToast(t('servers.form.saved')); await load(); return; }
-    if (!REAL_STRIPE_BILLING) { showToast(t('servers.form.draftSaved')); navigate(`/servers/publish?listing_id=${listingId}`); return; }
-    button.textContent = t('servers.form.openingStripe');
-    const checkout = await service.startCheckout(listingId, plan);
+    if (!REAL_PAYPAL_BILLING) { showToast(t('servers.form.draftSaved')); navigate(`/servers/publish?listing_id=${listingId}`); return; }
+    if (!publishForm.dataset.planVersion) { showToast(t('servers.form.planUnavailable'), 'error'); button.disabled = false; return; }
+    button.textContent = t('servers.form.openingPayPal');
+    const storageKey = `weaf:paypal-idempotency:${listingId}:${publishForm.dataset.planVersion}`;
+    let idempotencyKey = sessionStorage.getItem(storageKey);
+    if (!idempotencyKey) { idempotencyKey = crypto.randomUUID(); sessionStorage.setItem(storageKey, idempotencyKey); }
+    const checkout = await service.startSubscription(listingId, publishForm.dataset.planVersion, idempotencyKey);
     if (checkout.error) { showToast(checkout.error, 'error'); button.disabled = false; button.textContent = t('servers.checkout'); return; }
     window.location.assign(checkout.data.url);
   });

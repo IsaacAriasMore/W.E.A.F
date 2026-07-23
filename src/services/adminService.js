@@ -16,6 +16,9 @@ const messages = {
   invalid_listing_duration: 'La duración debe ser 1, 3, 9 o 12 meses.',
   listing_slug_taken: 'Ese slug ya pertenece a otro servidor.',
   server_not_found: 'El servidor ya no existe.',
+  invalid_offer_payload: 'Revisa precio, descuento, duración y vigencia de la oferta.',
+  paypal_plan_not_synced: 'Sincroniza esta versión con PayPal Sandbox antes de publicarla.',
+  offer_not_found: 'La oferta ya no existe.',
 };
 
 function friendly(error, fallback = 'No pudimos completar la acción administrativa.') {
@@ -36,6 +39,7 @@ export function createAdminService(client) {
     getWorkspace: () => rpc('get_admin_workspace', {}, 'No pudimos cargar el centro de comando.'),
     getContentWorkspace: () => rpc('get_admin_content_workspace', {}, 'No pudimos cargar el catálogo editorial.'),
     getServerWorkspace: () => rpc('get_admin_server_workspace', {}, 'No pudimos cargar la operación de servidores.'),
+    getBillingWorkspace: () => rpc('get_admin_billing_workspace', {}, 'No pudimos cargar planes y ofertas.'),
     setUserSuspension: (userId, suspended, reason) => rpc('admin_set_user_suspension', {
       p_user_id: userId, p_suspended: suspended, p_reason: reason || null,
     }),
@@ -73,5 +77,13 @@ export function createAdminService(client) {
       p_listing_id: listingId, p_duration_months: durationMonths,
     }),
     deleteServerListing: (listingId) => rpc('admin_delete_server_listing', { p_listing_id: listingId }),
+    saveBillingOffer: (offerId, payload) => rpc('admin_save_billing_offer', { p_offer_id: offerId || null, p_payload: payload }),
+    setBillingOfferStatus: (offerId, status) => rpc('admin_set_billing_offer_status', { p_offer_id: offerId, p_status: status }),
+    duplicateBillingOffer: (offerId) => rpc('admin_duplicate_billing_offer', { p_offer_id: offerId }),
+    async managePayPalCatalog(action, planVersionId = null) {
+      if (!client) return unavailable;
+      const { data, error } = await client.functions.invoke('manage-paypal-catalog', { body: { action, plan_version_id: planVersionId } });
+      return { data, error: error || data?.error ? (data?.error || error?.message || 'No pudimos sincronizar con PayPal Sandbox.') : null };
+    },
   };
 }

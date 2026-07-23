@@ -7,6 +7,10 @@ const messages = {
   listing_slug_taken: 'Ese slug ya está ocupado.',
   invalid_listing_payload: 'Revisa los datos de la publicación.',
   plan_change_requires_portal: 'Gestiona el cambio de plan desde facturación.',
+  listing_already_subscribed: 'Esta publicación ya tiene una suscripción en curso.',
+  offer_not_available: 'Esta oferta ya no está disponible.',
+  new_customers_only: 'Esta oferta está reservada para clientes nuevos.',
+  paypal_plan_not_synced: 'Este plan todavía no está sincronizado con PayPal.',
 };
 
 function friendly(error, fallback) {
@@ -35,12 +39,8 @@ export function createServerService(client) {
     },
     async listPlans() {
       if (!client) return { data: [], error: null };
-      const { data, error } = await client
-        .from('plans')
-        .select('code,name,price_usd_cents,features,is_active')
-        .in('code', ['normal', 'plus'])
-        .order('price_usd_cents');
-      return { data: data || [], error: friendly(error, 'No pudimos cargar los planes.') };
+      const { data, error } = await client.rpc('get_public_billing_catalog');
+      return { data: [...(data?.plans || []), ...(data?.offers || [])], catalog: data || { plans: [], offers: [] }, error: friendly(error, 'No pudimos cargar los planes.') };
     },
     async track(listingId, eventType) {
       if (!client) return { data: null, error: null };
@@ -58,17 +58,16 @@ export function createServerService(client) {
         return { data: null, error: null };
       }
     },
-    async startCheckout(serverListingId, planType) {
+    async startSubscription(serverListingId, planVersionId, idempotencyKey) {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };
-      const { data, error } = await client.functions.invoke('create-server-listing-checkout', {
-        body: { server_listing_id: serverListingId, plan_type: planType },
+      const { data, error } = await client.functions.invoke('create-paypal-subscription', {
+        body: { server_listing_id: serverListingId, plan_version_id: planVersionId, idempotency_key: idempotencyKey },
       });
       const code = data?.error || error?.message || '';
-      const paymentError = code.includes('payments_not_configured')
-        ? 'Stripe todavía necesita sus claves privadas en Supabase.'
+      const paymentError = code.includes('paypal_not_configured') || code.includes('billing_not_configured')
+        ? 'PayPal Sandbox todavía necesita configuración privada en Supabase.'
         : code.includes('billing_disabled') ? 'La facturación está desactivada temporalmente.'
-          : code.includes('listing_already_active') ? 'Esta publicación ya tiene una suscripción activa.'
-        : code.includes('checkout_rate_limit') ? 'Espera dos minutos antes de iniciar otro pago.' : 'No pudimos iniciar el checkout.';
+          : friendly({ message: code }, 'No pudimos iniciar la suscripción con PayPal.');
       return { data, error: error || data?.error ? paymentError : null };
     },
     async getMyBilling() {
@@ -83,20 +82,19 @@ export function createServerService(client) {
     },
     async saveListingDraft(listingId, planType, payload) {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };
-      const { data, error } = await client.rpc('save_server_listing_draft', {
+      const { data, error } = await client.rpc('save_paypal_server_listing_draft', {
         p_listing_id: listingId || null,
         p_plan_type: planType,
         p_payload: payload,
       });
       return { data, error: friendly(error, 'No pudimos guardar la publicación.') };
     },
-    async openBillingPortal() {
+    async cancelSubscription(subscriptionId, reason) {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };
-      const { data, error } = await client.functions.invoke('create-billing-portal-session', { body: {} });
-      const message = data?.message || (data?.error === 'billing_customer_not_found'
-        ? 'Todavía no tienes una cuenta de facturación en Stripe.'
-        : 'No pudimos abrir el portal de facturación.');
-      return { data, error: error || data?.error ? message : null };
+      const { data, error } = await client.functions.invoke('cancel-paypal-subscription', {
+        body: { subscription_id: subscriptionId, reason, confirm: true },
+      });
+      return { data, error: error || data?.error ? (data?.error === 'subscription_not_owned' ? 'No puedes cancelar una suscripción ajena.' : 'No pudimos cancelar la suscripción.') : null };
     },
     async updateListing(listingId, payload) {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };

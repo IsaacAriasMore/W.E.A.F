@@ -477,3 +477,33 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/expire-server-listings/deno.json"
 entrypoint = "./functions/expire-server-listings/index.ts"
+
+[functions.manage-paypal-catalog]
+enabled = true
+verify_jwt = false
+import_map = "./functions/manage-paypal-catalog/deno.json"
+entrypoint = "./functions/manage-paypal-catalog/index.ts"
+
+[functions.create-paypal-subscription]
+enabled = true
+verify_jwt = false
+import_map = "./functions/create-paypal-subscription/deno.json"
+entrypoint = "./functions/create-paypal-subscription/index.ts"
+
+[functions.paypal-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/paypal-webhook/deno.json"
+entrypoint = "./functions/paypal-webhook/index.ts"
+
+[functions.cancel-paypal-subscription]
+enabled = true
+verify_jwt = false
+import_map = "./functions/cancel-paypal-subscription/deno.json"
+entrypoint = "./functions/cancel-paypal-subscription/index.ts"
+
+[functions.reconcile-paypal-subscriptions]
+enabled = true
+verify_jwt = false
+import_map = "./functions/reconcile-paypal-subscriptions/deno.json"
+entrypoint = "./functions/reconcile-paypal-subscriptions/index.ts"

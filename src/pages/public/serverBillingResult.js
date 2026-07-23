@@ -20,12 +20,12 @@ export function bind({ path, authService }) {
   if (path !== '/servers/success') return cleanupAnimation;
   const service = createServerService(authService.getClient());
   const target = document.querySelector('[data-checkout-result]');
-  const sessionId = new URLSearchParams(window.location.search).get('session_id');
+  const listingId = new URLSearchParams(window.location.search).get('listing_id');
   let canceled = false;
   async function check(attempt = 0) {
     const result = await service.getMyBilling();
     if (canceled) return;
-    const listing = result.data?.listings?.find((item) => item.stripe_checkout_session_id === sessionId);
+    const listing = result.data?.listings?.find((item) => item.id === listingId);
     if (listing?.status === 'active') {
       const date = new Date(listing.expires_at).toLocaleDateString(getLanguage() === 'es' ? 'es-CR' : 'en-US');
       target.innerHTML = `<p>${t('servers.result.active')}</p><h1>${t('servers.result.published', { title: escapeHtml(listing.title) })}</h1><p>${t('servers.result.validUntil', { plan: escapeHtml(listing.plan_type || listing.plan), date })}</p><a class="button button-primary" href="/servers" data-link>${t('servers.result.directory')}</a><a class="button button-quiet" href="/account/billing" data-link>${t('servers.result.billing')}</a>`;
