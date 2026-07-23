@@ -1,5 +1,17 @@
 # Roadmap de datos reales
 
+## Avance de Fase 10
+
+- [x] Clasificar mapas ASE/ASA publicados al 22 de julio de 2026, incluidos Aquatica, Astraeos y Genesis: Part 1 Ascended.
+- [x] Cargar un catálogo confirmado de 20 bosses con fuentes.
+- [x] Completar las 12 dificultades de The Island con artefactos y tributos estructurados.
+- [x] Añadir fuente, revisión, riesgo, reversión y archivo destino a INIs.
+- [x] Añadir edición administrativa estructurada y slugs automáticos.
+- [ ] Completar requisitos contrastados de los 16 bosses fuera de The Island.
+- [ ] Validar los tres presets en una matriz limpia de versión, plataforma y hardware antes de marcarlos `verified`.
+- [ ] Completar criaturas por juego y mapa; el catálogo actual sigue siendo parcial.
+
+
 Este documento es la lista operativa para sustituir el contenido local inicial por datos mantenibles en Supabase. No publicar una fila solo para llenar una pantalla.
 
 ## Metadatos mínimos por registro

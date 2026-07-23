@@ -19,24 +19,25 @@ test('home loads without errors and renders its primary actions', async ({ page 
 
 test('INI filters, preview and download work', async ({ page }) => {
   await page.goto('/inis');
-  await page.getByRole('button', { name: 'FPS Boost' }).click();
+  await page.getByRole('button', { name: /ASA/ }).click();
+  await page.getByRole('button', { name: 'FPS' }).click();
   await expect(page.locator('[data-preset-card]')).toHaveCount(1);
   await page.getByRole('button', { name: 'Ver INI' }).click();
   await expect(page.locator('[data-ini-dialog]')).toHaveJSProperty('open', true);
-  await expect(page.locator('[data-dialog-content]')).toContainText('r.ShadowQuality');
+  await expect(page.locator('[data-dialog-content]')).toContainText('r.Lumen.Reflections.Allow');
   await page.getByRole('button', { name: 'Cerrar' }).click();
 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Descargar' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('weaf-fps-balanced.ini');
+  expect(download.suggestedFilename()).toBe('weaf-asa-fps-balanced.ini');
 });
 
 test('boss checklist persists in local storage', async ({ page }) => {
   await page.goto('/maps-bosses');
-  const firstItem = page.locator('.checklist-item').first();
+  const firstItem = page.locator('[data-checklist-item]').first();
   await firstItem.click();
-  await expect(page.locator('[data-checklist-progress]')).toHaveText('1 de 3 listos');
+  await expect(page.locator('[data-checklist-progress]').first()).toContainText('1 / 3');
   await page.reload();
   await expect(firstItem.locator('input')).toBeChecked();
 });

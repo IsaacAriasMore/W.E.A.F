@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('profile creation runs on user insertion without confirmation gates', () => {
-  const migration = read('supabase/migrations/20260721212837_phase_2_auth_profiles.sql');
+  const migration = read('supabase/migrations/20260721214754_phase_2_auth_profiles.sql');
   assert.match(migration, /after insert on auth\.users/i);
   assert.match(migration, /insert into public\.profiles/i);
   assert.doesNotMatch(migration, /email_confirmed|email_verified|confirmed_at/i);

@@ -1,5 +1,7 @@
 # W.E.A.F
 
+> Fase 10 incorpora catálogos bilingües de mapas, bosses y presets INI alimentados por Supabase, checklist local por dificultad y un editor administrativo estructurado. Consulta [docs/phase-10-content-bosses-inis.md](docs/phase-10-content-bosses-inis.md).
+
 Wild Evolution & Ascension Forge es una plataforma comunitaria independiente para jugadores y tribus de ARK: Survival Evolved y ARK: Survival Ascended.
 
 Las Fases 0 a 9 están implementadas. La experiencia incluye el sitio público, Supabase Auth, tribus multi-tenant, breeding privado, administración global, marketplace de servidores, ciclo de pagos Stripe, consentimiento granular, promociones internas Plus y una PWA instalable.

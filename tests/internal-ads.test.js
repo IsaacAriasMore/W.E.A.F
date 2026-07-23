@@ -45,7 +45,7 @@ test('dismissed recommendations expire after seven days', () => {
 });
 
 test('phase 9 normalizes internal placements and tracking without external providers', () => {
-  const migration = read('supabase/migrations/20260722224038_phase_9_internal_plus_ads.sql');
+  const migration = read('supabase/migrations/20260722225356_phase_9_internal_plus_ads.sql');
   const edge = read('supabase/functions/track-server-event/index.ts');
   const slot = read('src/components/ads/SponsoredServerSlot.js');
   for (const placement of [
@@ -65,7 +65,7 @@ test('phase 9 normalizes internal placements and tracking without external provi
 });
 
 test('tracking hotfix keeps events constrained and failures non-blocking', () => {
-  const migration = read('supabase/migrations/20260722234732_fix_tracking_service_role_check.sql');
+  const migration = read('supabase/migrations/20260722234931_fix_tracking_service_role_check.sql');
   const edge = read('supabase/functions/track-server-event/index.ts');
   const service = read('src/services/serverService.js');
   const slot = read('src/components/ads/SponsoredServerSlot.js');

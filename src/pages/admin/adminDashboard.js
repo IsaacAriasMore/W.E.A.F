@@ -119,7 +119,7 @@ function tribes(data) {
   </tr>`), 'No hay tribus registradas.');
 }
 
-function content(data) {
+function legacyContent(data) {
   return `<div class="admin-content-grid">
     <section class="admin-primary-list"><div class="admin-block-heading"><span>Especies</span><h2>Catálogo de breeding</h2></div>
       ${table(['Nombre', 'Juego', 'Cooldown', 'Visibilidad', ''], data.species.map((item) => `<tr><td><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)}</small></td><td>${escapeHtml(item.game_availability)}</td><td>${item.vanilla_mating_cooldown_hours}h</td><td>${status(item.is_public && item.is_active ? 'active' : 'draft')}</td><td><button class="admin-action" data-archive-content="species" data-id="${item.id}">Archivar</button></td></tr>`), 'Sin especies.')}
@@ -141,6 +141,38 @@ function content(data) {
       <details><summary><span>Bosses</span><strong>${data.bosses.length}</strong><small>${data.bosses.filter((x) => x.is_public).length} públicos</small></summary>${data.bosses.map((item) => `<div><p>${escapeHtml(item.name)}</p><button class="admin-action" data-archive-content="boss" data-id="${item.id}">Archivar</button></div>`).join('') || '<p>Sin bosses.</p>'}</details>
     </section>
   </div>`;
+}
+
+function requirementItem(kind, item = {}) {
+  return `<div class="admin-requirement-item" data-requirement-item><input name="${kind}_id" placeholder="ID estable" value="${escapeHtml(item.id || '')}"><input name="${kind}_name_es" placeholder="Nombre ES" value="${escapeHtml(item.name_es || item.name || '')}"><input name="${kind}_name_en" placeholder="Name EN" value="${escapeHtml(item.name_en || item.name || '')}"><input name="${kind}_quantity" type="number" min="1" value="${Number(item.quantity) || 1}" aria-label="Cantidad"><button class="admin-action" type="button" data-remove-requirement-item>Quitar</button></div>`;
+}
+
+function content(data) {
+  const games = '<option value="both">ASE + ASA</option><option value="evolved">ASE</option><option value="ascended">ASA</option>';
+  const states = '<option value="draft">Borrador</option><option value="reviewed">Revisado</option><option value="published">Publicado</option><option value="archived">Archivado</option>';
+  const maps = data.maps.map((item) => `<option value="${item.id}">${escapeHtml(item.name_es || item.name)}</option>`).join('');
+  const bosses = data.bosses.map((item) => `<option value="${item.id}">${escapeHtml(item.name_es || item.name)}</option>`).join('');
+  const actions = (entity, item) => `<span class="admin-row-actions"><button class="admin-action" data-edit-content="${entity}" data-id="${item.id}">Editar</button><button class="admin-action" data-archive-content="${entity}" data-id="${item.id}">Archivar</button></span>`;
+  const list = (title, entity, items, label) => `<details class="admin-catalog-list" open><summary><span>${title}</span><strong>${items.length}</strong></summary>${items.map((item) => `<div><p><strong>${escapeHtml(item[label] || item.name || item.title)}</strong><small>${escapeHtml(item.content_status || 'draft')}</small></p>${actions(entity, item)}</div>`).join('') || '<p class="admin-muted">Sin entradas.</p>'}</details>`;
+  return `<div class="admin-content-workspace"><header class="admin-content-intro"><span>Catálogo estructurado</span><h2>Mapas, bosses e INIs</h2><p>Los slugs se generan automáticamente. Publica solo datos contrastados y conserva la fuente revisada.</p></header>
+    <div class="admin-content-grid"><section class="admin-content-editors">
+      <details class="admin-editor" open><summary>Mapa</summary><form data-map-form data-editor-form><input name="id" type="hidden">
+        <div class="admin-field-pair"><label><span>Nombre ES</span><input name="name_es" required></label><label><span>Name EN</span><input name="name_en" required></label></div>
+        <div class="admin-field-pair"><label><span>Juego</span><select name="game_availability">${games}</select></label><label><span>Tipo</span><select name="map_type"><option value="story">Historia</option><option value="official_mod">Mod oficial</option><option value="non_canonical">No canónico</option><option value="anniversary">Aniversario</option><option value="premium">Premium</option><option value="other">Otro</option></select></label></div>
+        <div class="admin-field-pair"><label><span>Orden ASE</span><input name="release_order_evolved" type="number" min="1"></label><label><span>Orden ASA</span><input name="release_order_ascended" type="number" min="1"></label></div>
+        <label><span>Descripción ES</span><textarea name="description_es" rows="3" required></textarea></label><label><span>Description EN</span><textarea name="description_en" rows="3" required></textarea></label>
+        <div class="admin-field-pair"><label><span>Estado editorial</span><select name="content_status">${states}</select></label><label><span>Revisado</span><input name="reviewed_at" type="date"></label></div><label><span>Fuente verificable</span><input name="source_url" type="url" required></label><label><span>Imagen original/licenciada</span><input name="image_url" type="url"></label><label class="admin-check"><input name="is_canonical" type="checkbox" checked><span>Mapa canónico</span></label><button class="button button-primary">Guardar mapa</button></form></details>
+      <details class="admin-editor"><summary>Boss</summary><form data-boss-form data-editor-form><input name="id" type="hidden"><label><span>Mapa</span><select name="map_id" required>${maps || '<option value="">Crea un mapa primero</option>'}</select></label>
+        <div class="admin-field-pair"><label><span>Nombre ES</span><input name="name_es" required></label><label><span>Name EN</span><input name="name_en" required></label></div><div class="admin-field-pair"><label><span>Juego</span><select name="game_availability">${games}</select></label><label><span>Tipo</span><select name="boss_type"><option value="main">Principal</option><option value="mini">Mini</option><option value="final">Final</option><option value="arena">Arena</option><option value="mission">Misión</option><option value="titan">Titán</option><option value="other">Otro</option></select></label></div>
+        <label><span>Descripción ES</span><textarea name="description_es" required></textarea></label><label><span>Description EN</span><textarea name="description_en" required></textarea></label><div class="admin-field-pair"><label><span>Estado</span><select name="content_status">${states}</select></label><label><span>Revisado</span><input name="reviewed_at" type="date"></label></div><label><span>Fuente</span><input name="source_url" type="url" required></label><label><span>Imagen original/licenciada</span><input name="image_url" type="url"></label><button class="button button-primary">Guardar boss</button></form></details>
+      <details class="admin-editor"><summary>Dificultad y requisitos</summary><form data-requirement-form data-editor-form><input name="id" type="hidden"><label><span>Boss</span><select name="boss_id" required>${bosses || '<option value="">Crea un boss primero</option>'}</select></label><div class="admin-field-pair"><label><span>Dificultad</span><select name="difficulty"><option>gamma</option><option>beta</option><option>alpha</option></select></label><label><span>Nivel mínimo</span><input name="minimum_level" type="number" min="1" max="205" required></label></div><label><span>Máximo de jugadores</span><input name="max_players" type="number" min="1" value="10"></label>
+        <fieldset class="admin-requirement-builder" data-requirement-group="artifact"><legend>Artefactos</legend><div data-requirement-items>${requirementItem('artifact')}</div><button class="admin-action" type="button" data-add-requirement-item="artifact">Añadir artefacto</button></fieldset><fieldset class="admin-requirement-builder" data-requirement-group="tribute"><legend>Tributos</legend><div data-requirement-items>${requirementItem('tribute')}</div><button class="admin-action" type="button" data-add-requirement-item="tribute">Añadir tributo</button></fieldset>
+        <label><span>Notas ES</span><textarea name="notes_es"></textarea></label><label><span>Notes EN</span><textarea name="notes_en"></textarea></label><div class="admin-field-pair"><label><span>Estado</span><select name="content_status">${states}</select></label><label><span>Revisado</span><input name="reviewed_at" type="date"></label></div><label><span>Fuente</span><input name="source_url" type="url" required></label><button class="button button-primary">Guardar dificultad</button></form></details>
+      <details class="admin-editor"><summary>Preset INI</summary><form data-ini-form data-editor-form><input name="id" type="hidden"><div class="admin-field-pair"><label><span>Título ES</span><input name="title_es" required></label><label><span>Title EN</span><input name="title_en" required></label></div><div class="admin-field-pair"><label><span>Juego</span><select name="game_availability">${games}</select></label><label><span>Categoría</span><select name="category"><option value="general">General</option><option value="fps">FPS</option><option value="pvp">PvP</option><option value="farming">Farming</option><option value="breeding">Breeding</option><option value="visibility">Visibilidad</option><option value="clean">Limpieza</option><option value="server">Servidor</option><option value="client">Cliente</option></select></label></div><div class="admin-field-pair"><label><span>Archivo</span><select name="file_target"><option>GameUserSettings.ini</option><option>Game.ini</option><option>Engine.ini</option></select></label><label><span>Verificación</span><select name="verification_status"><option value="pending">Pendiente</option><option value="experimental">Experimental</option><option value="verified">Verificado</option></select></label></div>
+        <label><span>Descripción ES</span><textarea name="description_es" required></textarea></label><label><span>Description EN</span><textarea name="description_en" required></textarea></label><label><span>Contenido INI</span><textarea name="content" rows="9" spellcheck="false" required></textarea></label><label><span>Riesgos ES</span><textarea name="risk_notes_es"></textarea></label><label><span>Rollback ES</span><textarea name="revert_notes_es"></textarea></label><label><span>Risks EN</span><textarea name="risk_notes_en"></textarea></label><label><span>Rollback EN</span><textarea name="revert_notes_en"></textarea></label><div class="admin-field-pair"><label><span>Estado</span><select name="content_status">${states}</select></label><label><span>Revisado</span><input name="reviewed_at" type="date"></label></div><label><span>Fuente</span><input name="source_url" type="url" required></label><button class="button button-primary">Guardar preset</button></form></details>
+    </section><aside class="admin-secondary-lists">${list('Mapas', 'map', data.maps, 'name_es')}${list('Bosses', 'boss', data.bosses, 'name_es')}${list('Dificultades', 'requirement', data.requirements || [], 'difficulty')}${list('Presets INI', 'ini', data.inis, 'title_es')}
+      <details class="admin-editor"><summary>Nueva especie</summary><form data-species-form><label><span>Nombre</span><input name="name" required></label><label><span>Categoría</span><input name="category" required></label><label><span>Cooldown (horas)</span><input name="cooldown" type="number" min="0.1" step="0.1" required></label>${adminChoiceGroup({ legend: 'Stats', name: 'stats', items: SPECIES_STATS.map(([value, label]) => ({ value, label })), selected: SPECIES_STATS.map(([value]) => value) })}<button class="button button-primary">Guardar especie</button></form></details>
+    </aside></div></div>`;
 }
 
 function operations(data) {
@@ -199,15 +231,61 @@ export function bind({ state, authService, navigate }) {
   const main = document.querySelector('[data-admin-main]');
   let data;
 
+  function fillEditor(entity, record) {
+    const form = main.querySelector(`[data-${entity}-form]`);
+    if (!form || !record) return;
+    form.closest('details').open = true;
+    Object.entries(record).forEach(([key, value]) => {
+      const field = form.elements.namedItem(key);
+      if (!field || Array.isArray(value) || (value && typeof value === 'object')) return;
+      if (field.type === 'checkbox') field.checked = Boolean(value);
+      else field.value = key.endsWith('_at') && value ? String(value).slice(0, 10) : (value ?? '');
+    });
+    const aliases = entity === 'requirement'
+      ? { minimum_level: record.min_player_level }
+      : entity === 'ini' ? {
+        risk_notes_es: record.risk_es, risk_notes_en: record.risk_en,
+        revert_notes_es: record.rollback_es, revert_notes_en: record.rollback_en,
+      } : {};
+    Object.entries(aliases).forEach(([name, value]) => { if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value || ''; });
+    if (entity === 'requirement') {
+      ['artifact', 'tribute'].forEach((kind) => {
+        const group = form.querySelector(`[data-requirement-group="${kind}"] [data-requirement-items]`);
+        const items = record[`${kind}s`] || [];
+        group.innerHTML = (items.length ? items : [{}]).map((item) => requirementItem(kind, item)).join('');
+      });
+    }
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function requirementItems(values, kind) {
+    const ids = values.getAll(`${kind}_id`);
+    const namesEs = values.getAll(`${kind}_name_es`);
+    const namesEn = values.getAll(`${kind}_name_en`);
+    const quantities = values.getAll(`${kind}_quantity`);
+    return ids.map((id, index) => ({
+      id: slugify(id), name_es: String(namesEs[index] || '').trim(),
+      name_en: String(namesEn[index] || '').trim(), quantity: Number(quantities[index]) || 1,
+    })).filter((item) => item.id && item.name_es && item.name_en);
+  }
+
   async function load(section = currentSection()) {
     main.setAttribute('aria-busy', 'true');
-    const [result, serverResult] = await Promise.all([service.getWorkspace(), service.getServerWorkspace()]);
+    const [result, serverResult, contentResult] = await Promise.all([
+      service.getWorkspace(), service.getServerWorkspace(), service.getContentWorkspace(),
+    ]);
     if (result.error) {
       main.innerHTML = `<section class="admin-failure"><span>403</span><h1>Centro de comando bloqueado</h1><p>${escapeHtml(result.error)}</p><a class="button button-primary" href="/app" data-link>Volver a la tribu</a></section>`;
       return;
     }
     data = result.data;
     data.serverOps = serverResult.data || { listings: [], totals: {} };
+    if (contentResult.data) {
+      data.maps = contentResult.data.maps || [];
+      data.bosses = contentResult.data.bosses || [];
+      data.requirements = contentResult.data.requirements || [];
+      data.inis = contentResult.data.inis || [];
+    }
     const [title, description] = sectionNames[section];
     main.innerHTML = `<div class="admin-mobile-selector"><label><span>Área administrativa</span><select data-admin-mobile>${adminSectionOptions(section)}</select></label></div>
       <header class="admin-header"><div><p>W.E.A.F / Global</p><h1>${title}</h1><span>${description}</span></div><div class="admin-live"><i></i>Supabase conectado</div></header>
@@ -259,7 +337,26 @@ export function bind({ state, authService, navigate }) {
     const tribe = event.target.closest('[data-tribe-active]');
     if (tribe) await action(await service.setTribeActive(tribe.dataset.tribeActive, tribe.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado de la tribu actualizado.');
     const archive = event.target.closest('[data-archive-content]');
-    if (archive && window.confirm('¿Archivar esta entrada del catálogo público?')) await action(await service.archiveContent(archive.dataset.archiveContent, archive.dataset.id), 'Contenido archivado.');
+    if (archive && window.confirm('¿Archivar esta entrada del catálogo público?')) {
+      const entity = archive.dataset.archiveContent;
+      const result = entity === 'species'
+        ? await service.archiveContent(entity, archive.dataset.id)
+        : await service.archivePublicContent(entity === 'requirement' ? 'boss_requirement' : entity, archive.dataset.id);
+      await action(result, 'Contenido archivado.');
+    }
+    const edit = event.target.closest('[data-edit-content]');
+    if (edit) {
+      const collection = edit.dataset.editContent === 'requirement' ? 'requirements' : `${edit.dataset.editContent}s`;
+      fillEditor(edit.dataset.editContent, data[collection]?.find((item) => item.id === edit.dataset.id));
+    }
+    const addItem = event.target.closest('[data-add-requirement-item]');
+    if (addItem) addItem.closest('[data-requirement-group]').querySelector('[data-requirement-items]').insertAdjacentHTML('beforeend', requirementItem(addItem.dataset.addRequirementItem));
+    const removeItem = event.target.closest('[data-remove-requirement-item]');
+    if (removeItem) {
+      const container = removeItem.closest('[data-requirement-items]');
+      if (container.children.length > 1) removeItem.closest('[data-requirement-item]').remove();
+      else removeItem.closest('[data-requirement-item]').querySelectorAll('input').forEach((input) => { input.value = input.type === 'number' ? '1' : ''; });
+    }
     const renew = event.target.closest('[data-renew-server]');
     if (renew) { const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value); await action(await service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.'); }
     const remove = event.target.closest('[data-delete-server]');
@@ -269,6 +366,60 @@ export function bind({ state, authService, navigate }) {
   main.addEventListener('submit', async (event) => {
     event.preventDefault();
     const values = new FormData(event.target);
+    const value = (name) => String(values.get(name) || '').trim();
+    if (event.target.matches('[data-map-form]')) {
+      const payload = {
+        slug: slugify(value('name_en')), name_es: value('name_es'), name_en: value('name_en'),
+        description_es: value('description_es'), description_en: value('description_en'),
+        game_availability: value('game_availability'), map_type: value('map_type'),
+        release_order: '', release_order_evolved: value('release_order_evolved'), release_order_ascended: value('release_order_ascended'),
+        is_canonical: values.has('is_canonical'), platform_notes: '', image_url: value('image_url'), icon_url: '',
+        source_url: value('source_url'), source_name: 'Fuente editorial', reviewed_at: value('reviewed_at'),
+        content_status: value('content_status'), sort_order: 0,
+      };
+      await action(await service.upsertMap(value('id') || null, payload), 'Mapa guardado.'); return;
+    }
+    if (event.target.matches('[data-boss-form]')) {
+      const payload = {
+        map_id: value('map_id'), slug: slugify(value('name_en')), name_es: value('name_es'), name_en: value('name_en'),
+        description_es: value('description_es'), description_en: value('description_en'), game_availability: value('game_availability'),
+        boss_type: value('boss_type'), image_url: value('image_url'), source_url: value('source_url'), source_name: 'Fuente editorial',
+        reviewed_at: value('reviewed_at'), content_status: value('content_status'), sort_order: 0,
+      };
+      await action(await service.upsertBoss(value('id') || null, payload), 'Boss guardado.'); return;
+    }
+    if (event.target.matches('[data-requirement-form]')) {
+      const artifacts = requirementItems(values, 'artifact');
+      const tributes = requirementItems(values, 'tribute');
+      const incomplete = ['artifact', 'tribute'].some((kind) => {
+        const ids = values.getAll(`${kind}_id`); const namesEs = values.getAll(`${kind}_name_es`); const namesEn = values.getAll(`${kind}_name_en`);
+        return ids.some((id, index) => Boolean(id || namesEs[index] || namesEn[index]) && !(id && namesEs[index] && namesEn[index]));
+      });
+      if (incomplete) { showToast('Completa ID, nombre ES y nombre EN de cada requisito usado.', 'error'); return; }
+      const payload = {
+        boss_id: value('boss_id'), difficulty: value('difficulty'), min_player_level: value('minimum_level'), max_players: value('max_players'),
+        artifacts, tributes, unlocks: [], notes_es: value('notes_es'), notes_en: value('notes_en'),
+        source_url: value('source_url'), source_name: 'Fuente editorial', reviewed_at: value('reviewed_at'), content_status: value('content_status'),
+      };
+      await action(await service.upsertBossRequirement(value('id') || null, payload), 'Dificultad guardada.'); return;
+    }
+    if (event.target.matches('[data-ini-form]')) {
+      const payload = {
+        slug: slugify(value('title_en')), title_es: value('title_es'), title_en: value('title_en'), category: value('category'),
+        description_es: value('description_es'), description_en: value('description_en'), content: String(values.get('content') || ''),
+        game_availability: value('game_availability'), file_target: value('file_target'), risk_es: value('risk_notes_es'),
+        risk_en: value('risk_notes_en'), rollback_es: value('revert_notes_es'), rollback_en: value('revert_notes_en'),
+        compatibility_notes: '', verification_status: value('verification_status'), source_url: value('source_url'),
+        source_name: 'Fuente editorial', reviewed_at: value('reviewed_at'), content_status: value('content_status'),
+      };
+      await action(await service.upsertIniPreset(value('id') || null, payload), 'Preset INI guardado.'); return;
+    }
+    if (event.target.matches('[data-species-form]')) {
+      const stats = values.getAll('stats');
+      const name = value('name');
+      const payload = { slug: slugify(name), name, category: value('category'), cooldown_hours: Number(value('cooldown')), stats, notes: '', image_url: '', game_availability: 'both', is_public: false, is_active: true, sort_order: 0 };
+      await action(await service.upsertContent('species', null, payload), 'Especie guardada.'); return;
+    }
     if (event.target.matches('[data-content-form]')) {
       const entity = values.get('entity');
       const contentName = { species: values.get('species_name'), ini: values.get('ini_title'), map: values.get('map_name'), boss: values.get('boss_name') }[entity]?.trim() || '';

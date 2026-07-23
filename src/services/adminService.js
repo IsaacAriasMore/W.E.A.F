@@ -5,6 +5,10 @@ const messages = {
   tribe_not_found: 'La tribu ya no existe.',
   content_not_found: 'El contenido ya no existe.',
   invalid_content_payload: 'Revisa los datos del contenido.',
+  invalid_map_payload: 'Revisa los datos del mapa.',
+  invalid_boss_payload: 'Revisa los datos del boss.',
+  invalid_requirement_payload: 'Revisa la dificultad, artefactos y tributos.',
+  invalid_ini_payload: 'Revisa el contenido y los metadatos del preset INI.',
   unsupported_content_entity: 'Ese tipo de contenido no está habilitado.',
   invalid_feature_flag: 'La clave del flag no es válida.',
   invalid_legal_document: 'El documento legal está incompleto.',
@@ -30,6 +34,7 @@ export function createAdminService(client) {
 
   return {
     getWorkspace: () => rpc('get_admin_workspace', {}, 'No pudimos cargar el centro de comando.'),
+    getContentWorkspace: () => rpc('get_admin_content_workspace', {}, 'No pudimos cargar el catálogo editorial.'),
     getServerWorkspace: () => rpc('get_admin_server_workspace', {}, 'No pudimos cargar la operación de servidores.'),
     setUserSuspension: (userId, suspended, reason) => rpc('admin_set_user_suspension', {
       p_user_id: userId, p_suspended: suspended, p_reason: reason || null,
@@ -41,6 +46,11 @@ export function createAdminService(client) {
       p_entity: entity, p_id: id || null, p_payload: payload,
     }),
     archiveContent: (entity, id) => rpc('admin_archive_content', { p_entity: entity, p_id: id }),
+    upsertMap: (id, payload) => rpc('admin_upsert_map', { p_id: id || null, p_payload: payload }),
+    upsertBoss: (id, payload) => rpc('admin_upsert_boss', { p_id: id || null, p_payload: payload }),
+    upsertBossRequirement: (id, payload) => rpc('admin_upsert_boss_requirement', { p_id: id || null, p_payload: payload }),
+    upsertIniPreset: (id, payload) => rpc('admin_upsert_ini_preset', { p_id: id || null, p_payload: payload }),
+    archivePublicContent: (entity, id) => rpc('admin_archive_public_content', { p_entity: entity, p_id: id }),
     setReportStatus: (reportId, status) => rpc('admin_set_report_status', {
       p_report_id: reportId, p_status: status,
     }),

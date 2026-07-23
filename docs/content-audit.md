@@ -1,5 +1,7 @@
 # Auditoría de contenido público - Fase 8
 
+> Actualización Fase 10 (22 de julio de 2026): la migración de Fase 10 carga 14 mapas, 20 bosses, 12 dificultades verificadas de The Island y 3 presets INI editoriales. El Admin ya permite editar estas entidades con campos estructurados. El resto de este documento conserva el corte histórico de Fase 8; el estado vigente está en `docs/phase-10-content-bosses-inis.md`.
+
 Fecha de corte: 22 de julio de 2026.
 
 ## Resumen ejecutivo

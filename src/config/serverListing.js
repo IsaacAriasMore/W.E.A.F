@@ -1,21 +1,8 @@
 import { mapBosses } from '../data/publicData.js';
 
-const EXTRA_MAPS = [
-  { id: 'the-center', name: 'The Center', game: 'both' },
-  { id: 'ragnarok', name: 'Ragnarok', game: 'both' },
-  { id: 'extinction', name: 'Extinction', game: 'both' },
-  { id: 'valguero', name: 'Valguero', game: 'evolved' },
-  { id: 'genesis-1', name: 'Genesis: Part 1', game: 'evolved' },
-  { id: 'crystal-isles', name: 'Crystal Isles', game: 'evolved' },
-  { id: 'genesis-2', name: 'Genesis: Part 2', game: 'evolved' },
-  { id: 'lost-island', name: 'Lost Island', game: 'evolved' },
-  { id: 'fjordur', name: 'Fjordur', game: 'evolved' },
-];
-
 const catalogMaps = mapBosses.map(({ id, name, game }) => ({ id, name, game }));
 
-export const SERVER_MAPS = [...catalogMaps, ...EXTRA_MAPS]
-  .filter((map, index, maps) => maps.findIndex((item) => item.name === map.name) === index);
+export const SERVER_MAPS = catalogMaps;
 
 export const SERVER_PLATFORMS = [
   { id: 'steam', label: 'Steam', game: 'both' },
@@ -57,4 +44,3 @@ export function normalizeRates(preset, values = {}) {
     ...Object.fromEntries(RATE_FIELDS.map(([key]) => [key, Number(source?.[key] ?? 1)])),
   };
 }
-
