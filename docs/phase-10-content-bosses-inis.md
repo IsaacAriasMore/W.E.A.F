@@ -2,6 +2,8 @@
 
 Fecha de corte: 22 de julio de 2026.
 
+> Fase 10 implementada y desplegada. El contenido verificado inicial cubre The Island y 3 INIs editoriales. El resto del catálogo queda como trabajo editorial progresivo.
+
 ## Resultado
 
 Fase 10 convierte Mapas & Bosses e INIs en catálogos editoriales alimentados por Supabase, con fallback local cuando la red o el proyecto no están disponibles. No se almacenan imágenes oficiales de ARK. Las cards sin imagen usan un asset original de W.E.A.F.

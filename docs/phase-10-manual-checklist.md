@@ -1,5 +1,9 @@
 # Checklist manual — Fase 10
 
+> Fase 10 implementada y desplegada. El contenido verificado inicial cubre The Island y 3 INIs editoriales. El resto del catálogo queda como trabajo editorial progresivo.
+
+Las casillas siguientes se conservan como regresión manual repetible, no como bloqueo del cierre documental.
+
 ## Público
 
 - [ ] Abrir `/maps-bosses` en 1440 px, 768 px, 390 px y 360 px.
