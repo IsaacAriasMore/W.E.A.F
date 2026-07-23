@@ -41,30 +41,30 @@ test('server event tracking also swallows transport failures', async () => {
   assert.deepEqual(await service.track('listing-id', 'website_click'), { data: null, error: null });
 });
 
-test('checkout starts in a protected Edge Function without exposing Stripe keys', async () => {
+test('PayPal subscription starts in a protected Edge Function without exposing secrets', async () => {
   let call;
-  const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { url: 'https://checkout.stripe.com/test' }, error: null }; } } });
-  const result = await service.startCheckout('listing-id', 'plus');
-  assert.deepEqual(call, { name: 'create-server-listing-checkout', options: { body: { server_listing_id: 'listing-id', plan_type: 'plus' } } });
-  assert.equal(result.data.url, 'https://checkout.stripe.com/test');
+  const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { url: 'https://sandbox.paypal.com/webapps/billing/subscriptions?token=TEST' }, error: null }; } } });
+  const result = await service.startSubscription('listing-id', 'plan-version-id', 'idempotency-key');
+  assert.deepEqual(call, { name: 'create-paypal-subscription', options: { body: { server_listing_id: 'listing-id', plan_version_id: 'plan-version-id', idempotency_key: 'idempotency-key' } } });
+  assert.ok(result.data.url.includes('paypal.com'));
 });
 
-test('listing draft is saved through the owner-scoped RPC before checkout', async () => {
+test('listing draft is saved through the PayPal-scoped RPC before checkout', async () => {
   let call;
   const service = createServerService({ async rpc(name, params) { call = { name, params }; return { data: 'listing-id', error: null }; } });
   await service.saveListingDraft(null, 'normal', { title: 'Servidor Norte' });
   assert.deepEqual(call, {
-    name: 'save_server_listing_draft',
+    name: 'save_paypal_server_listing_draft',
     params: { p_listing_id: null, p_plan_type: 'normal', p_payload: { title: 'Servidor Norte' } },
   });
 });
 
-test('billing portal is created server-side', async () => {
+test('billing data is fetched through authenticated RPC', async () => {
   let call;
-  const service = createServerService({ functions: { async invoke(name, options) { call = { name, options }; return { data: { url: 'https://billing.stripe.com/test' }, error: null }; } } });
-  const result = await service.openBillingPortal();
-  assert.deepEqual(call, { name: 'create-billing-portal-session', options: { body: {} } });
-  assert.equal(result.data.url, 'https://billing.stripe.com/test');
+  const service = createServerService({ async rpc(name, params) { call = { name, params }; return { data: { subscriptions: [], payments: [], listings: [] }, error: null }; } });
+  const result = await service.getMyBilling();
+  assert.equal(call.name, 'get_my_server_billing');
+  assert.deepEqual(result.data, { subscriptions: [], payments: [], listings: [] });
 });
 
 test('paid listing creation uses the active subscription entitlement', async () => {

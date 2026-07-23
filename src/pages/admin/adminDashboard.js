@@ -18,6 +18,7 @@ const sectionNames = {
   tribes: ['Tribus', 'Tenants, propietarios y actividad de comunidad.'],
   content: ['Contenido público', 'Catálogo editorial compartido por ASA y ASE.'],
   operations: ['Operaciones', 'Servidores, planes y trazabilidad de pagos.'],
+  billing: ['Planes y ofertas', 'Catálogo versionado y sincronización segura con PayPal Sandbox.'],
   governance: ['Gobernanza', 'Moderación, flags, anuncios y documentos legales.'],
   audit: ['Auditoría', 'Registro inmutable de decisiones sensibles.'],
 };
@@ -194,9 +195,35 @@ function operations(data) {
         <label><span>Discord</span><input name="discord" type="url" placeholder="https://discord.gg/..." required></label><label><span>Sitio web (opcional)</span><input name="website" type="url"></label><label><span>Banner original/licenciado (opcional)</span><input name="banner" type="url"></label><label><span>Descripción pública</span><textarea name="description" minlength="20" maxlength="4000" rows="5" required></textarea></label>
         <label class="admin-check"><input name="verified" type="checkbox"><span>Servidor verificado</span></label><label class="admin-check"><input name="propagators" type="checkbox"><span>Usa propagadores</span></label><button class="button button-primary" type="submit">Publicar servidor</button>
       </form></aside></div>
-    <div class="admin-split"><section><div class="admin-block-heading"><span>Oferta</span><h2>Planes</h2></div>${data.plans.map((plan) => `<div class="admin-line"><p><strong>${escapeHtml(plan.name)}</strong><small>${escapeHtml(plan.code)}</small></p><span>$${(plan.price_usd_cents / 100).toFixed(2)}</span></div>`).join('') || empty('Los planes se configurarán antes de Stripe.')}</section>
-    <section><div class="admin-block-heading"><span>Finanzas</span><h2>Pagos recientes</h2></div>${data.payments.map((payment) => `<div class="admin-line"><p><strong>${escapeHtml(payment.email)}</strong><small>${escapeHtml(payment.plan_name)}</small></p><span>$${(payment.amount_usd_cents / 100).toFixed(2)} · ${escapeHtml(payment.status)}</span></div>`).join('') || empty('Sin pagos; Stripe se activa en la Fase 7.')}</section></div>
+    <div class="admin-split"><section><div class="admin-block-heading"><span>Oferta</span><h2>Planes</h2></div>${data.plans.map((plan) => `<div class="admin-line"><p><strong>${escapeHtml(plan.name)}</strong><small>${escapeHtml(plan.code)}</small></p><span>$${((plan.base_price_minor || plan.price_usd_cents || 0) / 100).toFixed(2)}</span></div>`).join('') || empty('Los planes se cargan desde la base de datos.')}</section>
+    <section><div class="admin-block-heading"><span>Finanzas</span><h2>Pagos recientes</h2></div>${data.payments.map((payment) => `<div class="admin-line"><p><strong>${escapeHtml(payment.email || 'N/A')}</strong><small>${escapeHtml(payment.plan_name || '')}</small></p><span>$${((payment.amount_minor || payment.amount_usd_cents || 0) / 100).toFixed(2)} · ${escapeHtml(payment.status)}</span></div>`).join('') || empty('Sin pagos registrados.')}</section></div>
   </div>`;
+}
+
+function billing(data) {
+  const workspace = data.billing || { plans: [], offers: [], subscriptions: [], audit: [] };
+  const money = (minor, currency = 'USD') => new Intl.NumberFormat('es-CR', { style: 'currency', currency }).format(Number(minor || 0) / 100);
+  return `<section class="admin-billing-workspace">
+    <div class="admin-block-heading"><span>PayPal Sandbox</span><h2>Catálogo versionado</h2><p>Los clientes existentes conservan su versión. Los cambios materiales siempre crean una versión nueva.</p></div>
+    <section class="admin-server-metrics"><div><span>Planes base</span><strong>${workspace.plans.length}</strong></div><div><span>Ofertas</span><strong>${workspace.offers.length}</strong></div><div><span>Suscripciones</span><strong>${workspace.subscriptions.length}</strong></div><div><span>Entorno</span><strong>Sandbox</strong></div></section>
+    <button class="button button-secondary" type="button" data-paypal-product-sync>Sincronizar producto principal</button>
+    <div class="admin-content-grid"><section class="admin-primary-list"><div class="admin-block-heading"><span>Versiones</span><h2>Ofertas configuradas</h2></div>
+      ${table(['Oferta','Precio','Vigencia','Estado','PayPal','Acciones'], workspace.offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.name)}</strong><small>${escapeHtml(offer.plan_code)} · v${offer.version_number} · ${offer.subscriber_count} suscriptores</small></td><td>${offer.promotional_price_minor < offer.base_price_minor ? `<del>${money(offer.base_price_minor, offer.currency)}</del> ` : ''}${money(offer.promotional_price_minor, offer.currency)}<small>cada ${offer.interval_count} ${escapeHtml(offer.frequency_unit.toLowerCase())}</small></td><td>${offer.acquisition_starts_at ? new Date(offer.acquisition_starts_at).toLocaleDateString('es-CR') : 'inmediata'}<small>${offer.acquisition_ends_at ? `hasta ${new Date(offer.acquisition_ends_at).toLocaleDateString('es-CR')}` : 'sin cierre'}</small></td><td>${status(offer.status)}</td><td>${status(offer.sync_status)}<small>${escapeHtml(offer.last_sync_error || offer.provider_status || '')}</small></td><td><button class="admin-action" data-sync-paypal-plan="${offer.current_version_id}">Sincronizar</button><button class="admin-action" data-offer-status="${offer.id}" data-next="active">Publicar</button><button class="admin-action" data-duplicate-offer="${offer.id}">Duplicar</button><button class="admin-action is-danger" data-offer-status="${offer.id}" data-next="withdrawn">Retirar</button></td></tr>`), 'No hay ofertas creadas.')}
+    </section><aside class="admin-editor"><div><span>Nueva versión</span><h2>Crear oferta</h2><p>Precio, ciclos y condiciones se obtienen desde este catálogo; nunca desde el navegador del cliente.</p></div>
+      <form data-billing-offer-form><input name="offer_id" type="hidden"><label><span>Nombre</span><input name="name" minlength="2" maxlength="127" required></label><label><span>Descripción</span><textarea name="description" maxlength="1000"></textarea></label>
+        <div class="admin-field-pair"><label><span>Nivel</span><select name="plan_code"><option value="normal">Normal</option><option value="plus">Plus</option></select></label><label><span>Moneda</span><select name="currency"><option>USD</option></select></label></div>
+        <div class="admin-field-pair"><label><span>Precio base</span><input name="base_price" type="number" min="0.01" step="0.01" value="3" required></label><label><span>Precio final</span><input name="promotional_price" type="number" min="0.01" step="0.01" value="3" required></label></div>
+        <div class="admin-field-pair"><label><span>Descuento</span><select name="discount_type"><option value="none">Sin descuento</option><option value="percentage">Porcentaje</option><option value="fixed_amount">Monto fijo</option><option value="custom_price">Precio personalizado</option></select></label><label><span>Valor descuento</span><input name="discount_value" type="number" min="0" step="0.01" value="0"></label></div>
+        <div class="admin-field-pair"><label><span>Frecuencia</span><select name="frequency_unit"><option value="MONTH">Mensual</option><option value="WEEK">Semanal</option><option value="YEAR">Anual</option><option value="DAY">Diaria</option></select></label><label><span>Unidades por ciclo</span><input name="interval_count" type="number" min="1" max="12" value="1" required></label></div>
+        <div class="admin-field-pair"><label><span>Ciclos con beneficio</span><input name="benefit_cycles" type="number" min="1" max="999"></label><label><span>Ciclos totales</span><input name="total_cycles" type="number" min="1" max="999"></label></div>
+        <label><span>Al finalizar</span><select name="end_behavior"><option value="base_price">Pasar al precio base</option><option value="same_price">Continuar igual</option><option value="expire">Expirar</option></select></label>
+        <label class="admin-check"><input name="auto_renew" type="checkbox" checked><span>Renovación automática</span></label>
+        <div class="admin-field-pair"><label><span>Inicio de adquisición</span><input name="acquisition_starts_at" type="datetime-local"></label><label><span>Fin de adquisición</span><input name="acquisition_ends_at" type="datetime-local"></label></div>
+        <div class="admin-field-pair"><label><span>Cupo total</span><input name="subscription_limit" type="number" min="1"></label><label><span>Estado inicial</span><select name="status"><option value="draft">Borrador</option><option value="scheduled">Programada</option></select></label></div>
+        <label class="admin-check"><input name="new_customers_only" type="checkbox"><span>Solo clientes nuevos</span></label><label><span>Entorno</span><select name="environment"><option value="sandbox">Sandbox</option></select></label>
+        <div class="admin-offer-preview" data-offer-preview><span>Vista previa</span><strong>Normal · $3.00 USD</strong><small>Mensual, renovación automática</small></div>
+        <button class="button button-primary" type="submit">Guardar versión</button></form></aside></div>
+  </section>`;
 }
 
 function governance(data) {
@@ -216,7 +243,7 @@ function audit(data) {
   return table(['Momento', 'Actor', 'Acción', 'Entidad'], data.audit.map((item) => `<tr><td>${formatRelativeTime(item.created_at)}</td><td>${escapeHtml(item.actor_name || 'Sistema')}</td><td><strong>${escapeHtml(item.action)}</strong></td><td>${escapeHtml(item.entity_type)}<small>${escapeHtml(item.entity_id || 'sin ID')}</small></td></tr>`), 'Todavía no hay eventos de auditoría.');
 }
 
-const renderers = { overview, users, tribes, content, operations, governance, audit };
+const renderers = { overview, users, tribes, content, operations, billing, governance, audit };
 
 export function render({ state }) {
   const section = currentSection();
@@ -271,8 +298,8 @@ export function bind({ state, authService, navigate }) {
 
   async function load(section = currentSection()) {
     main.setAttribute('aria-busy', 'true');
-    const [result, serverResult, contentResult] = await Promise.all([
-      service.getWorkspace(), service.getServerWorkspace(), service.getContentWorkspace(),
+    const [result, serverResult, contentResult, billingResult] = await Promise.all([
+      service.getWorkspace(), service.getServerWorkspace(), service.getContentWorkspace(), service.getBillingWorkspace(),
     ]);
     if (result.error) {
       main.innerHTML = `<section class="admin-failure"><span>403</span><h1>Centro de comando bloqueado</h1><p>${escapeHtml(result.error)}</p><a class="button button-primary" href="/app" data-link>Volver a la tribu</a></section>`;
@@ -280,6 +307,7 @@ export function bind({ state, authService, navigate }) {
     }
     data = result.data;
     data.serverOps = serverResult.data || { listings: [], totals: {} };
+    data.billing = billingResult.data || { plans: [], offers: [], subscriptions: [], audit: [] };
     if (contentResult.data) {
       data.maps = contentResult.data.maps || [];
       data.bosses = contentResult.data.bosses || [];
@@ -317,6 +345,11 @@ export function bind({ state, authService, navigate }) {
       main.querySelector('[data-game-field]').hidden = entity === 'boss';
     }
     if (event.target.matches('[data-admin-rate-preset]')) main.querySelector('[data-admin-custom-rates]').hidden = event.target.value !== 'custom';
+    if (event.target.closest('[data-billing-offer-form]')) {
+      const form = event.target.closest('[data-billing-offer-form]');
+      const tier = form.elements.plan_code.value; const price = Number(form.elements.promotional_price.value || 0).toFixed(2);
+      form.querySelector('[data-offer-preview]').innerHTML = `<span>Vista previa</span><strong>${tier === 'plus' ? 'Plus' : 'Normal'} · $${price} USD</strong><small>${form.elements.frequency_unit.options[form.elements.frequency_unit.selectedIndex].text} · ${form.elements.auto_renew.checked ? 'renovación automática' : 'duración fija'}</small>`;
+    }
     if (event.target.matches('[data-admin-server-game]')) {
       const form = event.target.closest('form');
       const game = event.target.value;
@@ -361,12 +394,33 @@ export function bind({ state, authService, navigate }) {
     if (renew) { const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value); await action(await service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.'); }
     const remove = event.target.closest('[data-delete-server]');
     if (remove && window.confirm('¿Eliminar definitivamente esta publicación y su analítica?')) await action(await service.deleteServerListing(remove.dataset.deleteServer), 'Publicación eliminada.');
+    const productSync = event.target.closest('[data-paypal-product-sync]');
+    if (productSync) { productSync.disabled = true; await action(await service.managePayPalCatalog('sync_product'), 'Producto PayPal sincronizado.'); }
+    const planSync = event.target.closest('[data-sync-paypal-plan]');
+    if (planSync) { planSync.disabled = true; await action(await service.managePayPalCatalog('sync_plan', planSync.dataset.syncPaypalPlan), 'Plan PayPal sincronizado.'); }
+    const offerStatus = event.target.closest('[data-offer-status]');
+    if (offerStatus && window.confirm(`¿Cambiar la oferta a ${offerStatus.dataset.next}?`)) await action(await service.setBillingOfferStatus(offerStatus.dataset.offerStatus, offerStatus.dataset.next), 'Estado de oferta actualizado.');
+    const duplicate = event.target.closest('[data-duplicate-offer]');
+    if (duplicate) await action(await service.duplicateBillingOffer(duplicate.dataset.duplicateOffer), 'Oferta duplicada como borrador.');
   });
 
   main.addEventListener('submit', async (event) => {
     event.preventDefault();
     const values = new FormData(event.target);
     const value = (name) => String(values.get(name) || '').trim();
+    if (event.target.matches('[data-billing-offer-form]')) {
+      const cents = (name) => Math.round(Number(value(name)) * 100);
+      const discountType = value('discount_type'); const discountValue = Number(value('discount_value') || 0);
+      const payload = { name: value('name'), description: value('description'), plan_code: value('plan_code'), currency: value('currency'),
+        base_price_minor: cents('base_price'), promotional_price_minor: cents('promotional_price'), discount_type: discountType,
+        discount_percentage: discountType === 'percentage' ? discountValue : null, discount_amount_minor: discountType === 'fixed_amount' ? Math.round(discountValue * 100) : null,
+        frequency_unit: value('frequency_unit'), interval_count: Number(value('interval_count')), benefit_cycles: value('benefit_cycles') || null,
+        total_cycles: value('total_cycles') || null, auto_renew: values.has('auto_renew'), end_behavior: value('end_behavior'),
+        acquisition_starts_at: value('acquisition_starts_at') ? new Date(value('acquisition_starts_at')).toISOString() : null,
+        acquisition_ends_at: value('acquisition_ends_at') ? new Date(value('acquisition_ends_at')).toISOString() : null,
+        subscription_limit: value('subscription_limit') || null, new_customers_only: values.has('new_customers_only'), status: value('status'), environment: 'sandbox' };
+      await action(await service.saveBillingOffer(value('offer_id') || null, payload), 'Oferta guardada como nueva versión.'); return;
+    }
     if (event.target.matches('[data-map-form]')) {
       const payload = {
         slug: slugify(value('name_en')), name_es: value('name_es'), name_en: value('name_en'),

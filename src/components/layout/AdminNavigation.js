@@ -6,8 +6,9 @@ const sections = [
   ['tribes', 'Tribus', '03'],
   ['content', 'Contenido', '04'],
   ['operations', 'Operaciones', '05'],
-  ['governance', 'Gobernanza', '06'],
-  ['audit', 'Auditoría', '07'],
+  ['billing', 'Planes y ofertas', '06'],
+  ['governance', 'Gobernanza', '07'],
+  ['audit', 'Auditoría', '08'],
 ];
 
 export function createAdminNavigation(profile, activeSection) {
