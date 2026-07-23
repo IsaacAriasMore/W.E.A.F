@@ -69,10 +69,14 @@ export function bind({ authService }) {
   }
 
   function filter() {
+    if (signal.aborted) return;
     const selects = [...document.querySelectorAll('[data-server-filter]')].map((field) => field.value);
     const [game, type, mods, platform, cluster, propagators] = selects;
-    const region = document.querySelector('[data-server-search="region"]').value.trim().toLowerCase();
-    const language = document.querySelector('[data-server-search="language"]').value.trim().toLowerCase();
+    const regionEl = document.querySelector('[data-server-search="region"]');
+    const languageEl = document.querySelector('[data-server-search="language"]');
+    if (!regionEl || !languageEl) return;
+    const region = regionEl.value.trim().toLowerCase();
+    const language = languageEl.value.trim().toLowerCase();
     const visible = servers.filter((server) => (!game || server.game === game) && (!type || server.server_type === type) && (!mods || String(server.has_mods) === mods) && (!platform || server.platforms?.some((item) => item.toLowerCase().includes(platform))) && (!cluster || String(Boolean(server.cluster_name)) === cluster) && (!propagators || String(server.uses_propagators) === propagators) && (!region || server.region.toLowerCase().includes(region)) && (!language || server.language.toLowerCase().includes(language)));
     list.innerHTML = visible.map(card).join('');
     empty.hidden = visible.length > 0;
@@ -96,6 +100,7 @@ export function bind({ authService }) {
   window.addEventListener('weaf:consent-changed', observeVisibleCards, { signal });
 
   service.listPublic().then((result) => {
+    if (signal.aborted) return;
     servers = result.data;
     filter();
   });

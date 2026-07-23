@@ -36,7 +36,7 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
     if (!uuid(body.plan_version_id)) return json({ error: "invalid_plan_version" }, 400)
     const versionId = String(body.plan_version_id)
     const { data: version, error } = await ctx.supabaseAdmin.rpc("get_paypal_plan_sync_payload", { p_version_id: versionId })
-    if (error || !version) return json({ error: error?.message || "plan_version_not_found" }, 404)
+    if (error || !version) return json({ error: "plan_version_not_found" }, 404)
     let planId = version.external_plan_id_sandbox || ""
     if (action === "sync_plan" || action === "retry_sync") {
       if (!version.external_product_id_sandbox) return json({ error: "paypal_product_not_synced" }, 409)

@@ -40,7 +40,7 @@ test('PWA manifest, service worker and required icons are present', () => {
 
 test('production example exposes only client-safe configuration', () => {
   const example = read('.env.example');
-  assert.match(example, /VITE_SUPABASE_URL=https:\/\/vwxqewpvtucygbaethkv\.supabase\.co/);
+  assert.match(example, /VITE_SUPABASE_URL=https:\/\/YOUR_PROJECT\.supabase\.co/);
   assert.match(example, /VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_/);
   assert.match(example, /VITE_BILLING_ENABLED=true/);
   assert.match(example, /VITE_PAYPAL_ENABLED=true/);

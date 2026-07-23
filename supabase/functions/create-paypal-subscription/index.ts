@@ -23,7 +23,7 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   const { data: prepared, error: prepareError } = await ctx.supabaseAdmin.rpc("prepare_paypal_subscription", {
     p_user_id: userId, p_listing_id: body.server_listing_id, p_plan_version_id: body.plan_version_id, p_idempotency_key: body.idempotency_key,
   })
-  if (prepareError || !prepared) return json({ error: prepareError?.message || "subscription_not_available" }, 409)
+  if (prepareError || !prepared) return json({ error: "subscription_not_available" }, 409)
   if (prepared.existing && prepared.external_subscription_id) {
     const remote = await paypalRequest<{ links?: Array<{ rel?: string; href?: string }> }>(`/v1/billing/subscriptions/${encodeURIComponent(prepared.external_subscription_id)}`)
     const existingUrl = approvalUrl(remote.links)
