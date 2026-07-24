@@ -1,3 +1,4 @@
+import { REAL_PAYPAL_BILLING } from '../config/billing.js';
 import { promotableServers } from '../utils/serverPromotion.js';
 
 const messages = {
@@ -38,10 +39,84 @@ export function createServerService(client) {
       return { ...result, data: promotableServers(result.data) };
     },
     async listPlans() {
-      if (!client) return { data: [], error: null };
-      const { data, error } = await client.rpc('get_public_billing_catalog');
-      return { data: [...(data?.plans || []), ...(data?.offers || [])], catalog: data || { plans: [], offers: [] }, error: friendly(error, 'No pudimos cargar los planes.') };
+  if (!client) {
+    return {
+      data: [],
+      catalog: { plans: [], offers: [] },
+      error: null,
+    };
+  }
+
+  // Mientras PayPal todavía no esté preparado en Supabase,
+  // usamos los planes legacy y evitamos llamar una RPC inexistente.
+  if (!REAL_PAYPAL_BILLING) {
+    const { data: legacyPlans, error: legacyError } = await client
+      .from('plans')
+      .select('code,name,price_usd_cents,features,is_active')
+      .in('code', ['normal', 'plus'])
+      .eq('is_active', true)
+      .order('price_usd_cents', { ascending: true });
+
+    const plans = (legacyPlans || []).map((plan) => ({
+      id: plan.code,
+      code: plan.code,
+      name: plan.name,
+      description: '',
+      tier: plan.code,
+      features: plan.features || [],
+
+      // Todavía no existe una versión PayPal asociada.
+      plan_version_id: null,
+
+      currency: 'USD',
+      price_minor: Number(plan.price_usd_cents || 0),
+      base_price_minor: Number(plan.price_usd_cents || 0),
+
+      frequency_unit: 'MONTH',
+      interval_count: 1,
+      total_cycles: null,
+      benefit_cycles: null,
+      auto_renew: true,
+      end_behavior: 'same_price',
+
+      offer_id: null,
+      offer_name: null,
+      acquisition_ends_at: null,
+    }));
+
+    return {
+      data: plans,
+      catalog: {
+        plans,
+        offers: [],
+      },
+      error: friendly(
+        legacyError,
+        'No pudimos cargar los planes.'
+      ),
+    };
+  }
+
+  // PayPal ya preparado: utilizar el catálogo seguro nuevo.
+  const { data, error } = await client.rpc(
+    'get_public_billing_catalog'
+  );
+
+  return {
+    data: [
+      ...(data?.plans || []),
+      ...(data?.offers || []),
+    ],
+    catalog: data || {
+      plans: [],
+      offers: [],
     },
+    error: friendly(
+      error,
+      'No pudimos cargar los planes.'
+    ),
+  };
+},
     async track(listingId, eventType) {
       if (!client) return { data: null, error: null };
       try {
@@ -81,14 +156,31 @@ export function createServerService(client) {
       return { data, error: friendly(error, error?.message?.includes('listing_slug_taken') ? 'Ese slug ya está ocupado.' : 'No pudimos publicar el servidor.') };
     },
     async saveListingDraft(listingId, planType, payload) {
-      if (!client) return { data: null, error: 'Supabase no está conectado.' };
-      const { data, error } = await client.rpc('save_paypal_server_listing_draft', {
-        p_listing_id: listingId || null,
-        p_plan_type: planType,
-        p_payload: payload,
-      });
-      return { data, error: friendly(error, 'No pudimos guardar la publicación.') };
-    },
+  if (!client) {
+    return {
+      data: null,
+      error: 'Supabase no está conectado.',
+    };
+  }
+
+  const rpcName = REAL_PAYPAL_BILLING
+    ? 'save_paypal_server_listing_draft'
+    : 'save_server_listing_draft';
+
+  const { data, error } = await client.rpc(rpcName, {
+    p_listing_id: listingId || null,
+    p_plan_type: planType,
+    p_payload: payload,
+  });
+
+  return {
+    data,
+    error: friendly(
+      error,
+      'No pudimos guardar la publicación.'
+    ),
+  };
+},
     async cancelSubscription(subscriptionId, reason) {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };
       const { data, error } = await client.functions.invoke('cancel-paypal-subscription', {
