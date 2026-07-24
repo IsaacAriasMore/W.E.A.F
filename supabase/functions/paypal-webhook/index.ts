@@ -1,5 +1,5 @@
 // @ts-ignore
-import { withSupabase } from "npm:@supabase/server@0.2.3"
+import { withSupabase } from "@supabase/server"
 import { PayPalError, verifyPayPalWebhook } from "../_shared/paypal.ts"
 
 type RuntimeDeno = {

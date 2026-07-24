@@ -1,5 +1,5 @@
-import "@supabase/functions-js/edge-runtime.d.ts"
-import { corsHeaders } from "@supabase/supabase-js/cors"
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { corsHeaders } from "npm:@supabase/supabase-js@2.110.8/cors"
 import { withSupabase } from "@supabase/server"
 import { approvalUrl, PayPalError, paypalRequest } from "../_shared/paypal.ts"
 
