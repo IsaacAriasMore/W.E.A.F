@@ -480,13 +480,15 @@ entrypoint = "./functions/expire-server-listings/index.ts"
 
 [functions.manage-paypal-catalog]
 enabled = true
-verify_jwt = true
+# Authentication is enforced by @supabase/server with auth: "user".
+verify_jwt = false
 import_map = "./functions/manage-paypal-catalog/deno.json"
 entrypoint = "./functions/manage-paypal-catalog/index.ts"
 
 [functions.create-paypal-subscription]
 enabled = true
-verify_jwt = true
+# Authentication is enforced by @supabase/server with auth: "user".
+verify_jwt = false
 import_map = "./functions/create-paypal-subscription/deno.json"
 entrypoint = "./functions/create-paypal-subscription/index.ts"
 
@@ -498,7 +500,8 @@ entrypoint = "./functions/paypal-webhook/index.ts"
 
 [functions.cancel-paypal-subscription]
 enabled = true
-verify_jwt = true
+# Authentication is enforced by @supabase/server with auth: "user".
+verify_jwt = false
 import_map = "./functions/cancel-paypal-subscription/deno.json"
 entrypoint = "./functions/cancel-paypal-subscription/index.ts"
 
