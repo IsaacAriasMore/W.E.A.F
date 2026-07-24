@@ -10,7 +10,7 @@
 
 Wild Evolution & Ascension Forge es una plataforma comunitaria independiente para jugadores y tribus de ARK: Survival Evolved y ARK: Survival Ascended.
 
-Las Fases 0 a 10 están implementadas y la Fase 11 de preparación operativa está iniciada. La experiencia incluye el sitio público, Supabase Auth, tribus multi-tenant, breeding privado, administración global, marketplace de servidores, ciclo de pagos Stripe, consentimiento granular, promociones internas Plus y una PWA instalable.
+Las Fases 0 a 10 están implementadas y la Fase 11 de preparación operativa está iniciada. La experiencia incluye el sitio público, Supabase Auth, tribus multi-tenant, breeding privado, administración global, marketplace de servidores, ciclo de pagos PayPal (sandbox), consentimiento granular, promociones internas Plus y una PWA instalable.
 
 ## Stack
 
@@ -47,10 +47,10 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 VITE_SUPABASE_ANON_KEY=
 VITE_APP_NAME=W.E.A.F
 VITE_PUBLIC_SITE_URL=http://localhost:5173
-VITE_STRIPE_PUBLIC_KEY=
+VITE_STRIPE_PUBLIC_KEY= # Legacy - Stripe deshabilitado, usar PayPal
 ```
 
-Usa preferentemente la clave publicable `sb_publishable_...`. `VITE_SUPABASE_ANON_KEY` queda como compatibilidad con proyectos heredados. Nunca expongas `SUPABASE_SERVICE_ROLE_KEY`, secretos de Stripe o webhooks de Discord en variables `VITE_*`.
+Usa preferentemente la clave publicable `sb_publishable_...`. `VITE_SUPABASE_ANON_KEY` queda como compatibilidad con proyectos heredados. Nunca expongas `SUPABASE_SERVICE_ROLE_KEY` o webhooks de Discord en variables `VITE_*`.
 
 Antes de activar Auth en producción, registra la URL de `/onboarding` entre las Redirect URLs permitidas en Supabase. La configuración local equivalente vive en `supabase/config.toml`.
 
