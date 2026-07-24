@@ -9,8 +9,7 @@ const uuid = (value: unknown) => /^[0-9a-f-]{36}$/i.test(String(value || ""))
 const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405)
   if (Deno.env.get("PAYPAL_ENABLED") !== "true" || Deno.env.get("PAYPAL_MODE") !== "sandbox") return json({ error: "paypal_disabled" }, 503)
-  const claims = ctx.userClaims as { sub?: string } | undefined
-  const userId = claims?.sub
+  const userId = ctx.userClaims?.id
   if (!userId) return json({ error: "authentication_required" }, 401)
   const { data: profile } = await ctx.supabase.from("profiles").select("global_role").eq("id", userId).maybeSingle()
   if (profile?.global_role !== "admin") return json({ error: "global_admin_required" }, 403)
