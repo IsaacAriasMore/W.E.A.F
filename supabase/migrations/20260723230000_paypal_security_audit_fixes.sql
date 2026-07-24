@@ -9,24 +9,116 @@
 --     Stripe cancel_at_period_end must also reset payment_status
 -- -------------------------------------------------------------------
 create or replace function private.enforce_server_listing_visibility()
-returns trigger language plpgsql security invoker set search_path = '' as $$
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
 begin
-  if new.billing_source in ('stripe','paypal') then
-    if new.payment_status in ('canceled','refunded') or new.cancel_at_period_end then
-      new.status := case when new.status = 'rejected' then new.status else 'canceled'::public.listing_status end;
+  /*
+   * STRIPE LEGACY
+   *
+   * Conservamos el comportamiento histórico:
+   * cancel_at_period_end puede retirar la publicación según
+   * el flujo Stripe existente.
+   */
+  if new.billing_source = 'stripe' then
+
+    if new.payment_status in ('canceled', 'refunded')
+       or new.cancel_at_period_end
+    then
+
+      new.status :=
+        case
+          when new.status in ('rejected', 'expired') then new.status
+          else 'canceled'::public.listing_status
+        end;
+
       new.payment_status := 'canceled';
       new.is_featured := false;
+
     elsif new.payment_status = 'failed' then
-      new.status := case when new.status = 'rejected' then new.status else 'paused'::public.listing_status end;
+
+      new.status :=
+        case
+          when new.status = 'rejected' then new.status
+          else 'paused'::public.listing_status
+        end;
+
       new.is_featured := false;
-    elsif new.status in ('canceled','expired','paused','hidden','rejected','pending_payment','draft') then
+
+    elsif new.status in (
+      'canceled',
+      'expired',
+      'paused',
+      'hidden',
+      'rejected',
+      'pending_payment',
+      'draft'
+    ) then
+
       new.is_featured := false;
+
     end if;
+
+  /*
+   * PAYPAL
+   *
+   * cancel_at_period_end NO significa que el periodo
+   * ya pagado terminó.
+   *
+   * La publicación puede permanecer active/paid
+   * hasta current_period_end.
+   */
+  elsif new.billing_source = 'paypal' then
+
+    if new.payment_status in ('canceled', 'refunded') then
+
+      new.status :=
+        case
+          when new.status in ('rejected', 'expired') then new.status
+          else 'canceled'::public.listing_status
+        end;
+
+      new.is_featured := false;
+
+    elsif new.payment_status = 'failed' then
+
+      new.status :=
+        case
+          when new.status = 'rejected' then new.status
+          else 'paused'::public.listing_status
+        end;
+
+      new.is_featured := false;
+
+    elsif new.cancel_at_period_end then
+
+      /*
+       * Mantener entitlement del periodo pagado.
+       * Solo retiramos promoción Plus.
+       */
+      new.is_featured := false;
+
+    elsif new.status in (
+      'canceled',
+      'expired',
+      'paused',
+      'hidden',
+      'rejected',
+      'pending_payment',
+      'draft'
+    ) then
+
+      new.is_featured := false;
+
+    end if;
+
   end if;
+
   return new;
 end;
 $$;
-
 -- -------------------------------------------------------------------
 -- C2: Add PayPal to public visibility policy
 --     Active PayPal listings with paid status must be publicly visible
@@ -117,7 +209,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       from public.billing_plans plan
       join public.billing_plan_versions version on version.plan_id = plan.id and version.offer_id is null
       where plan.is_active and version.environment = 'sandbox' and version.sync_status = 'synced'
-        and version.provider_status = 'active'
+        and upper(coalesce(version.provider_status, '')) = 'ACTIVE'
     ) row_data), '[]'::jsonb),
     'offers', coalesce((select jsonb_agg(to_jsonb(row_data) order by row_data.price_minor) from (
       select plan.id, plan.code, plan.name, plan.description, plan.tier, plan.features,
@@ -130,7 +222,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       join public.billing_plan_versions version on version.id = offer.current_version_id
       join public.billing_plans plan on plan.id = offer.plan_id
       where offer.status in ('active','scheduled') and version.environment = 'sandbox' and version.sync_status = 'synced'
-        and version.provider_status = 'active'
+       and upper(coalesce(version.provider_status, '')) = 'ACTIVE'
         and (offer.acquisition_starts_at is null or offer.acquisition_starts_at <= now())
         and (offer.acquisition_ends_at is null or offer.acquisition_ends_at > now())
         and (offer.subscription_limit is null or offer.used_count < offer.subscription_limit)
@@ -166,7 +258,8 @@ begin
   join public.billing_plans plan on plan.id = version.plan_id and plan.is_active
   left join public.billing_offers offer on offer.id = version.offer_id
   where version.id = p_plan_version_id and version.environment = 'sandbox'
-    and version.sync_status = 'synced' and version.provider_status = 'active';
+    and version.sync_status = 'synced'
+    and upper(coalesce(version.provider_status, '')) = 'ACTIVE';
   if selected.id is null then raise exception 'plan_not_available'; end if;
   external_plan := selected.external_plan_id_sandbox;
   if external_plan is null then raise exception 'paypal_plan_not_synced'; end if;
@@ -204,112 +297,966 @@ $$;
 -- M2: Sanitize process_paypal_billing_event error logging
 --     Don't store raw sqlerrm in billing_events
 -- -------------------------------------------------------------------
-create or replace function public.process_paypal_billing_event(p_event_id text, p_event_type text, p_data jsonb, p_payload jsonb)
-returns boolean language plpgsql security definer set search_path = '' as $$
-declare target public.billing_subscriptions%rowtype; event_time timestamptz; payment_inserted boolean := false;
-  external_sub text := nullif(p_data->>'subscription_id',''); external_payment text := nullif(p_data->>'payment_id','');
-  amount_minor integer := greatest(coalesce((p_data->>'amount_minor')::integer, 0), 0);
+-- -------------------------------------------------------------------
+-- M2: Safe and schema-correct PayPal webhook reconciliation
+-- -------------------------------------------------------------------
+create or replace function public.process_paypal_billing_event(
+  p_event_id text,
+  p_event_type text,
+  p_data jsonb,
+  p_payload jsonb
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target public.billing_subscriptions%rowtype;
+
+  event_time timestamptz;
+  next_billing timestamptz;
+
+  payment_inserted boolean := false;
+
+  external_sub text :=
+    nullif(p_data->>'subscription_id', '');
+
+  external_payment text :=
+    nullif(p_data->>'payment_id', '');
+
+  custom_ref text :=
+    nullif(
+      coalesce(
+        p_data->>'custom_id',
+        p_payload->'resource'->>'custom_id'
+      ),
+      ''
+    );
+
+  event_reason text :=
+    nullif(p_data->>'reason', '');
+
+  amount_minor integer :=
+    greatest(
+      coalesce(
+        nullif(p_data->>'amount_minor', '')::integer,
+        0
+      ),
+      0
+    );
 begin
-  if p_event_id is null or char_length(p_event_id) < 8 or char_length(p_event_id) > 120 then raise exception 'invalid_event_id'; end if;
-  if p_event_type is null or char_length(p_event_type) < 3 or char_length(p_event_type) > 120 then raise exception 'invalid_event_type'; end if;
-  if p_payload is null or pg_column_size(p_payload) > 1048576 then raise exception 'payload_too_large'; end if;
-  if jsonb_typeof(p_payload) <> 'object' then raise exception 'payload_must_be_object'; end if;
 
-  insert into private.billing_events(external_event_id, provider, event_type, payload)
-  values (p_event_id, 'paypal', p_event_type, p_payload)
-  on conflict (external_event_id) do nothing;
-  if not found then return false; end if;
+  -- ---------------------------------------------------------------
+  -- Basic validation
+  -- ---------------------------------------------------------------
 
-  event_time := coalesce(
-    nullif(p_payload->>'create_time','')::timestamptz,
-    nullif(p_payload->>'updated_time','')::timestamptz,
-    now()
-  );
+  if p_event_id is null
+     or char_length(p_event_id) < 8
+     or char_length(p_event_id) > 128
+  then
+    raise exception 'invalid_event_id';
+  end if;
 
-  if p_event_type like 'BILLING.SUBSCRIPTION.ACTIVATED' then
-    select * into target from public.billing_subscriptions
-    where external_subscription_id = external_sub and payment_provider = 'paypal' for update;
-    if target.id is not null then
-      update public.billing_subscriptions set status = 'active', current_period_end = coalesce(nullif(p_payload->>'next_billing_time','')::timestamptz, current_period_end),
-        provider_updated_at = greatest(coalesce(provider_updated_at, event_time), event_time), updated_at = now()
-      where id = target.id;
-      update public.server_listings set status = 'active', payment_status = 'paid', is_featured = true, updated_at = now()
-      where id = target.server_listing_id and status in ('pending_payment','paused','canceled') and billing_source = 'paypal';
-    end if;
+  if p_event_type is null
+     or p_event_type not in (
+       'BILLING.SUBSCRIPTION.CREATED',
+       'BILLING.SUBSCRIPTION.ACTIVATED',
+       'BILLING.SUBSCRIPTION.UPDATED',
+       'BILLING.SUBSCRIPTION.PAYMENT.FAILED',
+       'BILLING.SUBSCRIPTION.CANCELLED',
+       'BILLING.SUBSCRIPTION.SUSPENDED',
+       'BILLING.SUBSCRIPTION.EXPIRED',
+       'PAYMENT.SALE.COMPLETED',
+       'PAYMENT.SALE.REFUNDED',
+       'PAYMENT.SALE.REVERSED'
+     )
+  then
+    raise exception 'invalid_event_type';
+  end if;
 
-  elsif p_event_type like 'BILLING.SUBSCRIPTION.CANCELLED' then
-    select * into target from public.billing_subscriptions
-    where external_subscription_id = external_sub and payment_provider = 'paypal' for update;
-    if target.id is not null then
-      update public.billing_subscriptions set status = 'cancelled', updated_at = now()
-      where id = target.id;
-      update public.server_listings set status = 'canceled', payment_status = 'canceled', is_featured = false, updated_at = now()
-      where id = target.server_listing_id and billing_source = 'paypal';
-    end if;
+  if p_data is null
+     or jsonb_typeof(p_data) <> 'object'
+  then
+    raise exception 'invalid_event_data';
+  end if;
 
-  elsif p_event_type like 'BILLING.SUBSCRIPTION.SUSPENDED' then
-    select * into target from public.billing_subscriptions
-    where external_subscription_id = external_sub and payment_provider = 'paypal' for update;
-    if target.id is not null then
-      update public.billing_subscriptions set status = 'suspended', updated_at = now()
-      where id = target.id;
-      update public.server_listings set status = 'paused', is_featured = false, billing_failure_reason = 'paypal_subscription_suspended', updated_at = now()
-      where id = target.server_listing_id and billing_source = 'paypal' and status = 'active';
-    end if;
+  if p_payload is null
+     or jsonb_typeof(p_payload) <> 'object'
+     or pg_column_size(p_payload) > 1048576
+  then
+    raise exception 'invalid_event_payload';
+  end if;
 
-  elsif p_event_type like 'BILLING.SUBSCRIPTION.PAYMENT.FAILED' then
-    select * into target from public.billing_subscriptions
-    where external_subscription_id = external_sub and payment_provider = 'paypal' for update;
-    if target.id is not null then
-      update public.billing_subscriptions set failure_reason = coalesce(nullif(p_data->>'reason',''), 'payment_failed'), updated_at = now()
-      where id = target.id;
-      update public.server_listings set payment_status = 'failed', is_featured = false, updated_at = now()
-      where id = target.server_listing_id and billing_source = 'paypal';
-    end if;
 
-  elsif p_event_type = 'PAYMENT.SALE.COMPLETED' then
-    select * into target from public.billing_subscriptions
-    where external_subscription_id = external_sub and payment_provider = 'paypal' for update;
-    if external_payment is not null and amount_minor > 0 and target.id is not null then
-      insert into public.billing_payments(subscription_id, external_payment_id, amount_minor, currency, status, payment_time)
-      values (target.id, external_payment, amount_minor, coalesce(p_data->>'currency','USD'), 'completed', event_time)
-      on conflict (external_payment_id) do nothing;
-      payment_inserted := found;
-    end if;
-    if payment_inserted and target.id is not null
-      and target.status not in ('cancelled','suspended','expired','refunded','reversed') then
-      update public.billing_subscriptions set status = 'active',
-        completed_cycles = completed_cycles + 1,
-        current_period_start = coalesce(current_period_start, event_time),
-        next_billing_time = coalesce(nullif(p_payload->>'next_billing_time','')::timestamptz, next_billing_time),
-        current_period_end = coalesce(nullif(p_payload->>'next_billing_time','')::timestamptz, current_period_end),
-        provider_updated_at = event_time, updated_at = now()
-      where id = target.id;
-      update public.server_listings set status = 'active', payment_status = 'paid',
-        starts_at = coalesce(starts_at, event_time),
-        expires_at = coalesce(nullif(p_payload->>'next_billing_time','')::timestamptz, expires_at),
-        current_period_end = coalesce(nullif(p_payload->>'next_billing_time','')::timestamptz, current_period_end),
-        external_payment_id = external_payment, is_featured = (plan = 'plus'),
-        billing_failure_reason = null, updated_at = now()
-      where id = target.server_listing_id and billing_source = 'paypal' and status <> 'rejected';
-      if target.completed_cycles = 0 and target.offer_id is not null then
-        update public.billing_offers set used_count = used_count + 1, updated_at = now() where id = target.offer_id;
-      end if;
-    end if;
+  -- ---------------------------------------------------------------
+  -- Event timestamps
+  -- ---------------------------------------------------------------
 
-  elsif p_event_type like 'BILLING.SUBSCRIPTION.UPDATED' then
-    update public.billing_subscriptions set current_period_end = coalesce(nullif(p_payload->>'next_billing_time','')::timestamptz, current_period_end),
-      provider_updated_at = greatest(coalesce(provider_updated_at, event_time), event_time), updated_at = now()
-    where external_subscription_id = external_sub and payment_provider = 'paypal';
+  event_time :=
+    coalesce(
+      nullif(p_data->>'event_time', '')::timestamptz,
+      now()
+    );
+
+  next_billing :=
+    nullif(
+      p_data->>'next_billing_time',
+      ''
+    )::timestamptz;
+
+
+  -- ---------------------------------------------------------------
+  -- Webhook idempotency
+  --
+  -- private.billing_events PK:
+  -- (provider, environment, event_id)
+  -- ---------------------------------------------------------------
+
+  insert into private.billing_events(
+    provider,
+    environment,
+    event_id,
+    event_type,
+    resource_id,
+    payload,
+    event_created_at
+  )
+  values (
+    'paypal',
+    'sandbox',
+    p_event_id,
+    p_event_type,
+    coalesce(
+      external_sub,
+      external_payment,
+      custom_ref
+    ),
+    p_payload,
+    event_time
+  )
+  on conflict (
+    provider,
+    environment,
+    event_id
+  )
+  do nothing;
+
+  if not found then
+    -- Event already processed/registered.
+    return false;
+  end if;
+
+
+  -- ---------------------------------------------------------------
+  -- Resolve local subscription
+  -- ---------------------------------------------------------------
+
+  if external_sub is not null then
+
+    select *
+    into target
+    from public.billing_subscriptions
+    where payment_provider = 'paypal'
+      and environment = 'sandbox'
+      and external_subscription_id = external_sub
+    for update;
 
   end if;
 
-  update private.billing_events set processed_at = now() where external_event_id = p_event_id;
+
+  -- Refund/reversal events may resolve from an existing payment.
+  if target.id is null
+     and external_payment is not null
+  then
+
+    select subscription.*
+    into target
+    from public.billing_payments payment
+    join public.billing_subscriptions subscription
+      on subscription.id = payment.subscription_id
+    where payment.payment_provider = 'paypal'
+      and payment.external_payment_id = external_payment
+    for update of subscription;
+
+  end if;
+
+
+  -- Fallback for early PayPal events which arrive before the
+  -- external_subscription_id has been attached locally.
+  if target.id is null
+     and custom_ref is not null
+  then
+
+    select *
+    into target
+    from public.billing_subscriptions
+    where payment_provider = 'paypal'
+      and environment = 'sandbox'
+      and custom_id = custom_ref
+    for update;
+
+    if target.id is not null
+       and external_sub is not null
+       and target.external_subscription_id is null
+    then
+
+      update public.billing_subscriptions
+      set
+        external_subscription_id = external_sub,
+        updated_at = now()
+      where id = target.id;
+
+      update public.server_listings
+      set
+        external_subscription_id = external_sub,
+        updated_at = now()
+      where id = target.server_listing_id
+        and billing_source = 'paypal';
+
+      target.external_subscription_id := external_sub;
+
+    end if;
+
+  end if;
+
+
+  /*
+   * IMPORTANT:
+   *
+   * We deliberately raise here instead of marking the event as
+   * successfully processed.
+   *
+   * The transaction rolls back the billing_events INSERT, allowing
+   * PayPal to retry the webhook after the local subscription exists.
+   */
+  if target.id is null then
+    raise exception 'subscription_not_found';
+  end if;
+
+
+  -- ===============================================================
+  -- SUBSCRIPTION CREATED
+  -- ===============================================================
+
+  if p_event_type = 'BILLING.SUBSCRIPTION.CREATED' then
+
+    update public.billing_subscriptions
+    set
+      status =
+        case
+          when status = 'pending'
+            then 'approval_pending'
+          else status
+        end,
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id
+      and (
+        provider_updated_at is null
+        or event_time >= provider_updated_at
+      );
+
+
+  -- ===============================================================
+  -- SUBSCRIPTION ACTIVATED
+  --
+  -- IMPORTANT:
+  -- This DOES NOT mark the server listing as paid.
+  -- PAYMENT.SALE.COMPLETED is required for that.
+  -- ===============================================================
+
+  elsif p_event_type = 'BILLING.SUBSCRIPTION.ACTIVATED' then
+
+    update public.billing_subscriptions
+    set
+      status =
+        case
+          when status in (
+            'cancelled',
+            'expired',
+            'refunded',
+            'reversed',
+            'cancellation_pending'
+          )
+          then status
+
+          else 'active'
+        end,
+
+      next_billing_time =
+        coalesce(
+          next_billing,
+          next_billing_time
+        ),
+
+      current_period_end =
+        coalesce(
+          next_billing,
+          current_period_end
+        ),
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id
+      and (
+        provider_updated_at is null
+        or event_time >= provider_updated_at
+      );
+
+    /*
+     * DO NOT UPDATE server_listings HERE.
+     *
+     * A PayPal subscription being ACTIVE is not proof that the
+     * corresponding payment has been successfully captured.
+     */
+
+
+  -- ===============================================================
+  -- SUBSCRIPTION UPDATED
+  -- ===============================================================
+
+  elsif p_event_type = 'BILLING.SUBSCRIPTION.UPDATED' then
+
+    update public.billing_subscriptions
+    set
+      status =
+        case
+          when status in (
+            'cancelled',
+            'expired',
+            'refunded',
+            'reversed',
+            'cancellation_pending'
+          )
+          then status
+
+          else 'active'
+        end,
+
+      next_billing_time =
+        coalesce(
+          next_billing,
+          next_billing_time
+        ),
+
+      current_period_end =
+        coalesce(
+          next_billing,
+          current_period_end
+        ),
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id
+      and (
+        provider_updated_at is null
+        or event_time >= provider_updated_at
+      );
+
+
+  -- ===============================================================
+  -- SUCCESSFUL PAYMENT
+  --
+  -- This is the ONLY event that activates a paid listing.
+  -- ===============================================================
+
+  elsif p_event_type = 'PAYMENT.SALE.COMPLETED' then
+
+    if external_payment is null
+       or amount_minor <= 0
+    then
+      raise exception 'invalid_payment_event';
+    end if;
+
+
+    insert into public.billing_payments(
+      subscription_id,
+      user_id,
+      server_listing_id,
+      payment_provider,
+      external_payment_id,
+      external_event_id,
+      status,
+      amount_minor,
+      currency,
+      paid_at
+    )
+    values (
+      target.id,
+      target.user_id,
+      target.server_listing_id,
+      'paypal',
+      external_payment,
+      p_event_id,
+      'paid',
+      amount_minor,
+      coalesce(
+        nullif(p_data->>'currency', ''),
+        target.currency
+      ),
+      event_time
+    )
+    on conflict do nothing;
+
+    payment_inserted := found;
+
+
+    /*
+     * Duplicate webhook or duplicate PayPal payment.
+     *
+     * Do not increment cycles or offer usage again.
+     */
+    if payment_inserted
+       and target.status not in (
+         'cancelled',
+         'suspended',
+         'expired',
+         'refunded',
+         'reversed'
+       )
+    then
+
+      update public.billing_subscriptions
+      set
+        status =
+          case
+            when status = 'cancellation_pending'
+              then 'cancellation_pending'
+            else 'active'
+          end,
+
+        completed_cycles =
+          completed_cycles + 1,
+
+        current_period_start =
+          coalesce(
+            current_period_start,
+            event_time
+          ),
+
+        next_billing_time =
+          coalesce(
+            next_billing,
+            next_billing_time
+          ),
+
+        current_period_end =
+          coalesce(
+            next_billing,
+            current_period_end
+          ),
+
+        provider_updated_at =
+          greatest(
+            coalesce(provider_updated_at, event_time),
+            event_time
+          ),
+
+        failure_reason = null,
+
+        updated_at = now()
+
+      where id = target.id;
+
+
+      update public.server_listings listing
+      set
+        status = 'active',
+
+        payment_status = 'paid',
+
+        starts_at =
+          coalesce(
+            starts_at,
+            event_time
+          ),
+
+        expires_at =
+          coalesce(
+            next_billing,
+            expires_at
+          ),
+
+        current_period_end =
+          coalesce(
+            next_billing,
+            current_period_end
+          ),
+
+        external_payment_id =
+          external_payment,
+
+        /*
+         * Only Plus listings can be featured.
+         *
+         * The visibility trigger will also remove featured state
+         * when cancel_at_period_end is already true.
+         */
+        is_featured =
+          (listing.plan = 'plus'),
+
+        billing_failure_reason = null,
+
+        updated_at = now()
+
+      where id = target.server_listing_id
+        and billing_source = 'paypal'
+        and status <> 'rejected';
+
+
+      /*
+       * An offer is consumed ONE TIME PER SUBSCRIPTION,
+       * not once per monthly payment.
+       *
+       * target.completed_cycles contains the value BEFORE the
+       * increment performed above.
+       */
+      if target.completed_cycles = 0
+         and target.offer_id is not null
+      then
+
+        update public.billing_offers
+        set
+          used_count = used_count + 1,
+          updated_at = now()
+        where id = target.offer_id;
+
+      end if;
+
+    end if;
+
+
+  -- ===============================================================
+  -- PAYMENT FAILED
+  -- ===============================================================
+
+  elsif p_event_type =
+    'BILLING.SUBSCRIPTION.PAYMENT.FAILED'
+  then
+
+    update public.billing_subscriptions
+    set
+      status =
+        case
+          when status in (
+            'cancelled',
+            'expired',
+            'refunded',
+            'reversed',
+            'cancellation_pending'
+          )
+          then status
+
+          else 'failed'
+        end,
+
+      failure_reason =
+        coalesce(
+          event_reason,
+          'payment_failed'
+        ),
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id
+      and (
+        provider_updated_at is null
+        or event_time >= provider_updated_at
+      );
+
+
+    update public.server_listings
+    set
+      payment_status = 'failed',
+      status =
+        case
+          when status = 'rejected'
+            then status
+          else 'paused'::public.listing_status
+        end,
+      is_featured = false,
+      billing_failure_reason =
+        coalesce(
+          event_reason,
+          'paypal_payment_failed'
+        ),
+      updated_at = now()
+
+    where id = target.server_listing_id
+      and billing_source = 'paypal'
+      and status <> 'rejected';
+
+
+  -- ===============================================================
+  -- SUBSCRIPTION SUSPENDED
+  -- ===============================================================
+
+  elsif p_event_type =
+    'BILLING.SUBSCRIPTION.SUSPENDED'
+  then
+
+    update public.billing_subscriptions
+    set
+      status =
+        case
+          when status in (
+            'cancelled',
+            'expired',
+            'refunded',
+            'reversed'
+          )
+          then status
+
+          else 'suspended'
+        end,
+
+      failure_reason =
+        coalesce(
+          event_reason,
+          'subscription_suspended'
+        ),
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id
+      and (
+        provider_updated_at is null
+        or event_time >= provider_updated_at
+      );
+
+
+    update public.server_listings
+    set
+      status =
+        case
+          when status = 'rejected'
+            then status
+          else 'paused'::public.listing_status
+        end,
+
+      is_featured = false,
+
+      billing_failure_reason =
+        coalesce(
+          event_reason,
+          'paypal_subscription_suspended'
+        ),
+
+      updated_at = now()
+
+    where id = target.server_listing_id
+      and billing_source = 'paypal'
+      and status <> 'rejected';
+
+
+  -- ===============================================================
+  -- SUBSCRIPTION CANCELLED
+  --
+  -- W.E.A.F policy:
+  -- retain the already-paid entitlement until current_period_end.
+  -- ===============================================================
+
+  elsif p_event_type =
+    'BILLING.SUBSCRIPTION.CANCELLED'
+  then
+
+    /*
+     * There is still paid time remaining.
+     */
+    if target.current_period_end is not null
+       and target.current_period_end > event_time
+    then
+
+      update public.billing_subscriptions
+      set
+        status = 'cancellation_pending',
+        auto_renew = false,
+
+        provider_updated_at =
+          greatest(
+            coalesce(provider_updated_at, event_time),
+            event_time
+          ),
+
+        updated_at = now()
+
+      where id = target.id;
+
+
+      update public.server_listings
+      set
+        cancel_at_period_end = true,
+
+        /*
+         * Remove Plus promotion immediately,
+         * but keep the paid listing active.
+         */
+        is_featured = false,
+
+        updated_at = now()
+
+      where id = target.server_listing_id
+        and billing_source = 'paypal';
+
+
+    /*
+     * No paid period remains.
+     */
+    else
+
+      update public.billing_subscriptions
+      set
+        status = 'cancelled',
+        auto_renew = false,
+
+        provider_updated_at =
+          greatest(
+            coalesce(provider_updated_at, event_time),
+            event_time
+          ),
+
+        updated_at = now()
+
+      where id = target.id;
+
+
+      update public.server_listings
+      set
+        status = 'canceled',
+        payment_status = 'canceled',
+        cancel_at_period_end = false,
+        is_featured = false,
+        updated_at = now()
+
+      where id = target.server_listing_id
+        and billing_source = 'paypal';
+
+    end if;
+
+
+  -- ===============================================================
+  -- SUBSCRIPTION EXPIRED
+  -- ===============================================================
+
+  elsif p_event_type =
+    'BILLING.SUBSCRIPTION.EXPIRED'
+  then
+
+    update public.billing_subscriptions
+    set
+      status = 'expired',
+      auto_renew = false,
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id;
+
+
+    update public.server_listings
+    set
+      status = 'expired',
+      payment_status = 'canceled',
+      cancel_at_period_end = false,
+      is_featured = false,
+      updated_at = now()
+
+    where id = target.server_listing_id
+      and billing_source = 'paypal';
+
+
+  -- ===============================================================
+  -- PAYMENT REFUNDED
+  -- ===============================================================
+
+  elsif p_event_type =
+    'PAYMENT.SALE.REFUNDED'
+  then
+
+    update public.billing_subscriptions
+    set
+      status = 'refunded',
+
+      failure_reason =
+        coalesce(
+          event_reason,
+          'paypal_payment_refunded'
+        ),
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id;
+
+
+    if external_payment is not null then
+
+      update public.billing_payments
+      set
+        status = 'refunded',
+        refunded_at = event_time,
+        updated_at = now()
+
+      where payment_provider = 'paypal'
+        and external_payment_id =
+          external_payment;
+
+    end if;
+
+
+    update public.server_listings
+    set
+      status = 'canceled',
+      payment_status = 'refunded',
+      is_featured = false,
+
+      billing_failure_reason =
+        coalesce(
+          event_reason,
+          'paypal_payment_refunded'
+        ),
+
+      updated_at = now()
+
+    where id = target.server_listing_id
+      and billing_source = 'paypal';
+
+
+  -- ===============================================================
+  -- PAYMENT REVERSED
+  -- ===============================================================
+
+  elsif p_event_type =
+    'PAYMENT.SALE.REVERSED'
+  then
+
+    update public.billing_subscriptions
+    set
+      status = 'reversed',
+
+      failure_reason =
+        coalesce(
+          event_reason,
+          'paypal_payment_reversed'
+        ),
+
+      provider_updated_at =
+        greatest(
+          coalesce(provider_updated_at, event_time),
+          event_time
+        ),
+
+      updated_at = now()
+
+    where id = target.id;
+
+
+    if external_payment is not null then
+
+      update public.billing_payments
+      set
+        status = 'reversed',
+        refunded_at = event_time,
+        updated_at = now()
+
+      where payment_provider = 'paypal'
+        and external_payment_id =
+          external_payment;
+
+    end if;
+
+
+    update public.server_listings
+    set
+      status = 'paused',
+      payment_status = 'failed',
+      is_featured = false,
+
+      billing_failure_reason =
+        coalesce(
+          event_reason,
+          'paypal_payment_reversed'
+        ),
+
+      updated_at = now()
+
+    where id = target.server_listing_id
+      and billing_source = 'paypal'
+      and status <> 'rejected';
+
+  end if;
+
+
+  -- ---------------------------------------------------------------
+  -- Event successfully reconciled
+  -- ---------------------------------------------------------------
+
+  update private.billing_events
+  set
+    processed_at = now(),
+    processing_error = null
+
+  where provider = 'paypal'
+    and environment = 'sandbox'
+    and event_id = p_event_id;
+
+
   return true;
 
-exception when others then
-  update private.billing_events set processing_error = 'internal_processing_error' where external_event_id = p_event_id;
-  raise;
+
+exception
+  when others then
+
+    /*
+     * Do NOT persist sqlerrm/raw PostgreSQL details.
+     *
+     * The exception is intentionally re-raised so the Edge Function
+     * returns a controlled failure and PayPal can retry the webhook.
+     */
+    raise;
+
 end;
 $$;
 
