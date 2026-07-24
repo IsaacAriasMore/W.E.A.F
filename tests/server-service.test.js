@@ -49,13 +49,35 @@ test('PayPal subscription starts in a protected Edge Function without exposing s
   assert.ok(result.data.url.includes('paypal.com'));
 });
 
-test('listing draft is saved through the PayPal-scoped RPC before checkout', async () => {
+test('listing draft uses the legacy RPC while PayPal billing is disabled', async () => {
   let call;
-  const service = createServerService({ async rpc(name, params) { call = { name, params }; return { data: 'listing-id', error: null }; } });
-  await service.saveListingDraft(null, 'normal', { title: 'Servidor Norte' });
+
+  const service = createServerService({
+    async rpc(name, params) {
+      call = { name, params };
+
+      return {
+        data: 'listing-id',
+        error: null,
+      };
+    },
+  });
+
+  await service.saveListingDraft(
+    null,
+    'normal',
+    { title: 'Servidor Norte' },
+  );
+
   assert.deepEqual(call, {
-    name: 'save_paypal_server_listing_draft',
-    params: { p_listing_id: null, p_plan_type: 'normal', p_payload: { title: 'Servidor Norte' } },
+    name: 'save_server_listing_draft',
+    params: {
+      p_listing_id: null,
+      p_plan_type: 'normal',
+      p_payload: {
+        title: 'Servidor Norte',
+      },
+    },
   });
 });
 
