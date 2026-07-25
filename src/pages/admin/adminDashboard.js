@@ -394,8 +394,25 @@ export function bind({ state, authService, navigate }) {
     if (renew) { const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value); await action(await service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.'); }
     const remove = event.target.closest('[data-delete-server]');
     if (remove && window.confirm('¿Eliminar definitivamente esta publicación y su analítica?')) await action(await service.deleteServerListing(remove.dataset.deleteServer), 'Publicación eliminada.');
-    const productSync = event.target.closest('[data-paypal-product-sync]');
-    if (productSync) { productSync.disabled = true; await action(await service.managePayPalCatalog('sync_product'), 'Producto PayPal sincronizado.'); }
+const productSync = event.target.closest('[data-paypal-product-sync]');
+
+if (productSync) {
+  productSync.disabled = true;
+
+  const originalText = productSync.textContent;
+  productSync.textContent = 'Sincronizando...';
+
+  showToast('Sincronizando producto con PayPal Sandbox...');
+
+  const result = await service.managePayPalCatalog('sync_product');
+
+  productSync.textContent = originalText;
+
+  await action(
+    result,
+    'Producto PayPal sincronizado correctamente.',
+  );
+}
     const planSync = event.target.closest('[data-sync-paypal-plan]');
     if (planSync) { planSync.disabled = true; await action(await service.managePayPalCatalog('sync_plan', planSync.dataset.syncPaypalPlan), 'Plan PayPal sincronizado.'); }
     const offerStatus = event.target.closest('[data-offer-status]');

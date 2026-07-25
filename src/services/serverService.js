@@ -1,5 +1,6 @@
 import { REAL_PAYPAL_BILLING } from '../config/billing.js';
 import { promotableServers } from '../utils/serverPromotion.js';
+import { friendlyEdgeFunctionError } from '../utils/edgeFunctionErrors.js';
 
 const messages = {
   listing_not_available: 'Este servidor ya no está disponible.',
@@ -12,6 +13,38 @@ const messages = {
   offer_not_available: 'Esta oferta ya no está disponible.',
   new_customers_only: 'Esta oferta está reservada para clientes nuevos.',
   paypal_plan_not_synced: 'Este plan todavía no está sincronizado con PayPal.',
+  authentication_required:
+  'Tu sesión expiró. Inicia sesión nuevamente.',
+
+listing_not_owned:
+  'Esta publicación no pertenece a tu cuenta.',
+
+subscription_not_available:
+  'Esta suscripción ya no está disponible.',
+
+subscription_already_created:
+  'Esta publicación ya tiene una suscripción de PayPal creada.',
+
+invalid_subscription_request:
+  'Los datos necesarios para iniciar el pago no son válidos.',
+
+paypal_approval_url_missing:
+  'PayPal no devolvió el enlace de aprobación.',
+
+paypal_subscription_failed:
+  'PayPal no pudo crear la suscripción.',
+
+subscription_reconciliation_failed:
+  'La suscripción fue creada, pero W.E.A.F no pudo registrarla correctamente.',
+
+subscription_not_owned:
+  'No puedes cancelar una suscripción que pertenece a otra cuenta.',
+
+paypal_cancellation_failed:
+  'PayPal no pudo cancelar la suscripción.',
+
+cancellation_reconciliation_failed:
+  'PayPal recibió la cancelación, pero W.E.A.F no pudo actualizar su estado.',
 };
 
 function friendly(error, fallback) {
@@ -133,18 +166,41 @@ export function createServerService(client) {
         return { data: null, error: null };
       }
     },
-    async startSubscription(serverListingId, planVersionId, idempotencyKey) {
-      if (!client) return { data: null, error: 'Supabase no está conectado.' };
-      const { data, error } = await client.functions.invoke('create-paypal-subscription', {
-        body: { server_listing_id: serverListingId, plan_version_id: planVersionId, idempotency_key: idempotencyKey },
-      });
-      const code = data?.error || error?.message || '';
-      const paymentError = code.includes('paypal_not_configured') || code.includes('billing_not_configured')
-        ? 'PayPal Sandbox todavía necesita configuración privada en Supabase.'
-        : code.includes('billing_disabled') ? 'La facturación está desactivada temporalmente.'
-          : friendly({ message: code }, 'No pudimos iniciar la suscripción con PayPal.');
-      return { data, error: error || data?.error ? paymentError : null };
+    async startSubscription(
+  serverListingId,
+  planVersionId,
+  idempotencyKey,
+) {
+  if (!client) {
+    return {
+      data: null,
+      error: 'Supabase no está conectado.',
+    };
+  }
+
+  const { data, error } = await client.functions.invoke(
+    'create-paypal-subscription',
+    {
+      body: {
+        server_listing_id: serverListingId,
+        plan_version_id: planVersionId,
+        idempotency_key: idempotencyKey,
+      },
     },
+  );
+
+  const friendlyError = await friendlyEdgeFunctionError(
+    error,
+    data,
+    messages,
+    'No pudimos iniciar la suscripción con PayPal.',
+  );
+
+  return {
+    data,
+    error: friendlyError,
+  };
+},
     async getMyBilling() {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };
       const { data, error } = await client.rpc('get_my_server_billing');
@@ -182,12 +238,36 @@ export function createServerService(client) {
   };
 },
     async cancelSubscription(subscriptionId, reason) {
-      if (!client) return { data: null, error: 'Supabase no está conectado.' };
-      const { data, error } = await client.functions.invoke('cancel-paypal-subscription', {
-        body: { subscription_id: subscriptionId, reason, confirm: true },
-      });
-      return { data, error: error || data?.error ? (data?.error === 'subscription_not_owned' ? 'No puedes cancelar una suscripción ajena.' : 'No pudimos cancelar la suscripción.') : null };
+  if (!client) {
+    return {
+      data: null,
+      error: 'Supabase no está conectado.',
+    };
+  }
+
+  const { data, error } = await client.functions.invoke(
+    'cancel-paypal-subscription',
+    {
+      body: {
+        subscription_id: subscriptionId,
+        reason,
+        confirm: true,
+      },
     },
+  );
+
+  const friendlyError = await friendlyEdgeFunctionError(
+    error,
+    data,
+    messages,
+    'No pudimos cancelar la suscripción.',
+  );
+
+  return {
+    data,
+    error: friendlyError,
+  };
+},
     async updateListing(listingId, payload) {
       if (!client) return { data: null, error: 'Supabase no está conectado.' };
       const { data, error } = await client.rpc('update_paid_server_listing', { p_listing_id: listingId, p_payload: payload });

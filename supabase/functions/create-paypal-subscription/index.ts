@@ -15,8 +15,7 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return json({ error: "invalid_json" }, 400) }
   if (!isUuid(body.server_listing_id) || !isUuid(body.plan_version_id) || !isUuid(body.idempotency_key)) return json({ error: "invalid_subscription_request" }, 400)
-  const claims = ctx.userClaims as { sub?: string } | undefined
-  const userId = claims?.sub
+  const userId = ctx.userClaims?.id
   if (!userId) return json({ error: "authentication_required" }, 401)
   const { data: owned } = await ctx.supabase.from("server_listings").select("id,owner_user_id").eq("id", body.server_listing_id).maybeSingle()
   if (!owned || owned.owner_user_id !== userId) return json({ error: "listing_not_owned" }, 403)

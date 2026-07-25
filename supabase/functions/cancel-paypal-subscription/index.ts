@@ -11,8 +11,7 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   try { body = await req.json() } catch { return json({ error: "invalid_json" }, 400) }
   if (!/^[0-9a-f-]{36}$/i.test(String(body.subscription_id || "")) || body.confirm !== true) return json({ error: "cancellation_confirmation_required" }, 400)
   const reason = String(body.reason || "User requested cancellation").trim().slice(0, 127)
-  const claims = ctx.userClaims as { sub?: string } | undefined
-  const userId = claims?.sub
+const userId = ctx.userClaims?.id
   if (!userId) return json({ error: "authentication_required" }, 401)
   const { data: selected, error } = await ctx.supabaseAdmin.rpc("get_paypal_subscription_for_cancel", { p_user_id: userId, p_subscription_id: body.subscription_id })
   if (error || !selected) return json({ error: "subscription_not_owned" }, 403)

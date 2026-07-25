@@ -168,6 +168,7 @@ export function bind({ authService, navigate }) {
     if (!maps.length || !platforms.length) { showToast(t('servers.form.choicesError'), 'error'); return; }
     const button = publishForm.querySelector('button[type="submit"]');
     button.disabled = true;
+    showToast('Guardando la información del servidor...');
     const customRates = Object.fromEntries(RATE_FIELDS.map(([key]) => [key, values.get(`rate_${key}`)]));
     const payload = {
       title: values.get('title').trim(), game: values.get('game'), server_type: values.get('server_type'),
@@ -188,6 +189,7 @@ export function bind({ authService, navigate }) {
     const storageKey = `weaf:paypal-idempotency:${listingId}:${publishForm.dataset.planVersion}`;
     let idempotencyKey = sessionStorage.getItem(storageKey);
     if (!idempotencyKey) { idempotencyKey = crypto.randomUUID(); sessionStorage.setItem(storageKey, idempotencyKey); }
+    showToast('Conectando con PayPal Sandbox...');
     const checkout = await service.startSubscription(listingId, publishForm.dataset.planVersion, idempotencyKey);
     if (checkout.error) { showToast(checkout.error, 'error'); button.disabled = false; button.textContent = t('servers.checkout'); return; }
     window.location.assign(checkout.data.url);

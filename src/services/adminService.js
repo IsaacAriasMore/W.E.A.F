@@ -1,3 +1,5 @@
+import { friendlyEdgeFunctionError } from '../utils/edgeFunctionErrors.js';
+
 const messages = {
   global_admin_required: 'Esta cuenta no tiene autoridad global.',
   cannot_suspend_self: 'No puedes suspender tu propia cuenta.',
@@ -19,6 +21,26 @@ const messages = {
   invalid_offer_payload: 'Revisa precio, descuento, duración y vigencia de la oferta.',
   paypal_plan_not_synced: 'Sincroniza esta versión con PayPal Sandbox antes de publicarla.',
   offer_not_found: 'La oferta ya no existe.',
+  authentication_required:
+  'Tu sesión expiró. Inicia sesión nuevamente.',
+
+paypal_disabled:
+  'PayPal Sandbox está desactivado temporalmente.',
+
+billing_product_missing:
+  'No encontramos el producto de facturación de W.E.A.F.',
+
+invalid_plan_version:
+  'La versión del plan seleccionada no es válida.',
+
+plan_version_not_found:
+  'No encontramos esta versión del plan.',
+
+paypal_product_id_missing:
+  'PayPal no devolvió un identificador para el producto.',
+
+paypal_catalog_action_failed:
+  'PayPal no pudo completar la sincronización. Inténtalo nuevamente.',
 };
 
 function friendly(error, fallback = 'No pudimos completar la acción administrativa.') {
@@ -81,9 +103,29 @@ export function createAdminService(client) {
     setBillingOfferStatus: (offerId, status) => rpc('admin_set_billing_offer_status', { p_offer_id: offerId, p_status: status }),
     duplicateBillingOffer: (offerId) => rpc('admin_duplicate_billing_offer', { p_offer_id: offerId }),
     async managePayPalCatalog(action, planVersionId = null) {
-      if (!client) return unavailable;
-      const { data, error } = await client.functions.invoke('manage-paypal-catalog', { body: { action, plan_version_id: planVersionId } });
-      return { data, error: error || data?.error ? (data?.error || error?.message || 'No pudimos sincronizar con PayPal Sandbox.') : null };
+  if (!client) return unavailable;
+
+  const { data, error } = await client.functions.invoke(
+    'manage-paypal-catalog',
+    {
+      body: {
+        action,
+        plan_version_id: planVersionId,
+      },
     },
+  );
+
+  const friendlyError = await friendlyEdgeFunctionError(
+    error,
+    data,
+    messages,
+    'No pudimos sincronizar con PayPal Sandbox.',
+  );
+
+  return {
+    data,
+    error: friendlyError,
+  };
+},
   };
 }
