@@ -201,29 +201,655 @@ function operations(data) {
 }
 
 function billing(data) {
-  const workspace = data.billing || { plans: [], offers: [], subscriptions: [], audit: [] };
-  const money = (minor, currency = 'USD') => new Intl.NumberFormat('es-CR', { style: 'currency', currency }).format(Number(minor || 0) / 100);
-  return `<section class="admin-billing-workspace">
-    <div class="admin-block-heading"><span>PayPal Sandbox</span><h2>Catálogo versionado</h2><p>Los clientes existentes conservan su versión. Los cambios materiales siempre crean una versión nueva.</p></div>
-    <section class="admin-server-metrics"><div><span>Planes base</span><strong>${workspace.plans.length}</strong></div><div><span>Ofertas</span><strong>${workspace.offers.length}</strong></div><div><span>Suscripciones</span><strong>${workspace.subscriptions.length}</strong></div><div><span>Entorno</span><strong>Sandbox</strong></div></section>
-    <button class="button button-secondary" type="button" data-paypal-product-sync>Sincronizar producto principal</button>
-    <div class="admin-content-grid"><section class="admin-primary-list"><div class="admin-block-heading"><span>Versiones</span><h2>Ofertas configuradas</h2></div>
-      ${table(['Oferta','Precio','Vigencia','Estado','PayPal','Acciones'], workspace.offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.name)}</strong><small>${escapeHtml(offer.plan_code)} · v${offer.version_number} · ${offer.subscriber_count} suscriptores</small></td><td>${offer.promotional_price_minor < offer.base_price_minor ? `<del>${money(offer.base_price_minor, offer.currency)}</del> ` : ''}${money(offer.promotional_price_minor, offer.currency)}<small>cada ${offer.interval_count} ${escapeHtml(offer.frequency_unit.toLowerCase())}</small></td><td>${offer.acquisition_starts_at ? new Date(offer.acquisition_starts_at).toLocaleDateString('es-CR') : 'inmediata'}<small>${offer.acquisition_ends_at ? `hasta ${new Date(offer.acquisition_ends_at).toLocaleDateString('es-CR')}` : 'sin cierre'}</small></td><td>${status(offer.status)}</td><td>${status(offer.sync_status)}<small>${escapeHtml(offer.last_sync_error || offer.provider_status || '')}</small></td><td><button class="admin-action" data-sync-paypal-plan="${offer.current_version_id}">Sincronizar</button><button class="admin-action" data-offer-status="${offer.id}" data-next="active">Publicar</button><button class="admin-action" data-duplicate-offer="${offer.id}">Duplicar</button><button class="admin-action is-danger" data-offer-status="${offer.id}" data-next="withdrawn">Retirar</button></td></tr>`), 'No hay ofertas creadas.')}
-    </section><aside class="admin-editor"><div><span>Nueva versión</span><h2>Crear oferta</h2><p>Precio, ciclos y condiciones se obtienen desde este catálogo; nunca desde el navegador del cliente.</p></div>
-      <form data-billing-offer-form><input name="offer_id" type="hidden"><label><span>Nombre</span><input name="name" minlength="2" maxlength="127" required></label><label><span>Descripción</span><textarea name="description" maxlength="1000"></textarea></label>
-        <div class="admin-field-pair"><label><span>Nivel</span><select name="plan_code"><option value="normal">Normal</option><option value="plus">Plus</option></select></label><label><span>Moneda</span><select name="currency"><option>USD</option></select></label></div>
-        <div class="admin-field-pair"><label><span>Precio base</span><input name="base_price" type="number" min="0.01" step="0.01" value="3" required></label><label><span>Precio final</span><input name="promotional_price" type="number" min="0.01" step="0.01" value="3" required></label></div>
-        <div class="admin-field-pair"><label><span>Descuento</span><select name="discount_type"><option value="none">Sin descuento</option><option value="percentage">Porcentaje</option><option value="fixed_amount">Monto fijo</option><option value="custom_price">Precio personalizado</option></select></label><label><span>Valor descuento</span><input name="discount_value" type="number" min="0" step="0.01" value="0"></label></div>
-        <div class="admin-field-pair"><label><span>Frecuencia</span><select name="frequency_unit"><option value="MONTH">Mensual</option><option value="WEEK">Semanal</option><option value="YEAR">Anual</option><option value="DAY">Diaria</option></select></label><label><span>Unidades por ciclo</span><input name="interval_count" type="number" min="1" max="12" value="1" required></label></div>
-        <div class="admin-field-pair"><label><span>Ciclos con beneficio</span><input name="benefit_cycles" type="number" min="1" max="999"></label><label><span>Ciclos totales</span><input name="total_cycles" type="number" min="1" max="999"></label></div>
-        <label><span>Al finalizar</span><select name="end_behavior"><option value="base_price">Pasar al precio base</option><option value="same_price">Continuar igual</option><option value="expire">Expirar</option></select></label>
-        <label class="admin-check"><input name="auto_renew" type="checkbox" checked><span>Renovación automática</span></label>
-        <div class="admin-field-pair"><label><span>Inicio de adquisición</span><input name="acquisition_starts_at" type="datetime-local"></label><label><span>Fin de adquisición</span><input name="acquisition_ends_at" type="datetime-local"></label></div>
-        <div class="admin-field-pair"><label><span>Cupo total</span><input name="subscription_limit" type="number" min="1"></label><label><span>Estado inicial</span><select name="status"><option value="draft">Borrador</option><option value="scheduled">Programada</option></select></label></div>
-        <label class="admin-check"><input name="new_customers_only" type="checkbox"><span>Solo clientes nuevos</span></label><label><span>Entorno</span><select name="environment"><option value="sandbox">Sandbox</option></select></label>
-        <div class="admin-offer-preview" data-offer-preview><span>Vista previa</span><strong>Normal · $3.00 USD</strong><small>Mensual, renovación automática</small></div>
-        <button class="button button-primary" type="submit">Guardar versión</button></form></aside></div>
-  </section>`;
+  const workspace = data.billing || {
+    plans: [],
+    versions: [],
+    offers: [],
+    subscriptions: [],
+    audit: [],
+  };
+
+  const money = (minor, currency = 'USD') =>
+    new Intl.NumberFormat('es-CR', {
+      style: 'currency',
+      currency,
+    }).format(Number(minor || 0) / 100);
+
+  // Busca la versión BASE más reciente de cada plan.
+  // Las versiones base son las que NO pertenecen a una oferta.
+  const basePlans = workspace.plans.map((plan) => {
+    const versions = (workspace.versions || [])
+      .filter(
+        (version) =>
+          version.plan_id === plan.id &&
+          !version.offer_id &&
+          version.environment === 'sandbox',
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime(),
+      );
+
+    return {
+      ...plan,
+      version: versions[0] || null,
+    };
+  });
+
+  return `
+    <section class="admin-billing-workspace">
+
+      <div class="admin-block-heading">
+        <span>PayPal Sandbox</span>
+        <h2>Catálogo versionado</h2>
+        <p>
+          Los clientes existentes conservan su versión.
+          Los cambios materiales siempre crean una versión nueva.
+        </p>
+      </div>
+
+      <section class="admin-server-metrics">
+        <div>
+          <span>Planes base</span>
+          <strong>${workspace.plans.length}</strong>
+        </div>
+
+        <div>
+          <span>Ofertas</span>
+          <strong>${workspace.offers.length}</strong>
+        </div>
+
+        <div>
+          <span>Suscripciones</span>
+          <strong>${workspace.subscriptions.length}</strong>
+        </div>
+
+        <div>
+          <span>Entorno</span>
+          <strong>Sandbox</strong>
+        </div>
+      </section>
+
+      <button
+        class="button button-secondary"
+        type="button"
+        data-paypal-product-sync
+      >
+        Sincronizar producto principal
+      </button>
+
+      <!-- PLANES BASE -->
+      <section class="admin-primary-list">
+        <div class="admin-block-heading">
+          <span>Planes oficiales</span>
+          <h2>Planes base</h2>
+          <p>
+            Estos son los planes disponibles normalmente para los usuarios,
+            independientemente de promociones u ofertas especiales.
+          </p>
+        </div>
+
+        ${table(
+          [
+            'Plan',
+            'Precio',
+            'Estado',
+            'PayPal',
+            'Acción',
+          ],
+
+          basePlans.map((plan) => {
+            const version = plan.version;
+
+            return `
+              <tr>
+                <td>
+                  <strong>${escapeHtml(plan.name)}</strong>
+                  <small>${escapeHtml(plan.code)}</small>
+                </td>
+
+                <td>
+                  ${money(plan.base_price_minor, plan.currency)}
+                </td>
+
+                <td>
+                  ${status(plan.is_active ? 'active' : 'inactive')}
+                </td>
+
+                <td>
+                  ${
+                    version
+                      ? `
+                        ${status(version.sync_status)}
+                        <small>
+                          ${escapeHtml(
+                            version.external_plan_id_sandbox ||
+                            version.last_sync_error ||
+                            version.provider_status ||
+                            ''
+                          )}
+                        </small>
+                      `
+                      : `
+                        <span class="admin-status">
+                          sin versión
+                        </span>
+                      `
+                  }
+                </td>
+
+                <td>
+                  ${
+                    !version
+                      ? ''
+                      : version.sync_status === 'synced'
+                        ? `
+                          <span class="admin-status is-positive">
+                            Sincronizado
+                          </span>
+                        `
+                        : `
+                          <button
+                            class="admin-action"
+                            type="button"
+                            data-sync-paypal-plan="${version.id}"
+                          >
+                            Sincronizar
+                          </button>
+                        `
+                  }
+                </td>
+              </tr>
+            `;
+          }),
+
+          'No hay planes base configurados.',
+        )}
+      </section>
+
+      <!-- OFERTAS -->
+      <div class="admin-content-grid">
+
+        <section class="admin-primary-list">
+
+          <div class="admin-block-heading">
+            <span>Versiones</span>
+            <h2>Ofertas configuradas</h2>
+          </div>
+
+          ${table(
+            [
+              'Oferta',
+              'Precio',
+              'Vigencia',
+              'Estado',
+              'PayPal',
+              'Acciones',
+            ],
+
+            workspace.offers.map((offer) => `
+              <tr>
+
+                <td>
+                  <strong>${escapeHtml(offer.name)}</strong>
+                  <small>
+                    ${escapeHtml(offer.plan_code)}
+                    · v${offer.version_number}
+                    · ${offer.subscriber_count} suscriptores
+                  </small>
+                </td>
+
+                <td>
+                  ${
+                    offer.promotional_price_minor < offer.base_price_minor
+                      ? `
+                        <del>
+                          ${money(
+                            offer.base_price_minor,
+                            offer.currency,
+                          )}
+                        </del>
+                      `
+                      : ''
+                  }
+
+                  ${money(
+                    offer.promotional_price_minor,
+                    offer.currency,
+                  )}
+
+                  <small>
+                    cada ${offer.interval_count}
+                    ${escapeHtml(
+                      offer.frequency_unit.toLowerCase(),
+                    )}
+                  </small>
+                </td>
+
+                <td>
+                  ${
+                    offer.acquisition_starts_at
+                      ? new Date(
+                          offer.acquisition_starts_at,
+                        ).toLocaleDateString('es-CR')
+                      : 'inmediata'
+                  }
+
+                  <small>
+                    ${
+                      offer.acquisition_ends_at
+                        ? `hasta ${new Date(
+                            offer.acquisition_ends_at,
+                          ).toLocaleDateString('es-CR')}`
+                        : 'sin cierre'
+                    }
+                  </small>
+                </td>
+
+                <td>
+                  ${status(offer.status)}
+                </td>
+
+                <td>
+                  ${status(offer.sync_status)}
+
+                  <small>
+                    ${escapeHtml(
+                      offer.external_plan_id_sandbox ||
+                      offer.last_sync_error ||
+                      offer.provider_status ||
+                      '',
+                    )}
+                  </small>
+                </td>
+
+                <td>
+
+                  ${
+                    offer.sync_status === 'synced'
+                      ? `
+                        <span class="admin-status is-positive">
+                          Sincronizado
+                        </span>
+                      `
+                      : `
+                        <button
+                          class="admin-action"
+                          type="button"
+                          data-sync-paypal-plan="${offer.current_version_id}"
+                        >
+                          Sincronizar
+                        </button>
+                      `
+                  }
+
+                  <button
+                    class="admin-action"
+                    data-offer-status="${offer.id}"
+                    data-next="active"
+                  >
+                    Publicar
+                  </button>
+
+                  <button
+                    class="admin-action"
+                    data-duplicate-offer="${offer.id}"
+                  >
+                    Duplicar
+                  </button>
+
+                  <button
+                    class="admin-action is-danger"
+                    data-offer-status="${offer.id}"
+                    data-next="withdrawn"
+                  >
+                    Retirar
+                  </button>
+
+                </td>
+
+              </tr>
+            `),
+
+            'No hay ofertas creadas.',
+          )}
+
+        </section>
+
+        <!-- CREAR OFERTA -->
+        <aside class="admin-editor">
+
+          <div>
+            <span>Nueva versión</span>
+            <h2>Crear oferta</h2>
+            <p>
+              Precio, ciclos y condiciones se obtienen desde este catálogo;
+              nunca desde el navegador del cliente.
+            </p>
+          </div>
+
+          <form data-billing-offer-form>
+
+            <input
+              name="offer_id"
+              type="hidden"
+            >
+
+            <label>
+              <span>Nombre</span>
+              <input
+                name="name"
+                minlength="2"
+                maxlength="127"
+                required
+              >
+            </label>
+
+            <label>
+              <span>Descripción</span>
+              <textarea
+                name="description"
+                maxlength="1000"
+              ></textarea>
+            </label>
+
+            <div class="admin-field-pair">
+
+              <label>
+                <span>Nivel</span>
+
+                <select name="plan_code">
+                  <option value="normal">
+                    Normal
+                  </option>
+
+                  <option value="plus">
+                    Plus
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Moneda</span>
+
+                <select name="currency">
+                  <option>USD</option>
+                </select>
+              </label>
+
+            </div>
+
+            <div class="admin-field-pair">
+
+              <label>
+                <span>Precio base</span>
+
+                <input
+                  name="base_price"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value="3"
+                  required
+                >
+              </label>
+
+              <label>
+                <span>Precio final</span>
+
+                <input
+                  name="promotional_price"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value="3"
+                  required
+                >
+              </label>
+
+            </div>
+
+            <div class="admin-field-pair">
+
+              <label>
+                <span>Descuento</span>
+
+                <select name="discount_type">
+                  <option value="none">
+                    Sin descuento
+                  </option>
+
+                  <option value="percentage">
+                    Porcentaje
+                  </option>
+
+                  <option value="fixed_amount">
+                    Monto fijo
+                  </option>
+
+                  <option value="custom_price">
+                    Precio personalizado
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Valor descuento</span>
+
+                <input
+                  name="discount_value"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                >
+              </label>
+
+            </div>
+
+            <div class="admin-field-pair">
+
+              <label>
+                <span>Frecuencia</span>
+
+                <select name="frequency_unit">
+                  <option value="MONTH">
+                    Mensual
+                  </option>
+
+                  <option value="WEEK">
+                    Semanal
+                  </option>
+
+                  <option value="YEAR">
+                    Anual
+                  </option>
+
+                  <option value="DAY">
+                    Diaria
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Unidades por ciclo</span>
+
+                <input
+                  name="interval_count"
+                  type="number"
+                  min="1"
+                  max="12"
+                  value="1"
+                  required
+                >
+              </label>
+
+            </div>
+
+            <div class="admin-field-pair">
+
+              <label>
+                <span>Ciclos con beneficio</span>
+
+                <input
+                  name="benefit_cycles"
+                  type="number"
+                  min="1"
+                  max="999"
+                >
+              </label>
+
+              <label>
+                <span>Ciclos totales</span>
+
+                <input
+                  name="total_cycles"
+                  type="number"
+                  min="1"
+                  max="999"
+                >
+              </label>
+
+            </div>
+
+            <label>
+              <span>Al finalizar</span>
+
+              <select name="end_behavior">
+                <option value="base_price">
+                  Pasar al precio base
+                </option>
+
+                <option value="same_price">
+                  Continuar igual
+                </option>
+
+                <option value="expire">
+                  Expirar
+                </option>
+              </select>
+            </label>
+
+            <label class="admin-check">
+              <input
+                name="auto_renew"
+                type="checkbox"
+                checked
+              >
+
+              <span>
+                Renovación automática
+              </span>
+            </label>
+
+            <div class="admin-field-pair">
+
+              <label>
+                <span>Inicio de adquisición</span>
+
+                <input
+                  name="acquisition_starts_at"
+                  type="datetime-local"
+                >
+              </label>
+
+              <label>
+                <span>Fin de adquisición</span>
+
+                <input
+                  name="acquisition_ends_at"
+                  type="datetime-local"
+                >
+              </label>
+
+            </div>
+
+            <div class="admin-field-pair">
+
+              <label>
+                <span>Cupo total</span>
+
+                <input
+                  name="subscription_limit"
+                  type="number"
+                  min="1"
+                >
+              </label>
+
+              <label>
+                <span>Estado inicial</span>
+
+                <select name="status">
+                  <option value="draft">
+                    Borrador
+                  </option>
+
+                  <option value="scheduled">
+                    Programada
+                  </option>
+                </select>
+              </label>
+
+            </div>
+
+            <label class="admin-check">
+
+              <input
+                name="new_customers_only"
+                type="checkbox"
+              >
+
+              <span>
+                Solo clientes nuevos
+              </span>
+
+            </label>
+
+            <label>
+
+              <span>Entorno</span>
+
+              <select name="environment">
+                <option value="sandbox">
+                  Sandbox
+                </option>
+              </select>
+
+            </label>
+
+            <div
+              class="admin-offer-preview"
+              data-offer-preview
+            >
+              <span>
+                Vista previa
+              </span>
+
+              <strong>
+                Normal · $3.00 USD
+              </strong>
+
+              <small>
+                Mensual, renovación automática
+              </small>
+            </div>
+
+            <button
+              class="button button-primary"
+              type="submit"
+            >
+              Guardar versión
+            </button>
+
+          </form>
+
+        </aside>
+
+      </div>
+
+    </section>
+  `;
 }
 
 function governance(data) {
@@ -414,7 +1040,32 @@ if (productSync) {
   );
 }
     const planSync = event.target.closest('[data-sync-paypal-plan]');
-    if (planSync) { planSync.disabled = true; await action(await service.managePayPalCatalog('sync_plan', planSync.dataset.syncPaypalPlan), 'Plan PayPal sincronizado.'); }
+
+if (planSync) {
+  planSync.disabled = true;
+
+  const originalText = planSync.textContent;
+
+  planSync.textContent = 'Sincronizando...';
+
+  showToast('Sincronizando plan con PayPal Sandbox...');
+
+  const result = await service.managePayPalCatalog(
+    'sync_plan',
+    planSync.dataset.syncPaypalPlan,
+  );
+
+  if (result.error) {
+    planSync.disabled = false;
+    planSync.textContent = originalText;
+    showToast(result.error, 'error');
+    return;
+  }
+
+  showToast('Plan PayPal sincronizado correctamente.');
+
+  await load();
+}
     const offerStatus = event.target.closest('[data-offer-status]');
     if (offerStatus && window.confirm(`¿Cambiar la oferta a ${offerStatus.dataset.next}?`)) await action(await service.setBillingOfferStatus(offerStatus.dataset.offerStatus, offerStatus.dataset.next), 'Estado de oferta actualizado.');
     const duplicate = event.target.closest('[data-duplicate-offer]');
