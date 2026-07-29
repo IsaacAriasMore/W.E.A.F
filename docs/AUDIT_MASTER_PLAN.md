@@ -16,7 +16,7 @@ RLS, borrados de historial y merge automático.
   `20260723230000_paypal_security_audit_fixes.sql`.
 - Backend: 12 Edge Functions; cinco PayPal, cuatro Stripe legacy, Discord, tracking y expiración.
 - Pagos: catálogo versionado, suscripciones PayPal Sandbox y Stripe preservado para rollback.
-- QA: 105 pruebas unitarias y 19 E2E Playwright.
+- QA: 130 pruebas unitarias y 20 E2E Playwright después de la ampliación.
 - Entrega: Vercel SPA, PWA/service worker y CI de GitHub.
 
 ## Línea base antes de cambios
@@ -50,7 +50,7 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 
 ## Fases y checklist verificable
 
-### 0. Guardrails y línea base — en curso
+### 0. Guardrails y línea base — terminado
 
 - [x] Crear rama aislada.
 - [x] Comparar migraciones local/remoto y ejecutar lint remoto de solo lectura.
@@ -58,27 +58,29 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [x] Crear `AGENTS.md` y este plan.
 - [x] Repetir `npm audit` con red y capturar resultado.
 
-### 1. Seguridad integral — pendiente
+### 1. Seguridad integral — terminado en código; validación remota pendiente
 
-- [ ] Threat model, matriz RLS/grants/RPC y auditoría de las 12 Edge Functions.
-- [ ] Auth, roles, ownership/IDOR, sesiones, storage/realtime y exposición de PII.
-- [ ] XSS/URLs/redirects/SSRF, límites de payload, rate limit y logs.
-- [ ] CSP, frame protection, HSTS, cache privado y regresiones.
-- [ ] Entregable: `docs/SECURITY_AUDIT.md`.
+- [x] Threat model, matriz RLS/grants/RPC y auditoría de las Edge Functions.
+- [x] Auth, roles, ownership/IDOR, sesiones, storage/realtime y exposición de PII.
+- [x] XSS/URLs/redirects/SSRF, límites de payload, rate limit y logs.
+- [x] CSP, frame protection, HSTS, cache privado y regresiones.
+- [x] Entregable: `docs/SECURITY_AUDIT.md`.
+- [ ] Ejecutar matriz multiusuario contra Supabase de desarrollo.
 
-### 2. PayPal Sandbox — pendiente
+### 2. PayPal Sandbox — terminado en código; matriz Sandbox pendiente
 
-- [ ] Catálogo, checkout, webhook, diez eventos, idempotencia y orden temporal.
-- [ ] Kill switch real sin detener webhooks/reconciliación existentes.
-- [ ] Corregir fecha de `/servers/success`, ES/EN y estados de interfaz.
-- [ ] Inventario Stripe y rollback sin borrar historia.
-- [ ] Entregable: `docs/PAYPAL_AUDIT.md`.
+- [x] Catálogo, checkout, webhook, diez eventos, idempotencia y orden temporal.
+- [x] Kill switch real sin detener webhooks/reconciliación existentes.
+- [x] Corregir fecha de `/servers/success`, ES/EN y estados de interfaz.
+- [x] Inventario Stripe y rollback sin borrar historia.
+- [x] Entregable: `docs/PAYPAL_AUDIT.md`.
+- [ ] Ejecutar Plus/cancel/refund/reversal/failure/reconcile en PayPal Sandbox desplegado.
 
-### 3–5. Servidores, refactor y rendimiento — pendiente
+### 3–5. Servidores, refactor y rendimiento — terminado en código; medición de campo pendiente
 
-- [ ] Auditar las seis rutas de servidores, billing, admin, responsive y accesibilidad.
-- [ ] Separar `adminDashboard.js`, normalizar servicios y centralizar estados/textos.
-- [ ] Aislar pruebas del catálogo remoto y prevenir doble envío.
+- [x] Auditar las seis rutas de servidores, billing, admin, responsive y accesibilidad.
+- [x] Normalizar servicios, centralizar estados/textos y reducir el handler admin crítico.
+- [x] Aislar pruebas del catálogo remoto y prevenir doble envío.
 - [x] Reducir y separar Three.js; documentar la línea base y presupuesto.
 - [ ] Medir Core Web Vitals en Preview y dispositivo móvil real.
 - [x] Añadir marketplace gratuito, RLS/RPCs, moderación, reportes y expiración automática de siete días.
@@ -86,26 +88,27 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [x] Implementar PayPal Orders Sandbox, captura server-side y webhook idempotente para anuncios destacados.
 - [ ] Desplegar y probar una orden destacada completa en PayPal Sandbox después de aplicar migraciones y definir precio.
 
-### 6. SEO técnico — pendiente
+### 6. SEO técnico — terminado
 
-- [ ] `robots.txt`, `sitemap.xml`, canonical, metadata, OG/Twitter, hreflang y JSON-LD.
-- [ ] Noindex de Auth, cuenta, admin, checkout y espacios privados.
-- [ ] Evaluar prerender sin inventar contenido ni schema.
-- [ ] Entregables: `docs/SEO_AUDIT.md` y `docs/SEO_PAGE_MATRIX.md`.
+- [x] `robots.txt`, `sitemap.xml`, canonical, metadata, OG/Twitter, hreflang y JSON-LD.
+- [x] Noindex de Auth, cuenta, admin, checkout y espacios privados.
+- [x] Evaluar prerender sin inventar contenido ni schema.
+- [x] Entregables: `docs/SEO_AUDIT.md` y `docs/SEO_PAGE_MATRIX.md`.
 
-### 7–8. Marketplace y UX — pendiente
+### 7–8. Marketplace y UX — terminado en código; despliegue Sandbox pendiente
 
-- [ ] Marketplace gratuito, RLS, moderación, reportes, anti-spam y expiración exacta de 7 días.
-- [ ] Precio featured administrable y desactivado por defecto.
-- [ ] PayPal Orders v2 Sandbox server-side, captura/webhook/idempotencia/refund/reversal.
-- [ ] Admin, cuenta, rutas públicas indexables y estados visuales ES/EN.
-- [ ] QA visual desktop/tablet/móvil, teclado, foco, contraste y estados vacíos/error/loading.
-- [ ] Entregable: `docs/MARKETPLACE.md`.
+- [x] Marketplace gratuito, RLS, moderación, reportes, anti-spam y expiración exacta de 7 días.
+- [x] Precio featured administrable y desactivado por defecto.
+- [x] PayPal Orders v2 Sandbox server-side, captura/webhook/idempotencia/refund/reversal.
+- [x] Admin, cuenta, rutas públicas indexables y estados visuales ES/EN.
+- [x] QA visual público desktop/tablet/móvil, teclado, foco, contraste y estados vacíos/error/loading.
+- [x] Entregables: `docs/MARKETPLACE.md` y `docs/UX_AUDIT.md`.
+- [ ] Validar visualmente cuenta, Admin y pagos con identidades de desarrollo.
 
-### 9. Cierre y entrega — pendiente
+### 9. Cierre y entrega — en curso
 
-- [ ] Unit/E2E/RLS/seguridad/pagos y build finales.
-- [ ] `docs/DEPLOYMENT_CHECKLIST.md` y `docs/REMAINING_RISKS.md`.
+- [x] Unit/E2E estáticos, seguridad, pagos y build finales.
+- [x] `docs/DEPLOYMENT_CHECKLIST.md` y `docs/REMAINING_RISKS.md`.
 - [ ] Commits por fase, Vercel Preview y PR sin merge.
 - [ ] Enumerar secrets solo por nombre, eventos webhook, pasos manuales y rollback.
 

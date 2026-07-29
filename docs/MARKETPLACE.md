@@ -57,7 +57,10 @@ Los eventos se guardan en `private.billing_events`, cuya clave primaria por prov
 
 ## Migración y rollback
 
-Migración: `20260729010939_phase_7_marketplace_foundation.sql`.
+Migraciones:
+
+- `20260729010939_phase_7_marketplace_foundation.sql`;
+- `20260729012207_marketplace_paypal_orders.sql`.
 
 Rollback funcional reversible:
 
@@ -68,7 +71,7 @@ Rollback funcional reversible:
 
 ## Pendientes operativos
 
-- Aplicar la migración después de corregir el BOM de `.env.local` y repetir `supabase migration list` + `db push --dry-run`.
+- Aplicar ambas migraciones, en orden, después de corregir el BOM de `.env.local` y repetir `supabase migration list` + `db push --dry-run`.
 - Probar RLS con dos usuarios reales de desarrollo y un admin.
 - Configurar precio desde Admin únicamente cuando se vaya a probar Orders Sandbox.
 - Desplegar `create-marketplace-paypal-order`, `capture-marketplace-paypal-order` y la nueva versión de `paypal-webhook` antes de habilitar pagos.
