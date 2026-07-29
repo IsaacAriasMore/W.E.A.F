@@ -28,7 +28,7 @@ test('local Auth and frontend feature flag default to direct registration', () =
 
 test('a signup without a returned session redirects to login with success context', () => {
   const register = read('src/pages/auth/register.js');
-  const login = read('src/pages/auth/login.js');
+  const authCopy = read('src/config/auth.js');
   assert.match(register, /registered=1/);
-  assert.match(login, /Cuenta creada correctamente\. Ya puedes entrar a W\.E\.A\.F\./);
+  assert.match(authCopy, /Cuenta creada correctamente\. Ya puedes entrar a W\.E\.A\.F\./);
 });
