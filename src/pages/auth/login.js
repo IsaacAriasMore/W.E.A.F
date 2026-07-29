@@ -36,7 +36,7 @@ export function render({ state }) {
           <label>
             <span>${copy.login.password}</span>
             <div class="password-control">
-              <input id="login-password" name="password" type="password" autocomplete="current-password" required minlength="8" />
+              <input id="login-password" name="password" type="password" autocomplete="current-password" required />
               <button type="button" data-password-toggle aria-controls="login-password" aria-pressed="false">${copy.show}</button>
             </div>
           </label>

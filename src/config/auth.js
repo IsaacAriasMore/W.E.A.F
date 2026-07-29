@@ -11,6 +11,12 @@ export const AUTH_COPY = Object.freeze({
     processing: 'Procesando…',
     show: 'Mostrar',
     hide: 'Ocultar',
+    passwordRequirements: {
+      title: 'Tu contraseña debe incluir:',
+      length: 'Entre 8 y 64 caracteres', uppercase: 'Una letra mayúscula', lowercase: 'Una letra minúscula',
+      number: 'Un número', symbol: 'Un símbolo permitido', allowedSymbols: 'Símbolos permitidos: {symbols}',
+      invalid: 'Completa todos los requisitos de contraseña.', mismatch: 'Las contraseñas no coinciden.',
+    },
     configTitle: 'Conexión pendiente',
     configBody: 'La interfaz está lista. Define VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY para activar Auth.',
     login: {
@@ -41,7 +47,7 @@ export const AUTH_COPY = Object.freeze({
       displayNamePlaceholder: 'Cómo te conoce tu tribu',
       email: 'Correo electrónico',
       password: 'Contraseña',
-      passwordHelp: 'Mínimo 8 caracteres.',
+      passwordHelp: 'Usa una contraseña única que no reutilices en otros servicios.',
       gameQuestion: '¿Dónde juegas principalmente?',
       both: 'Ambos',
       combined: 'Perfil combinado',
@@ -53,6 +59,17 @@ export const AUTH_COPY = Object.freeze({
       confirmEyebrow: 'Un paso más',
       confirmTitle: 'Confirma tu correo',
       confirmBody: 'Enviamos un enlace de confirmación. Al abrirlo volverás a W.E.A.F para terminar tu perfil.',
+    },
+    reset: {
+      coordinate: 'W.E.A.F / RECUPERACIÓN', context: 'Recupera el acceso sin alterar tu perfil, tribus o permisos.',
+      eyebrow: 'Acceso seguro', title: 'Crea una contraseña nueva', body: 'El enlace de recuperación debe seguir activo en este navegador.',
+      password: 'Nueva contraseña', confirmation: 'Confirmar contraseña', submit: 'Actualizar contraseña',
+      invalidLink: 'El enlace no es válido, expiró o todavía no abrió una sesión de recuperación.', requestAgain: 'Solicitar otro enlace',
+    },
+    changePassword: {
+      title: 'Cambiar contraseña', body: 'Actualiza tu acceso sin cerrar la sesión actual.',
+      password: 'Nueva contraseña', confirmation: 'Confirmar nueva contraseña', submit: 'Guardar contraseña',
+      saved: 'Contraseña actualizada correctamente.',
     },
     captcha: {
       label: 'Verificación anti-bots',
@@ -84,6 +101,12 @@ export const AUTH_COPY = Object.freeze({
     processing: 'Processing…',
     show: 'Show',
     hide: 'Hide',
+    passwordRequirements: {
+      title: 'Your password must include:',
+      length: 'Between 8 and 64 characters', uppercase: 'One uppercase letter', lowercase: 'One lowercase letter',
+      number: 'One number', symbol: 'One allowed symbol', allowedSymbols: 'Allowed symbols: {symbols}',
+      invalid: 'Complete every password requirement.', mismatch: 'Passwords do not match.',
+    },
     configTitle: 'Connection pending',
     configBody: 'The interface is ready. Define VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to enable Auth.',
     login: {
@@ -114,7 +137,7 @@ export const AUTH_COPY = Object.freeze({
       displayNamePlaceholder: 'How your tribe knows you',
       email: 'Email address',
       password: 'Password',
-      passwordHelp: 'At least 8 characters.',
+      passwordHelp: 'Use a unique password that you do not reuse on other services.',
       gameQuestion: 'Where do you mainly play?',
       both: 'Both',
       combined: 'Combined profile',
@@ -126,6 +149,17 @@ export const AUTH_COPY = Object.freeze({
       confirmEyebrow: 'One more step',
       confirmTitle: 'Confirm your email',
       confirmBody: 'We sent a confirmation link. Opening it will return you to W.E.A.F to finish your profile.',
+    },
+    reset: {
+      coordinate: 'W.E.A.F / RECOVERY', context: 'Recover access without changing your profile, tribes, or permissions.',
+      eyebrow: 'Secure access', title: 'Create a new password', body: 'The recovery link must still be active in this browser.',
+      password: 'New password', confirmation: 'Confirm password', submit: 'Update password',
+      invalidLink: 'The link is invalid, expired, or has not opened a recovery session yet.', requestAgain: 'Request another link',
+    },
+    changePassword: {
+      title: 'Change password', body: 'Update your access without closing the current session.',
+      password: 'New password', confirmation: 'Confirm new password', submit: 'Save password',
+      saved: 'Password updated successfully.',
     },
     captcha: {
       label: 'Anti-bot verification',
