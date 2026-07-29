@@ -26,7 +26,7 @@ RLS, borrados de historial y merge automático.
 | `npm install` | Pasa | Lockfile sin cambio. |
 | `npm run check` | Pasa | 79 archivos frontend. |
 | `npm run test:unit` | Pasa | 105/105. |
-| `npm run build` | Pasa con warning | Three.js: 734.33 KB min / 189.46 KB gzip. |
+| `npm run build` | Pasa | Three.js quedó diferido y dividido; ningún chunk supera 500 kB. |
 | `npm run test:e2e` | 1 fallo, ejecución agotó 120 s | `/servers/owners` recibió cero planes desde catálogo remoto; 18 casos llegaron a ejecutarse. |
 | Migraciones | Alineadas | 29 timestamps coinciden local/remoto; no requiere repair. |
 | `supabase db lint` | 1 warning legacy | Variable `new_subscription_id` nunca leída en función Stripe histórica. |
@@ -44,7 +44,7 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 5. **Medio:** cabeceras carecen todavía de CSP, anti-frame y política explícita para privados.
 6. **Medio:** `robots.txt` y `sitemap.xml` no existen como archivos estáticos y caen al rewrite SPA.
 7. **Medio:** dashboard admin monolítico (~74 KB fuente) y renders completos en acciones.
-8. **Medio:** Three.js produce un chunk minificado de 734 KB.
+8. **Corregido:** Three.js producía un chunk minificado de 734 KB; la importación modular y diferida elimina el warning y reduce el total gzip aproximadamente 26.5 %.
 9. **Bajo:** textos hardcodeados ES y lógica Stripe legacy mezclada en servicios actuales.
 10. **Informativo:** falta validación manual completa de Plus, refund, reversal y fallos Sandbox.
 
@@ -79,7 +79,8 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [ ] Auditar las seis rutas de servidores, billing, admin, responsive y accesibilidad.
 - [ ] Separar `adminDashboard.js`, normalizar servicios y centralizar estados/textos.
 - [ ] Aislar pruebas del catálogo remoto y prevenir doble envío.
-- [ ] Medir/corregir Three.js, render síncrono, imágenes y Core Web Vitals.
+- [x] Reducir y separar Three.js; documentar la línea base y presupuesto.
+- [ ] Medir Core Web Vitals en Preview y dispositivo móvil real.
 
 ### 6. SEO técnico — pendiente
 

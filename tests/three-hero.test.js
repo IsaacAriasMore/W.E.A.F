@@ -6,7 +6,9 @@ const source = readFileSync(new URL('../src/components/visuals/WeafThreeHero.js'
 const home = readFileSync(new URL('../src/pages/public/home.js', import.meta.url), 'utf8');
 
 test('the home WebGL layer is lazy, capped and optional', () => {
-  assert.match(source, /import\('three'\)/);
+  assert.match(source, /import\('\.\/threeHeroCore\.js'\)/);
+  assert.match(source, /import\('\.\/threeHeroRenderer\.js'\)/);
+  assert.doesNotMatch(source, /import\('three'\)/);
   assert.match(source, /requestIdleCallback/);
   assert.match(source, /Math\.min\(window\.devicePixelRatio \|\| 1, 1\.5\)/);
   assert.match(source, /prefers-reduced-motion: reduce/);
