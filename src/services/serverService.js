@@ -131,9 +131,13 @@ export function createServerService(client) {
   }
 
   // PayPal ya preparado: utilizar el catálogo seguro nuevo.
-  const { data, error } = await client.rpc(
-    'get_public_billing_catalog'
-  );
+  const [catalogResult, statusResult] = await Promise.all([
+    client.rpc('get_public_billing_catalog'),
+    client.rpc('get_paypal_checkout_status'),
+  ]);
+
+  const { data, error } = catalogResult;
+  const statusError = statusResult.error;
 
   return {
     data: [
@@ -144,8 +148,9 @@ export function createServerService(client) {
       plans: [],
       offers: [],
     },
+    enabled: statusError ? false : statusResult.data === true,
     error: friendly(
-      error,
+      error || statusError,
       'No pudimos cargar los planes.'
     ),
   };

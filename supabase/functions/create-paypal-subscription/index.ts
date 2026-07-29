@@ -17,6 +17,12 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (!isUuid(body.server_listing_id) || !isUuid(body.plan_version_id) || !isUuid(body.idempotency_key)) return json({ error: "invalid_subscription_request" }, 400)
   const userId = ctx.userClaims?.sub || ctx.userClaims?.id
   if (!userId) return json({ error: "authentication_required" }, 401)
+  const { data: paymentFlag, error: paymentFlagError } = await ctx.supabaseAdmin
+    .from("feature_flags")
+    .select("enabled")
+    .eq("key", "paypal_payments")
+    .maybeSingle()
+  if (paymentFlagError || paymentFlag?.enabled !== true) return json({ error: "billing_disabled" }, 503)
   const { data: owned } = await ctx.supabase.from("server_listings").select("id,owner_user_id").eq("id", body.server_listing_id).maybeSingle()
   if (!owned || owned.owner_user_id !== userId) return json({ error: "listing_not_owned" }, 403)
   const { data: prepared, error: prepareError } = await ctx.supabaseAdmin.rpc("prepare_paypal_subscription", {

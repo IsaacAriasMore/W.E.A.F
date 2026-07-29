@@ -5,12 +5,15 @@ import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerS
 import { billingCadence, billingPrice, formatBillingMoney } from '../../utils/billingPlans.js';
 import { getLanguage } from '../../i18n/index.js';
 
-function plansMarkup(plans) {
+function plansMarkup(plans, enabled) {
   return plans.map((plan) => {
     const plus = plan.code === 'plus';
     const features = ['normal', 'plus'].includes(plan.code) ? t(`servers.owner.${plan.code}Features`).split('|') : (plan.features || []);
     const locale = getLanguage() === 'es' ? 'es-CR' : 'en-US';
-    return `<article class="owner-plan interactive-card ${plus ? 'is-plus' : ''}" data-gsap-item><div><span>${t(plus ? 'servers.owner.visibility' : 'servers.owner.essential')}</span><h2>${escapeHtml(plan.offer_name || plan.name)}</h2><p>${escapeHtml(plan.offer_description || (plus ? t('servers.owner.plusBody') : t('servers.owner.normalBody')))}</p></div><strong>${formatBillingMoney(billingPrice(plan), plan.currency, locale)}<small> ${billingCadence(plan, getLanguage())}</small></strong><ul>${features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul><a class="button ${plus ? 'button-primary' : 'button-secondary'}" href="/servers/publish?plan=${plan.code}${plan.offer_id ? `&offer=${plan.offer_id}` : ''}" data-link>${t('servers.owner.choose', { plan: plan.offer_name || plan.name })}</a></article>`;
+    const action = enabled
+      ? `<a class="button ${plus ? 'button-primary' : 'button-secondary'}" href="/servers/publish?plan=${plan.code}${plan.offer_id ? `&offer=${plan.offer_id}` : ''}" data-link>${t('servers.owner.choose', { plan: plan.offer_name || plan.name })}</a>`
+      : `<span class="button button-quiet" aria-disabled="true">${t('servers.owner.unavailable')}</span>`;
+    return `<article class="owner-plan interactive-card ${plus ? 'is-plus' : ''}" data-gsap-item><div><span>${t(plus ? 'servers.owner.visibility' : 'servers.owner.essential')}</span><h2>${escapeHtml(plan.offer_name || plan.name)}</h2><p>${escapeHtml(plan.offer_description || (plus ? t('servers.owner.plusBody') : t('servers.owner.normalBody')))}</p></div><strong>${formatBillingMoney(billingPrice(plan), plan.currency, locale)}<small> ${billingCadence(plan, getLanguage())}</small></strong><ul>${features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul>${action}</article>`;
   }).join('');
 }
 
@@ -35,11 +38,11 @@ export function bind({ authService }) {
     window.requestAnimationFrame(() => scrollToPlans('auto'));
   }
 
-  createServerService(authService.getClient()).listPlans().then(({ data, error }) => {
+  createServerService(authService.getClient()).listPlans().then(({ data, error, enabled }) => {
     if (!plansSection?.isConnected) return;
     if (error || !Array.isArray(data) || !data.length) { plansSection.innerHTML = `<div class="publish-message"><p>${t('servers.form.plansUnavailable')}</p></div>`; return; }
     const plans = data;
-    plansSection.innerHTML = plansMarkup(plans);
+    plansSection.innerHTML = `${enabled ? '' : `<div class="publish-message"><p>${t('servers.form.billingDisabled')}</p></div>`}${plansMarkup(plans, enabled)}`;
     plansSection.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-scale')
       .forEach((element) => element.classList.add('reveal-visible'));
   }).catch(() => {

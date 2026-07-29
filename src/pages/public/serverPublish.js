@@ -48,7 +48,7 @@ function ratesSection(listing) {
   </fieldset>`;
 }
 
-function form(plan, listing) {
+function form(plan, listing, checkoutEnabled) {
   const paidAndActive = listing?.status === 'active';
   const game = listing?.game || 'ascended';
   const tier = listing?.plan_type || listing?.plan || plan?.code || 'normal';
@@ -72,7 +72,7 @@ function form(plan, listing) {
         <label class="publish-check"><input name="propagators" type="checkbox" ${checked(listing?.uses_propagators)}><span>${t('servers.form.propagators')}</span></label>
       </fieldset>
     </div>
-    <footer><p>${t(paidAndActive ? 'servers.form.immediate' : REAL_PAYPAL_BILLING ? 'servers.form.redirectPayPal' : 'servers.form.adminPending')}</p><button class="button button-primary" type="submit">${paidAndActive ? t('common.saveChanges') : REAL_PAYPAL_BILLING ? t('servers.checkout') : t('servers.form.saveDraft')}</button></footer>
+    <footer><p>${t(paidAndActive ? 'servers.form.immediate' : checkoutEnabled ? 'servers.form.redirectPayPal' : 'servers.form.billingDisabled')}</p><button class="button button-primary" type="submit">${paidAndActive ? t('common.saveChanges') : checkoutEnabled ? t('servers.checkout') : t('servers.form.saveDraft')}</button></footer>
   </form>`;
 }
 
@@ -117,24 +117,30 @@ export function bind({ authService, navigate }) {
   const requestedListingId = query.get('listing_id');
   let selectedListing = null;
   let catalog = [];
+  let checkoutEnabled = false;
 
   async function load() {
     const [result, plansResult] = await Promise.all([service.getMyBilling(), service.listPlans()]);
     if (result.error) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.accountError')}</h2><p>${escapeHtml(result.error)}</p>`; return; }
-    if (plansResult.error || !plansResult.data?.length) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.plansUnavailable')}</h2><p>${escapeHtml(plansResult.error || t('servers.form.syncRequired'))}</p>`; return; }
-    catalog = plansResult.data;
     const listings = result.data?.listings || [];
     selectedListing = requestedListingId ? listings.find((item) => item.id === requestedListingId) : null;
     if (requestedListingId && !selectedListing) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.unavailable')}</h2><p>${t('servers.form.ownershipError')}</p>`; return; }
+    if (plansResult.error || !plansResult.data?.length) {
+      if (selectedListing?.status === 'active') { workspace.className = 'publish-workspace'; workspace.innerHTML = form(null, selectedListing, false); return; }
+      workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.plansUnavailable')}</h2><p>${escapeHtml(plansResult.error || t('servers.form.syncRequired'))}</p>`; return;
+    }
+    catalog = plansResult.data;
+    checkoutEnabled = REAL_PAYPAL_BILLING && plansResult.enabled === true;
     workspace.className = 'publish-workspace';
     if (selectedListing || chosenPlan) {
       const tier = selectedListing?.plan_type || selectedListing?.plan || chosenPlan;
       const plan = catalog.find((item) => item.plan_version_id === selectedListing?.billing_plan_version_id)
         || catalog.find((item) => item.offer_id === requestedOfferId)
         || catalog.find((item) => item.code === (tier === 'manual' ? 'normal' : tier) && !item.offer_id);
-      workspace.innerHTML = form(plan, selectedListing);
+      workspace.innerHTML = form(plan, selectedListing, checkoutEnabled);
       return;
     }
+    if (!checkoutEnabled) { workspace.className = 'publish-message'; workspace.innerHTML = `<h2>${t('servers.form.plansUnavailable')}</h2><p>${t('servers.form.billingDisabled')}</p>`; return; }
     workspace.innerHTML = planSelector(catalog, listings);
   }
 
@@ -151,7 +157,7 @@ export function bind({ authService, navigate }) {
       chosenPlan = planChoice.dataset.tier;
       const selectedPlan = catalog.find((item) => item.plan_version_id === planChoice.dataset.selectPublishPlan);
       window.history.replaceState({}, '', `/servers/publish?plan=${chosenPlan}${selectedPlan?.offer_id ? `&offer=${selectedPlan.offer_id}` : ''}`);
-      workspace.innerHTML = form(selectedPlan, null);
+      workspace.innerHTML = form(selectedPlan, null, checkoutEnabled);
       workspace.querySelector('[name="title"]')?.focus();
       return;
     }
@@ -183,7 +189,7 @@ export function bind({ authService, navigate }) {
     if (result.error) { showToast(result.error, 'error'); button.disabled = false; return; }
     const listingId = result.data;
     if (selectedListing?.status === 'active') { showToast(t('servers.form.saved')); await load(); return; }
-    if (!REAL_PAYPAL_BILLING) { showToast(t('servers.form.draftSaved')); navigate(`/servers/publish?listing_id=${listingId}`); return; }
+    if (!checkoutEnabled) { showToast(t('servers.form.billingDisabled'), 'error'); navigate(`/servers/publish?listing_id=${listingId}`); return; }
     if (!publishForm.dataset.planVersion) { showToast(t('servers.form.planUnavailable'), 'error'); button.disabled = false; return; }
     button.textContent = t('servers.form.openingPayPal');
     const storageKey = `weaf:paypal-idempotency:${listingId}:${publishForm.dataset.planVersion}`;
