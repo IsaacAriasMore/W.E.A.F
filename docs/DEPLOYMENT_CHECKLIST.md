@@ -1,7 +1,21 @@
 # Checklist de despliegue seguro
 
-Este documento prepara Preview y el despliegue posterior. No autoriza producción, PayPal Live,
-merge ni cambios destructivos.
+Este documento registra el despliegue controlado ejecutado el 2026-07-28 (Costa Rica) / 2026-07-29
+(UTC). No autoriza PayPal Live, merge ni cambios destructivos. El PR continúa como Draft y los dos
+interruptores de pagos permanecen apagados.
+
+## Estado del despliegue controlado
+
+- [x] Docker Desktop 4.84.0 operativo; `docker version` mostró Client y Server.
+- [x] Backups nuevos, externos al repo y mayores que 0 en `E:\W.E.A.F-Backups\20260728-220144`.
+- [x] Historial local/remoto comparado y dry-run limitado a cuatro migraciones.
+- [x] Cuatro migraciones aplicadas en orden; historial local/remoto alineado.
+- [x] Ocho Edge Functions desplegadas con el `verify_jwt` esperado.
+- [x] `check`, 130 unitarias, 20 E2E, build y audit de dependencias en verde.
+- [x] Prueba A/B de ownership y RLS con usuarios sintéticos; datos privados aislados.
+- [ ] QA visual del Preview y flujo Admin con sesión segura; Vercel Authentication bloqueó la
+  inspección anónima del Preview.
+- [ ] Matriz PayPal completa en Sandbox. No se ejecutaron pagos ni se habilitaron switches.
 
 ## 1. Antes de desplegar
 
@@ -16,8 +30,9 @@ npx supabase migration list --linked
 npx supabase db push --linked --dry-run
 ```
 
-El historial estaba alineado hasta `20260723230000_paypal_security_audit_fixes.sql`. No usar
-`migration repair`, `db reset` ni borrar historial salvo que una comparación nueva pruebe que es necesario.
+Antes del push el historial estaba alineado hasta `20260723230000_paypal_security_audit_fixes.sql`.
+Después del push quedó alineado hasta `20260729012207_marketplace_paypal_orders.sql`. No se usó
+`migration repair`, `db reset` ni se borró historial.
 
 ## 2. Migraciones nuevas, en orden
 
@@ -26,7 +41,7 @@ El historial estaba alineado hasta `20260723230000_paypal_security_audit_fixes.s
 3. `20260729010939_phase_7_marketplace_foundation.sql`
 4. `20260729012207_marketplace_paypal_orders.sql`
 
-Después del dry-run revisado:
+El dry-run mostró exactamente estas cuatro migraciones y luego se ejecutó:
 
 ```powershell
 npx supabase db push --linked
@@ -34,10 +49,10 @@ npx supabase migration list --linked
 npx supabase db lint --linked
 ```
 
-Aplicar primero en el proyecto de desarrollo. La migración de marketplace crea el cron de
-expiración; verificar su ejecución cada 15 minutos y que solo oculte anuncios vencidos.
+El push terminó correctamente. La migración de marketplace creó el cron `*/15 * * * *`; se verificó
+que apunta a `expire_marketplace_listings()` y que el procedimiento es idempotente.
 
-## 3. Edge Functions que cambian o se agregan
+## 3. Edge Functions desplegadas
 
 ```powershell
 npx supabase functions deploy create-paypal-subscription --project-ref vwxqewpvtucygbaethkv
@@ -47,6 +62,10 @@ npx supabase functions deploy paypal-webhook --project-ref vwxqewpvtucygbaethkv
 npx supabase functions deploy create-marketplace-paypal-order --project-ref vwxqewpvtucygbaethkv
 npx supabase functions deploy capture-marketplace-paypal-order --project-ref vwxqewpvtucygbaethkv
 ```
+
+También se desplegaron `track-server-event` y `manage-paypal-catalog`. Versiones resultantes:
+tracking v22, catálogo v5, crear/cancelar suscripción v5, reconciliación v3, webhook v3 y las dos
+funciones marketplace v1.
 
 No desplegar funciones de checkout antes de las migraciones. `paypal-webhook` y reconciliación
 deben continuar funcionando aunque el kill switch de nuevos pagos esté apagado.
@@ -89,7 +108,7 @@ En el webhook Sandbox habilitar:
 - `PAYMENT.CAPTURE.REFUNDED`
 - `PAYMENT.CAPTURE.REVERSED`
 
-Desde Admin, dejar pagos destacados apagados hasta definir
+Desde Admin, mantener pagos destacados apagados hasta definir
 `marketplace_featured_price_minor`. Probar gratis primero; luego fijar un precio de prueba,
 habilitar Sandbox y recorrer una única orden con cuenta Sandbox.
 
@@ -108,7 +127,7 @@ habilitar Sandbox y recorrer una única orden con cuenta Sandbox.
 
 ## 7. Rollback
 
-1. Apagar `paypal_payments` y `marketplace_payments` desde la configuración server-side.
+1. Confirmar que `paypal_payments=false` y `marketplace_payments=false` en configuración server-side.
 2. Mantener webhooks y reconciliación para obligaciones existentes.
 3. Revertir el frontend/Edge Functions a la versión anterior mediante deployment, sin borrar tablas.
 4. Preservar billing, eventos, pagos, reportes y auditoría.

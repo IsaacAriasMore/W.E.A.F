@@ -5,14 +5,13 @@ puntos requieren entorno desplegado, identidades reales de desarrollo o decision
 
 ## Altos
 
-- **Migraciones aún no aplicadas.** Las cuatro migraciones de esta rama existen localmente. El CLI
-  no pudo completar el dry-run porque `.env.local` contiene BOM. Debe corregirse sin revelar secretos,
-  repetir historial/dry-run y aplicar primero en desarrollo.
 - **Matriz PayPal incompleta en Sandbox.** Normal tiene evidencia histórica, pero Plus, cancelación,
   suspensión, failure, refund, reversal, expiración, reconciliación y pago único marketplace necesitan
   pruebas end-to-end con webhook Sandbox desplegado.
-- **RLS multiusuario no ejecutado contra remoto.** Las políticas, grants, ownership y RPCs tienen
-  revisión estática y regresiones; falta probar con usuario A, usuario B y admin en una base de desarrollo.
+- **QA Admin pendiente.** La matriz A/B remota confirmó ownership y RLS con cuentas sintéticas, pero
+  falta validar moderación, reportes y settings con una sesión Admin segura.
+- **Preview protegido.** Vercel Authentication impidió la inspección visual anónima. Deben verificarse
+  rutas privadas, consola/CSP y responsive después de iniciar sesión en el Preview.
 
 ## Medios
 
@@ -30,8 +29,9 @@ puntos requieren entorno desplegado, identidades reales de desarrollo o decision
 
 ## Bajos e informativos
 
-- `supabase db lint` conserva un warning legacy: `new_subscription_id` no se usa en una función Stripe
-  histórica. No se retiró porque Stripe permanece como rollback e historial.
+- `supabase db lint` conserva el warning legacy de `new_subscription_id` y advierte que
+  `private.validate_marketplace_payload` está marcada `IMMUTABLE` aunque contiene una expresión
+  `STABLE`. No altera el despliegue actual; debe corregirse con una migración nueva revisada.
 - Admin conserva colores locales y tipografía legacy fuera de algunos tokens del sistema.
 - Recuperación de contraseña depende de SMTP; la UI falla de forma clara, pero la entregabilidad necesita
   dominio, SPF, DKIM y DMARC válidos.
@@ -39,5 +39,5 @@ puntos requieren entorno desplegado, identidades reales de desarrollo o decision
 
 ## Criterio para liberar
 
-No habilitar pagos nuevos ni marketplace destacado hasta cerrar los tres riesgos altos, revisar Preview,
-confirmar backups y aprobar manualmente el despliegue. Mantener siempre `PAYPAL_MODE=sandbox` durante QA.
+No habilitar pagos nuevos ni marketplace destacado hasta cerrar los riesgos altos y aprobar manualmente
+la prueba. Los backups ya se confirmaron; mantener siempre `PAYPAL_MODE=sandbox` durante QA.

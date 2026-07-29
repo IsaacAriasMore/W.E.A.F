@@ -69,10 +69,10 @@ Rollback funcional reversible:
 3. Mantener tablas y logs. No ejecutar `DROP` ni borrar pagos/reportes sin exportación, respaldo y aprobación.
 4. Desprogramar `expire-marketplace-listings` solo si el marketplace completo queda deshabilitado; los anuncios existentes deben ocultarse de forma controlada.
 
-## Pendientes operativos
+## Estado operativo y pendientes
 
-- Aplicar ambas migraciones, en orden, después de corregir el BOM de `.env.local` y repetir `supabase migration list` + `db push --dry-run`.
-- Probar RLS con dos usuarios reales de desarrollo y un admin.
+- Las dos migraciones se aplicaron en orden tras backup, comparación de historial y dry-run; local y remoto están alineados.
+- La prueba RLS A/B con usuarios sintéticos pasó; falta validar moderación y settings con un Admin seguro.
 - Configurar precio desde Admin únicamente cuando se vaya a probar Orders Sandbox.
-- Desplegar `create-marketplace-paypal-order`, `capture-marketplace-paypal-order` y la nueva versión de `paypal-webhook` antes de habilitar pagos.
+- `create-marketplace-paypal-order`, `capture-marketplace-paypal-order` y `paypal-webhook` están desplegadas; pagos siguen apagados.
 - Definir política legal final, retención y respuesta a reportes con asesoría profesional.

@@ -12,9 +12,9 @@ RLS, borrados de historial y merge automático.
 ## Inventario inicial
 
 - Frontend: Vite 7, JavaScript ESM, 10 páginas públicas, 5 privadas, 4 de Auth y un dashboard admin.
-- Datos: 29 migraciones locales y remotas alineadas hasta
-  `20260723230000_paypal_security_audit_fixes.sql`.
-- Backend: 12 Edge Functions; cinco PayPal, cuatro Stripe legacy, Discord, tracking y expiración.
+- Datos: 33 migraciones locales y remotas alineadas hasta
+  `20260729012207_marketplace_paypal_orders.sql`.
+- Backend: funciones PayPal y marketplace desplegadas en Sandbox; Stripe legacy preservado.
 - Pagos: catálogo versionado, suscripciones PayPal Sandbox y Stripe preservado para rollback.
 - QA: 130 pruebas unitarias y 20 E2E Playwright después de la ampliación.
 - Entrega: Vercel SPA, PWA/service worker y CI de GitHub.
@@ -58,14 +58,15 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [x] Crear `AGENTS.md` y este plan.
 - [x] Repetir `npm audit` con red y capturar resultado.
 
-### 1. Seguridad integral — terminado en código; validación remota pendiente
+### 1. Seguridad integral — terminado; validación Admin pendiente
 
 - [x] Threat model, matriz RLS/grants/RPC y auditoría de las Edge Functions.
 - [x] Auth, roles, ownership/IDOR, sesiones, storage/realtime y exposición de PII.
 - [x] XSS/URLs/redirects/SSRF, límites de payload, rate limit y logs.
 - [x] CSP, frame protection, HSTS, cache privado y regresiones.
 - [x] Entregable: `docs/SECURITY_AUDIT.md`.
-- [ ] Ejecutar matriz multiusuario contra Supabase de desarrollo.
+- [x] Ejecutar matriz multiusuario A/B contra Supabase con cuentas sintéticas.
+- [ ] Completar matriz con una sesión Admin segura.
 
 ### 2. PayPal Sandbox — terminado en código; matriz Sandbox pendiente
 
@@ -84,7 +85,7 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [x] Reducir y separar Three.js; documentar la línea base y presupuesto.
 - [ ] Medir Core Web Vitals en Preview y dispositivo móvil real.
 - [x] Añadir marketplace gratuito, RLS/RPCs, moderación, reportes y expiración automática de siete días.
-- [ ] Aplicar y probar la migración del marketplace en Supabase después de corregir el BOM local.
+- [x] Aplicar y probar las migraciones del marketplace en Supabase tras backup y dry-run.
 - [x] Implementar PayPal Orders Sandbox, captura server-side y webhook idempotente para anuncios destacados.
 - [ ] Desplegar y probar una orden destacada completa en PayPal Sandbox después de aplicar migraciones y definir precio.
 
@@ -95,7 +96,7 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [x] Evaluar prerender sin inventar contenido ni schema.
 - [x] Entregables: `docs/SEO_AUDIT.md` y `docs/SEO_PAGE_MATRIX.md`.
 
-### 7–8. Marketplace y UX — terminado en código; despliegue Sandbox pendiente
+### 7–8. Marketplace y UX — desplegado con pagos desactivados
 
 - [x] Marketplace gratuito, RLS, moderación, reportes, anti-spam y expiración exacta de 7 días.
 - [x] Precio featured administrable y desactivado por defecto.
@@ -103,14 +104,17 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [x] Admin, cuenta, rutas públicas indexables y estados visuales ES/EN.
 - [x] QA visual público desktop/tablet/móvil, teclado, foco, contraste y estados vacíos/error/loading.
 - [x] Entregables: `docs/MARKETPLACE.md` y `docs/UX_AUDIT.md`.
-- [ ] Validar visualmente cuenta, Admin y pagos con identidades de desarrollo.
+- [x] Validar ownership, expiración y aislamiento A/B con identidades sintéticas.
+- [ ] Validar visualmente Preview y Admin con una sesión segura.
+- [ ] Validar pagos únicamente en PayPal Sandbox cuando se autorice encender los switches.
 
-### 9. Cierre y entrega — en curso
+### 9. Cierre y entrega — cierre técnico completado; QA manual pendiente
 
 - [x] Unit/E2E estáticos, seguridad, pagos y build finales.
 - [x] `docs/DEPLOYMENT_CHECKLIST.md` y `docs/REMAINING_RISKS.md`.
-- [ ] Commits por fase, Vercel Preview y PR sin merge.
-- [ ] Enumerar secrets solo por nombre, eventos webhook, pasos manuales y rollback.
+- [x] Commits por fase, Vercel Preview y PR Draft sin merge.
+- [x] Enumerar secrets solo por nombre, eventos webhook, pasos manuales y rollback.
+- [x] Registrar migraciones, funciones, backups, pruebas y logs en el reporte de producción.
 
 ## Archivos inicialmente afectados
 

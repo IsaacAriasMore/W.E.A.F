@@ -46,15 +46,16 @@ públicas de `weaf.vercel.app`. Esta revisión reduce riesgo, pero no afirma seg
 
 ## Supabase, RLS y autorización
 
-- Las 29 migraciones locales coinciden con las 29 remotas; no se reparó ni borró historial.
+- Las 33 migraciones locales coinciden con las 33 remotas hasta
+  `20260729012207_marketplace_paypal_orders.sql`; no se reparó ni borró historial.
 - Tablas públicas nuevas de billing tienen RLS; catálogo interno revoca acceso directo y expone una
   RPC sanitizada. Suscripciones/pagos solo permiten lectura del propietario y admins vía funciones.
 - RPCs privilegiadas fijan `search_path=''`; los grants finales separan `authenticated` y
   `service_role`. Los handlers de servicio no confían en `user_metadata`.
 - Admin se comprueba contra `profiles.global_role`/`private.is_global_admin()`, no contra campos del
   navegador. Roles de tribu siguen separados de admin global.
-- El lint remoto conserva un aviso informativo legacy: variable no leída en
-  `process_stripe_server_event_verified_payload`; no cambia permisos ni resultados.
+- El lint remoto conserva el aviso legacy de una variable no leída en Stripe y un aviso de volatilidad
+  en `private.validate_marketplace_payload`; no se modificó una migración ya aplicada.
 - No se detectaron buckets de Storage usados por la app ni suscripciones Realtime en el frontend.
 
 ## Edge Functions
@@ -104,8 +105,8 @@ app, admin, billing, publish, success, cancel, Stripe y Functions.
   sin revisión.
 - Rate limiting perimetral/WAF para endpoints públicos debe configurarse en el proveedor si el
   volumen lo exige.
-- Las pruebas activas de IDOR/RLS deben usar usuarios sintéticos en un proyecto aislado; no se
-  intentaron ataques sobre cuentas reales.
+- Las pruebas activas de IDOR/RLS se ejecutaron con dos usuarios sintéticos: B no pudo leer ni editar
+  tribus, servidores, pagos o anuncios privados de A, ni alterar featured/expiración. Falta el rol Admin.
 
 ## Verificación de regresión
 

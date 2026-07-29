@@ -103,4 +103,5 @@ legacy vivas y un rollback alternativo.
 - El cron del reconciliador debe configurarse con secreto fuera del repo y observar duración/límites.
 - Refund/reversal requieren acciones Sandbox y confirmación en Dashboard; no deben probarse sobre
   la suscripción de un usuario real.
-- El dry-run de migraciones está pendiente hasta corregir el BOM de `.env.local` sin exponerlo.
+- El dry-run y el push controlado se completaron después de crear backups externos válidos; el historial
+  local/remoto quedó alineado. PayPal continúa en Sandbox y `paypal_payments=false`.
