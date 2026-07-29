@@ -149,3 +149,46 @@ habilitar Sandbox y recorrer una única orden con cuenta Sandbox.
 
 Rollback específico: restaurar la Edge desde `5d6a8d4` y crear una migración compensatoria para la
 función de checkout o la RPC; no borrar el historial `20260729055627` ni `20260729060503`.
+
+## 9. Rollout escalonado de Turnstile
+
+### Estado antes del merge
+
+- [x] `create-server-listing-checkout` v13 y `create-billing-portal-session` v12 están `ACTIVE` con
+  `verify_jwt=true`; ninguna otra Edge Function cambió.
+- [x] Ambas rechazan una petición sin JWT con 401.
+- [ ] Con sesión QA, enviar solo `GET` y confirmar 405; no usar POST ni abrir checkout/portal.
+- [x] Registro, login y recuperación entregan `captchaToken` a Supabase Auth.
+- [x] Token en memoria, single-use, expiración, reset, bloqueo de doble envío y 429 ES/EN cubiertos.
+- [x] CSP mínima para `challenges.cloudflare.com`, sin quitar headers existentes.
+- [x] Preview de esta rama tiene `VITE_AUTH_CAPTCHA_ENABLED=true` y la site key pública oficial de
+  prueba. Production no fue modificada.
+- [x] Supabase CAPTCHA global continúa apagado; una solicitud inválida sin token alcanzó la
+  validación remota de contraseña.
+- [x] Confirmación de correo continúa apagada y el trigger de perfiles no cambió.
+- [x] PayPal sigue Sandbox; `paypal_payments=false` y Marketplace `payments_enabled=false` no se
+  modificaron. No se hicieron pagos, portales ni cancelaciones.
+- [ ] Widget, token, CSP, consola y responsive deben validarse en el nuevo Preview del commit final.
+
+### Orden exacto posterior al merge
+
+1. Crear en Cloudflare Turnstile una site key real limitada a `weaf.vercel.app`; guardar el secret
+   únicamente en Supabase Dashboard, nunca en Vercel ni con prefijo `VITE_`.
+2. Configurar en **Production** `VITE_TURNSTILE_SITE_KEY=<site key pública real>` y
+   `VITE_AUTH_CAPTCHA_ENABLED=true`.
+3. Desplegar `main` y comprobar que login, registro y recuperación muestran el widget, obtienen token
+   y no presentan violaciones CSP.
+4. Inmediatamente después, en Supabase Authentication → Bot and Abuse Protection, seleccionar
+   Turnstile, cargar el secret y activar CAPTCHA.
+5. Repetir login, registro y recuperación con una identidad QA; confirmar éxito con token y rechazo
+   sin token/expirado. Comprobar 429 genérico, ES/EN y consola sin tokens.
+6. Registrar hora, operador y evidencia. Solo entonces describir la protección como activa de extremo
+   a extremo.
+
+### Rollback de CAPTCHA
+
+Si falla antes del paso 4, conservar Supabase CAPTCHA apagado, restaurar
+`VITE_AUTH_CAPTCHA_ENABLED=false` y redesplegar. Si falla después del paso 4, apagar primero el
+enforcement global para evitar bloquear Auth, luego desactivar la flag y redesplegar. Retirar las dos
+variables branch-scoped del Preview cuando deje de ser necesario. No modificar usuarios, perfiles,
+RLS ni migraciones. Un rollback de las funciones legacy debe preservar `verify_jwt=true`.

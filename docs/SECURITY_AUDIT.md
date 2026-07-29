@@ -130,3 +130,50 @@ aplicar/desplegar.
 - El lint remoto conserva solo dos warnings preexistentes: volatilidad de
   `private.validate_marketplace_payload` y `new_subscription_id` sin uso en Stripe legacy.
 - En Preview comprobar login, Discord, checkout/cancelación Sandbox y consola CSP.
+
+## Cierre escalonado de CAPTCHA (2026-07-29)
+
+El frontend de Auth quedó preparado para Cloudflare Turnstile, un servicio gratuito, en registro,
+inicio de sesión y recuperación. La integración usa el script oficial con render explícito y entrega
+`captchaToken` a los tres métodos reales de `@supabase/supabase-js` 2.110.8. El token vive solo en
+memoria, es de un solo uso, se limpia al expirar o después de cada intento y nunca se registra. Los
+formularios bloquean el doble envío y fallan cerrados si la feature flag está activa pero falta site
+key, widget o token.
+
+El rollout sigue deliberadamente incompleto: `VITE_AUTH_CAPTCHA_ENABLED=false` es el valor seguro por
+defecto del repo y el enforcement autoritativo de Supabase continúa apagado hasta que el frontend de
+`main` esté desplegado con una site key real. Preview usa la site key pública oficial de prueba,
+limitada a la rama; nunca se configuró ni solicitó el secret en Vercel o en el repositorio.
+
+La CSP agregó únicamente `https://challenges.cloudflare.com` a `script-src` y `frame-src`. Turnstile
+no requiere ampliar `connect-src` para este modo sin pre-clearance. Se conservaron `default-src`,
+`frame-ancestors`, HSTS, `nosniff`, Referrer-Policy, Permissions-Policy y los orígenes existentes.
+
+### Auditoría de Auth sin cambios destructivos
+
+| Control | Evidencia | Estado |
+| --- | --- | --- |
+| Registro | `/auth/v1/settings` publicó `disable_signup=false`. | Habilitado. |
+| Confirmación | El mismo endpoint publicó `mailer_autoconfirm=true`. | Confirmación obligatoria apagada; SMTP/dominio siguen pendientes. |
+| CAPTCHA global | Una solicitud deliberadamente inválida sin `captchaToken` llegó a `weak_password` en vez de rechazo CAPTCHA. | Apagado, como exige el rollout. |
+| Contraseña | La respuesta remota exige 8 caracteres; una clave de 8 letras pasó esa validación y luego falló por email inválido. | Mínimo 8, sin complejidad adicional comprobada. |
+| Contraseñas filtradas | No se habilitó; requiere Supabase Pro. | Pendiente de decisión/plan. |
+| MFA | TOTP/phone están deshabilitados en la configuración versionada; el estado privado remoto no se expone por el endpoint público. | Verificación manual para admins pendiente. |
+
+Los límites versionados, no modificados, son: 30 signup/sign-in por 5 minutos/IP, 150 refresh por 5
+minutos/IP, 30 verificaciones por 5 minutos/IP y 2 emails/hora con proveedor integrado. Supabase
+documenta además 15 challenges/verificaciones MFA por hora. Los valores privados del proyecto deben
+confirmarse en Authentication → Rate Limits; no se redujeron ni se extrajeron credenciales del CLI.
+La UI transforma 429 en mensajes genéricos ES/EN y recuperación nunca confirma si un correo existe.
+
+### Edge Functions legacy de billing
+
+Solo `create-server-listing-checkout` y `create-billing-portal-session` se redesplegaron, sin
+`--no-verify-jwt`. El inventario remoto confirma respectivamente v13 y v12, ambas `ACTIVE` y
+`verify_jwt=true`; las otras doce funciones conservaron su versión. Peticiones sin JWT devolvieron
+401 antes del handler. La comprobación con sesión QA debe usar `GET` para obtener 405 después de la
+barrera de identidad, evitando crear checkout o portal; queda pendiente hasta disponer de una sesión
+segura en el navegador de QA.
+
+**Estado exacto:** frontend preparado y validado; enforcement autoritativo pendiente de activación
+inmediata después del despliegue de `main`.

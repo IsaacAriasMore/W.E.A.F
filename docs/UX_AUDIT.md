@@ -76,3 +76,17 @@ Normal y Plus, Admin, usuario autenticado, ownership con dos usuarios y contenid
 - El Preview protegido se validó mediante requests reales para CSP/caché. La inspección visual usó
   el mismo commit en Vite porque la sesión SSO anterior no estaba compartida con el navegador de esta
   tarea. El fixture `qa-admin.*` fue eliminado al terminar.
+
+## UX de Turnstile
+
+Los tres puntos de Auth comparten un widget oscuro y flexible con estados accesibles `role=status`:
+cargando, disponible, verificado, expirado, error y enviando. El botón permanece deshabilitado hasta
+verificación cuando la flag está activa; el error conserva feedback antes de reiniciar el widget. Los
+controles mantienen 44 px, no agregan sombras o paneles ajenos al sistema mineral/ámbar y el CSS evita
+overflow a 390 px. `prefers-reduced-motion` conserva una transición inmediata y legible.
+
+Todos los textos están disponibles en ES/EN, incluida recuperación neutral para evitar enumeración.
+La suite cubre el rollout apagado y las rutas inglesas. Falta recorrer el widget real del Preview en
+390×844, 768×1024 y escritorio para login, registro y recuperación, comprobando consola/CSP y captura
+de token sin imprimirlo. La clave pública oficial de prueba configurada en Preview no es válida para
+producción.

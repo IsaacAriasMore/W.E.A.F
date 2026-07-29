@@ -165,3 +165,30 @@ Rollback del hotfix: mantener ambos interruptores de pago en `false`, redesplega
 desde `5d6a8d4` si fuera necesario y usar una migración compensatoria para restaurar la definición
 anterior de `prepare_marketplace_paypal_order` o retirar la RPC nueva. No editar los dos archivos ya
 aplicados ni borrar reportes, auditoría o pagos.
+
+## Cierre de seguridad Auth/JWT (2026-07-29)
+
+No se aplicaron migraciones ni se modificaron datos, usuarios, flags o pagos. Se redesplegaron
+exclusivamente las dos funciones Stripe legacy solicitadas con la configuración actual del repo:
+
+| Función | Antes | Después | Resultado |
+| --- | ---: | ---: | --- |
+| `create-server-listing-checkout` | v12, JWT desalineado | v13 | `ACTIVE`, `verify_jwt=true`, sin JWT → 401 |
+| `create-billing-portal-session` | v11, JWT desalineado | v12 | `ACTIVE`, `verify_jwt=true`, sin JWT → 401 |
+
+Las otras doce funciones conservaron sus versiones. No se usó `--no-verify-jwt`, no se creó checkout,
+no se abrió portal y no se llamó a Stripe o PayPal. El smoke con JWT de usuario queda limitado a un
+`GET` esperado 405 cuando haya sesión QA compartida.
+
+El frontend añadió Turnstile sin dependencia nueva y con rollout por flag. `.env.example` contiene
+solo `VITE_AUTH_CAPTCHA_ENABLED=false` y `VITE_TURNSTILE_SITE_KEY=`; no existe variable de secret. La
+CSP permite únicamente el origen oficial en script/frame. Preview de la rama recibió ambas variables
+públicas con la site key oficial de prueba; Production y Supabase CAPTCHA no se tocaron.
+
+La inspección pública remota confirmó registro habilitado, autoconfirmación de email, mínimo de 8
+caracteres y ausencia actual de enforcement CAPTCHA. Los límites privados y MFA deben revisarse en el
+Dashboard sin extraer credenciales. El procedimiento de activación y rollback está en
+`docs/DEPLOYMENT_CHECKLIST.md`.
+
+**Decisión temporal:** no declarar protección anti-bot completa. Frontend preparado y validado;
+enforcement autoritativo pendiente de activación inmediata después del despliegue de `main`.
