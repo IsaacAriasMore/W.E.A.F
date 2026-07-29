@@ -10,7 +10,8 @@ const money = (minor: number) => (minor / 100).toFixed(2)
 const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405)
   if (Number(req.headers.get("content-length") || 0) > 2048) return json({ error: "payload_too_large" }, 413)
-  if (Deno.env.get("BILLING_ENABLED") !== "true" || Deno.env.get("PAYPAL_ENABLED") !== "true" || Deno.env.get("PAYPAL_MODE") !== "sandbox") return json({ error: "marketplace_payments_disabled" }, 503)
+  const paypalBase = (Deno.env.get("PAYPAL_API_BASE") || "").replace(/\/$/, "")
+  if (Deno.env.get("BILLING_ENABLED") !== "true" || Deno.env.get("PAYPAL_ENABLED") !== "true" || Deno.env.get("PAYPAL_MODE") !== "sandbox" || paypalBase !== "https://api-m.sandbox.paypal.com") return json({ error: "billing_disabled" }, 503)
   const publicSite = Deno.env.get("PUBLIC_SITE_URL")?.replace(/\/$/, "") || ""
   if (!publicSite) return json({ error: "billing_not_configured" }, 503)
   let body: Record<string, unknown>
@@ -18,10 +19,23 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (!isUuid(body.listing_id) || !isUuid(body.idempotency_key)) return json({ error: "invalid_marketplace_order" }, 400)
   const userId = ctx.userClaims?.sub || ctx.userClaims?.id
   if (!userId) return json({ error: "authentication_required" }, 401)
+  const { data: paymentFlag, error: paymentFlagError } = await ctx.supabaseAdmin
+    .from("feature_flags")
+    .select("enabled")
+    .eq("key", "paypal_payments")
+    .maybeSingle()
+  if (paymentFlagError || paymentFlag?.enabled !== true) return json({ error: "billing_disabled" }, 503)
   const { data: prepared, error: prepareError } = await ctx.supabaseAdmin.rpc("prepare_marketplace_paypal_order", {
     p_user_id: userId, p_listing_id: body.listing_id, p_idempotency_key: body.idempotency_key,
   })
-  if (prepareError || !prepared) return json({ error: prepareError?.message?.includes("disabled") ? "marketplace_payments_disabled" : "marketplace_order_not_available" }, 409)
+  if (prepareError || !prepared) {
+    const errorCode = prepareError?.message?.includes("billing_disabled")
+      ? "billing_disabled"
+      : prepareError?.message?.includes("marketplace_payments_disabled")
+        ? "marketplace_payments_disabled"
+        : "marketplace_order_not_available"
+    return json({ error: errorCode }, errorCode.endsWith("disabled") ? 503 : 409)
+  }
   try {
     if (prepared.paypal_order_id) {
       const existing = await paypalRequest<{ status?: string; links?: Array<{ rel?: string; href?: string }> }>(`/v2/checkout/orders/${encodeURIComponent(prepared.paypal_order_id)}`)
