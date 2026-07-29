@@ -949,8 +949,30 @@ export function bind({ state, authService, navigate }) {
   }
 
   async function action(result, success = 'Cambio aplicado.') {
-    if (result.error) showToast(result.error, 'error');
-    else { showToast(success); await load(); }
+    if (result.error) {
+      showToast(result.error, 'error');
+      return false;
+    }
+    showToast(success);
+    await load();
+    return true;
+  }
+
+  async function runButtonAction(button, pendingText, task, success) {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = pendingText;
+    try {
+      return await action(await task(), success);
+    } catch (error) {
+      showToast(error?.message || 'No se pudo completar la acción.', 'error');
+      return false;
+    } finally {
+      if (button.isConnected) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
   }
 
   main.addEventListener('change', async (event) => {
@@ -992,84 +1014,75 @@ export function bind({ state, authService, navigate }) {
 
   main.addEventListener('click', async (event) => {
     const user = event.target.closest('[data-user-suspension]');
-    if (user) await action(await service.setUserSuspension(user.dataset.userSuspension, user.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado del usuario actualizado.');
+    if (user) {
+      await runButtonAction(user, 'Actualizando…', () => service.setUserSuspension(user.dataset.userSuspension, user.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado del usuario actualizado.');
+      return;
+    }
     const tribe = event.target.closest('[data-tribe-active]');
-    if (tribe) await action(await service.setTribeActive(tribe.dataset.tribeActive, tribe.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado de la tribu actualizado.');
+    if (tribe) {
+      await runButtonAction(tribe, 'Actualizando…', () => service.setTribeActive(tribe.dataset.tribeActive, tribe.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado de la tribu actualizado.');
+      return;
+    }
     const archive = event.target.closest('[data-archive-content]');
     if (archive && window.confirm('¿Archivar esta entrada del catálogo público?')) {
       const entity = archive.dataset.archiveContent;
-      const result = entity === 'species'
-        ? await service.archiveContent(entity, archive.dataset.id)
-        : await service.archivePublicContent(entity === 'requirement' ? 'boss_requirement' : entity, archive.dataset.id);
-      await action(result, 'Contenido archivado.');
+      await runButtonAction(archive, 'Archivando…', () => (entity === 'species'
+        ? service.archiveContent(entity, archive.dataset.id)
+        : service.archivePublicContent(entity === 'requirement' ? 'boss_requirement' : entity, archive.dataset.id)), 'Contenido archivado.');
+      return;
     }
     const edit = event.target.closest('[data-edit-content]');
     if (edit) {
       const collection = edit.dataset.editContent === 'requirement' ? 'requirements' : `${edit.dataset.editContent}s`;
       fillEditor(edit.dataset.editContent, data[collection]?.find((item) => item.id === edit.dataset.id));
+      return;
     }
     const addItem = event.target.closest('[data-add-requirement-item]');
-    if (addItem) addItem.closest('[data-requirement-group]').querySelector('[data-requirement-items]').insertAdjacentHTML('beforeend', requirementItem(addItem.dataset.addRequirementItem));
+    if (addItem) {
+      addItem.closest('[data-requirement-group]').querySelector('[data-requirement-items]').insertAdjacentHTML('beforeend', requirementItem(addItem.dataset.addRequirementItem));
+      return;
+    }
     const removeItem = event.target.closest('[data-remove-requirement-item]');
     if (removeItem) {
       const container = removeItem.closest('[data-requirement-items]');
       if (container.children.length > 1) removeItem.closest('[data-requirement-item]').remove();
       else removeItem.closest('[data-requirement-item]').querySelectorAll('input').forEach((input) => { input.value = input.type === 'number' ? '1' : ''; });
+      return;
     }
     const renew = event.target.closest('[data-renew-server]');
-    if (renew) { const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value); await action(await service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.'); }
+    if (renew) {
+      const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value);
+      await runButtonAction(renew, 'Renovando…', () => service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.');
+      return;
+    }
     const remove = event.target.closest('[data-delete-server]');
-    if (remove && window.confirm('¿Eliminar definitivamente esta publicación y su analítica?')) await action(await service.deleteServerListing(remove.dataset.deleteServer), 'Publicación eliminada.');
-const productSync = event.target.closest('[data-paypal-product-sync]');
-
-if (productSync) {
-  productSync.disabled = true;
-
-  const originalText = productSync.textContent;
-  productSync.textContent = 'Sincronizando...';
-
-  showToast('Sincronizando producto con PayPal Sandbox...');
-
-  const result = await service.managePayPalCatalog('sync_product');
-
-  productSync.textContent = originalText;
-
-  await action(
-    result,
-    'Producto PayPal sincronizado correctamente.',
-  );
-}
+    if (remove) {
+      if (window.confirm('¿Eliminar definitivamente esta publicación y su analítica?')) {
+        await runButtonAction(remove, 'Eliminando…', () => service.deleteServerListing(remove.dataset.deleteServer), 'Publicación eliminada.');
+      }
+      return;
+    }
+    const productSync = event.target.closest('[data-paypal-product-sync]');
+    if (productSync) {
+      showToast('Sincronizando producto con PayPal Sandbox…');
+      await runButtonAction(productSync, 'Sincronizando…', () => service.managePayPalCatalog('sync_product'), 'Producto PayPal sincronizado correctamente.');
+      return;
+    }
     const planSync = event.target.closest('[data-sync-paypal-plan]');
-
-if (planSync) {
-  planSync.disabled = true;
-
-  const originalText = planSync.textContent;
-
-  planSync.textContent = 'Sincronizando...';
-
-  showToast('Sincronizando plan con PayPal Sandbox...');
-
-  const result = await service.managePayPalCatalog(
-    'sync_plan',
-    planSync.dataset.syncPaypalPlan,
-  );
-
-  if (result.error) {
-    planSync.disabled = false;
-    planSync.textContent = originalText;
-    showToast(result.error, 'error');
-    return;
-  }
-
-  showToast('Plan PayPal sincronizado correctamente.');
-
-  await load();
-}
+    if (planSync) {
+      showToast('Sincronizando plan con PayPal Sandbox…');
+      await runButtonAction(planSync, 'Sincronizando…', () => service.managePayPalCatalog('sync_plan', planSync.dataset.syncPaypalPlan), 'Plan PayPal sincronizado correctamente.');
+      return;
+    }
     const offerStatus = event.target.closest('[data-offer-status]');
-    if (offerStatus && window.confirm(`¿Cambiar la oferta a ${offerStatus.dataset.next}?`)) await action(await service.setBillingOfferStatus(offerStatus.dataset.offerStatus, offerStatus.dataset.next), 'Estado de oferta actualizado.');
+    if (offerStatus) {
+      if (window.confirm(`¿Cambiar la oferta a ${offerStatus.dataset.next}?`)) {
+        await runButtonAction(offerStatus, 'Actualizando…', () => service.setBillingOfferStatus(offerStatus.dataset.offerStatus, offerStatus.dataset.next), 'Estado de oferta actualizado.');
+      }
+      return;
+    }
     const duplicate = event.target.closest('[data-duplicate-offer]');
-    if (duplicate) await action(await service.duplicateBillingOffer(duplicate.dataset.duplicateOffer), 'Oferta duplicada como borrador.');
+    if (duplicate) await runButtonAction(duplicate, 'Duplicando…', () => service.duplicateBillingOffer(duplicate.dataset.duplicateOffer), 'Oferta duplicada como borrador.');
   });
 
   main.addEventListener('submit', async (event) => {
