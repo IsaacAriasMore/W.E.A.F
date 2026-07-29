@@ -1,5 +1,6 @@
 .footer-links button {
   width: fit-content;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;

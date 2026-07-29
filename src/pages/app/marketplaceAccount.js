@@ -23,16 +23,19 @@ export function bind({ path, authService, navigate }) {
   const editId = path.endsWith('/edit') ? path.split('/')[2] : null;
   Promise.all([service.getCatalog(), service.getMyWorkspace(), service.getSettings()]).then(([catalog, workspace, settings]) => {
     if (!root?.isConnected) return;
-    if (workspace.error) { root.insertAdjacentHTML('beforeend', `<div class="market-empty"><p>${escapeHtml(workspace.error)}</p></div>`); root.querySelector('.route-loading')?.remove(); return; }
+    if (workspace.error) { root.insertAdjacentHTML('beforeend', `<div class="market-empty" role="status"><p>${escapeHtml(workspace.error)}</p></div>`); root.querySelector('.route-loading')?.remove(); return; }
     const listings = workspace.data?.listings || [];
     if (path === '/account/marketplace') {
       root.querySelector('.route-loading').outerHTML = `<div class="market-account-actions"><a class="button button-primary" href="/marketplace/new" data-link>${t('marketplace.publish')}</a></div><div class="market-account-list">${listings.length ? listings.map((item) => `<article><div><span>${t(`marketplace.status.${item.status}`)}</span><h2>${escapeHtml(item.title)}</h2><p>${marketplaceTimeLeft(item.expires_at)} ${t('marketplace.daysRemaining')}</p></div><div>${['active','draft'].includes(item.status) ? `<a class="button button-secondary" href="/marketplace/${item.id}/edit" data-link>${t('common.edit')}</a><button class="button button-quiet" type="button" data-hide-market="${item.id}">${t('marketplace.hide')}</button>` : ''}</div></article>`).join('') : `<div class="market-empty"><h2>${t('marketplace.accountEmpty')}</h2><p>${t('marketplace.accountEmptyBody')}</p></div>`}</div>`;
       return;
     }
+    if (catalog.error || !(catalog.data?.categories?.length)) { root.querySelector('.route-loading').outerHTML = `<div class="market-empty" role="status"><p>${t('marketplace.errors.load')}</p></div>`; return; }
     const listing = editId ? listings.find((item) => item.id === editId) : null;
     if (editId && !listing) { root.querySelector('.route-loading').outerHTML = `<div class="market-empty"><p>${t('marketplace.errors.notOwned')}</p></div>`; return; }
     if (!settings.data?.marketplace_enabled && !listing) { root.querySelector('.route-loading').outerHTML = `<div class="market-empty"><p>${t('marketplace.errors.disabled')}</p></div>`; return; }
-    root.querySelector('.route-loading').outerHTML = form(catalog.data?.categories || [], listing || {}, settings.data || {});
+    root.querySelector('.route-loading').outerHTML = form(catalog.data.categories, listing || {}, settings.data || {});
+  }).catch(() => {
+    if (root?.isConnected) root.querySelector('.route-loading').outerHTML = `<div class="market-empty" role="status"><p>${t('marketplace.errors.loadAccount')}</p></div>`;
   });
 
   root.addEventListener('change', (event) => {

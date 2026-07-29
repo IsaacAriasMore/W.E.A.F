@@ -1,10 +1,8 @@
 import { createMarketplaceService } from '../../services/marketplaceService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
-import { getLanguage, t } from '../../i18n/index.js';
+import { t } from '../../i18n/index.js';
 import { marketplaceTimeLeft } from '../../utils/marketplaceListing.js';
 import { applyMarketplaceListingMetadata } from '../../seo/metadata.js';
-
-const label = (category) => getLanguage() === 'es' ? category.name_es : category.name_en;
 
 function card(listing) {
   const days = marketplaceTimeLeft(listing.expires_at);
@@ -37,7 +35,9 @@ export function bind({ path, authService }) {
         return;
       }
       applyMarketplaceListingMetadata(path, listing.title, listing.description);
-      root.innerHTML = `<a class="text-link" href="/marketplace" data-link>← ${t('marketplace.back')}</a><article class="market-detail"><div class="market-detail-copy"><span>${listing.is_featured ? t('marketplace.featured') : t(`marketplace.types.${listing.listing_type}`)}</span><h1>${escapeHtml(listing.title)}</h1><p>${escapeHtml(listing.description)}</p><dl><div><dt>${t('marketplace.resource')}</dt><dd>${escapeHtml(listing.resource_name)}${listing.quantity ? ` · ${listing.quantity}` : ''}</dd></div><div><dt>${t('marketplace.terms')}</dt><dd>${escapeHtml(listing.trade_terms)}</dd></div><div><dt>${t('marketplace.server')}</dt><dd>${escapeHtml(listing.server_name || t('marketplace.unspecified'))}</dd></div><div><dt>${t('marketplace.region')}</dt><dd>${escapeHtml(listing.region)} · ${escapeHtml(listing.platform)}</dd></div></dl><a class="button button-primary" href="${escapeHtml(listing.discord_invite_url)}" target="_blank" rel="noopener noreferrer">${t('marketplace.contactDiscord')}</a><details class="market-report"><summary>${t('marketplace.reportFraud')}</summary><form data-market-report data-listing-id="${listing.id}"><label><span>${t('marketplace.reportReason')}</span><select name="reason"><option value="fraud">${t('marketplace.reportReasons.fraud')}</option><option value="prohibited">${t('marketplace.reportReasons.prohibited')}</option><option value="malicious_link">${t('marketplace.reportReasons.malicious')}</option><option value="personal_data">${t('marketplace.reportReasons.personal')}</option><option value="spam">Spam</option><option value="other">${t('marketplace.reportReasons.other')}</option></select></label><label><span>${t('marketplace.reportDetails')}</span><textarea name="details" minlength="10" maxlength="1000" required></textarea></label><button class="button button-secondary" type="submit">${t('marketplace.sendReport')}</button></form></details></div><aside><strong>${marketplaceTimeLeft(listing.expires_at)}</strong><span>${t('marketplace.daysRemaining')}</span><p>${t('marketplace.transactionNotice')}</p></aside></article>`;
+      root.innerHTML = `<a class="text-link" href="/marketplace" data-link>← ${t('marketplace.back')}</a><article class="market-detail"><div class="market-detail-copy"><span>${listing.is_featured ? t('marketplace.featured') : t(`marketplace.types.${listing.listing_type}`)}</span><h1>${escapeHtml(listing.title)}</h1><p>${escapeHtml(listing.description)}</p><dl><div><dt>${t('marketplace.resource')}</dt><dd>${escapeHtml(listing.resource_name)}${listing.quantity ? ` · ${listing.quantity}` : ''}</dd></div><div><dt>${t('marketplace.terms')}</dt><dd>${escapeHtml(listing.trade_terms)}</dd></div><div><dt>${t('marketplace.server')}</dt><dd>${escapeHtml(listing.server_name || t('marketplace.unspecified'))}</dd></div><div><dt>${t('marketplace.region')}</dt><dd>${escapeHtml(listing.region)} · ${escapeHtml(listing.platform)}</dd></div></dl><a class="button button-primary" href="${escapeHtml(listing.discord_invite_url)}" target="_blank" rel="noopener noreferrer">${t('marketplace.contactDiscord')}</a><details class="market-report"><summary>${t('marketplace.reportFraud')}</summary><form data-market-report data-listing-id="${listing.id}"><label><span>${t('marketplace.reportReason')}</span><select name="reason"><option value="fraud">${t('marketplace.reportReasons.fraud')}</option><option value="prohibited">${t('marketplace.reportReasons.prohibited')}</option><option value="malicious_link">${t('marketplace.reportReasons.malicious')}</option><option value="personal_data">${t('marketplace.reportReasons.personal')}</option><option value="spam">Spam</option><option value="other">${t('marketplace.reportReasons.other')}</option></select></label><label><span>${t('marketplace.reportDetails')}</span><textarea name="details" minlength="10" maxlength="1000" required></textarea></label><button class="button button-secondary" type="submit">${t('marketplace.sendReport')}</button><p class="form-message" data-report-result role="status" aria-live="polite"></p></form></details></div><aside><strong>${marketplaceTimeLeft(listing.expires_at)}</strong><span>${t('marketplace.daysRemaining')}</span><p>${t('marketplace.transactionNotice')}</p></aside></article>`;
+    }).catch(() => {
+      if (root?.isConnected) root.innerHTML = `<div class="market-empty" role="status"><h1>${t('marketplace.notFound')}</h1><p>${t('marketplace.errors.load')}</p><a class="button button-primary" href="/marketplace" data-link>${t('marketplace.back')}</a></div>`;
     });
     root?.addEventListener('submit', async (event) => {
       const form = event.target.closest('[data-market-report]');
@@ -46,13 +46,16 @@ export function bind({ path, authService }) {
       const button = form.querySelector('[type="submit"]');
       if (button.disabled) return;
       button.disabled = true;
-      const values = new FormData(form);
-      const result = await service.report(form.dataset.listingId, String(values.get('reason')), String(values.get('details') || '').trim());
-      button.disabled = false;
-      const message = form.querySelector('[data-report-result]') || document.createElement('p');
-      message.dataset.reportResult = '';
-      message.textContent = result.error || t('marketplace.reportSent');
-      form.append(message);
+      const message = form.querySelector('[data-report-result]');
+      try {
+        const values = new FormData(form);
+        const result = await service.report(form.dataset.listingId, String(values.get('reason')), String(values.get('details') || '').trim());
+        message.textContent = result.error || t('marketplace.reportSent');
+      } catch {
+        message.textContent = t('marketplace.errors.report');
+      } finally {
+        button.disabled = false;
+      }
     });
     return;
   }
@@ -71,6 +74,8 @@ export function bind({ path, authService }) {
     listings = data?.listings || [];
     if (error) grid.innerHTML = `<div class="market-empty"><p>${escapeHtml(error)}</p></div>`;
     else draw();
+  }).catch(() => {
+    if (grid?.isConnected) grid.innerHTML = `<div class="market-empty" role="status"><p>${t('marketplace.errors.load')}</p></div>`;
   });
   document.querySelector('.market-filters')?.addEventListener('input', draw);
 }

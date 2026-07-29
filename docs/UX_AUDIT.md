@@ -1,0 +1,63 @@
+# Auditoría técnica de UX y accesibilidad
+
+Actualizada: 2026-07-28. Alcance visual ejecutado sobre la rama de auditoría, con
+Supabase deshabilitado en el navegador local para no depender de datos ni sesiones reales.
+
+## Resultado
+
+| Dimensión | Puntuación | Evidencia principal |
+| --- | ---: | --- |
+| Accesibilidad | 3/4 | Semántica, foco y formularios correctos; se corrigieron objetivos táctiles menores de 44 px. |
+| Rendimiento | 3/4 | Three.js se carga por ruta y sin warning de 500 kB; falta medición de campo en Preview. |
+| Responsive | 4/4 | Sin overflow a 390, 768 y 1280 px; navegación móvil y filtros cambian correctamente. |
+| Theming | 3/4 | Marketplace usa tokens; Admin conserva algunos colores históricos hardcodeados. |
+| Anti-patrones | 3/4 | Identidad propia y contenida; quedan kickers uppercase repetidos en superficies legacy. |
+| **Total** | **16/20** | **Bueno; listo para Preview con validaciones manuales pendientes.** |
+
+Veredicto anti-patrones: no parece una plantilla genérica generada. La sala táctica oscura,
+el ámbar fósil y el arte propio sostienen una identidad reconocible. Se retiró del marketplace
+el panel con franja lateral y se normalizó el tracking de títulos al sistema W.E.A.F.
+
+## Hallazgos corregidos
+
+- **P1 · Objetivos táctiles pequeños:** idioma, enlaces legales, correo y preferencias medían
+  entre 15 y 32 px de alto en móvil. Ahora todos alcanzan al menos 44 px.
+- **P2 · Estado de reportes no anunciado:** el resultado de un reporte ahora usa una región
+  `aria-live` y recupera el botón aun si falla la petición.
+- **P2 · Promesas sin recuperación:** catálogo, detalle, cuenta y retorno de pago muestran un
+  estado controlado cuando una llamada rechaza inesperadamente.
+- **P3 · Jerarquía tipográfica:** títulos del marketplace usan `-0.035em` y `text-wrap: balance`,
+  en línea con `DESIGN.md`.
+- **P3 · Panel fuera del lenguaje visual:** la publicación gratuita usa borde completo y radio,
+  no una franja lateral decorativa.
+
+## Riesgos de UX restantes
+
+- **P2 · Estados autenticados no recorridos con identidades reales.** Cuenta, formulario,
+  Admin y estados PayPal se cubren por unidad/contratos, pero necesitan una pasada visual con
+  usuario normal y admin de desarrollo después de aplicar migraciones.
+- **P2 · Datos extremos.** Revisar manualmente títulos, URLs e idiomas de longitud máxima con
+  datos de desarrollo para confirmar cortes y tablas en Admin.
+- **P2 · Métricas de campo.** Lighthouse y Core Web Vitals deben medirse en Vercel Preview;
+  el navegador local confirma layout, consola y targets, no latencia de red real.
+- **P3 · Superficies legacy.** Admin conserva tracking más agresivo, colores locales y varios
+  kickers uppercase. No bloquea WCAG, pero conviene normalizarlo en una fase separada.
+
+## Matriz ejecutada
+
+- Marketplace público: escritorio 1280×720, tablet 768×1024 y móvil 390×844.
+- Idiomas: español e inglés.
+- Estados: carga, catálogo vacío, error controlado y visitante sin sesión.
+- Navegación pública: 8 E2E; Auth y protección de rutas: 12 E2E.
+- Resultado: cero overflow horizontal, cero errores/warnings de consola en la ruta auditada y
+  20/20 pruebas E2E exitosas.
+
+Pendientes manuales antes de producción: pago pendiente/exitoso/cancelado con PayPal Sandbox,
+Normal y Plus, Admin, usuario autenticado, ownership con dos usuarios y contenido límite.
+
+## Acciones recomendadas
+
+1. **P2 · `$impeccable harden`:** probar estados autenticados y errores remotos con datos de desarrollo.
+2. **P2 · `$impeccable optimize`:** medir LCP, CLS e INP en Preview y un móvil real.
+3. **P3 · `$impeccable typeset`:** normalizar tokens tipográficos de Admin en una fase independiente.
+4. **P3 · `$impeccable polish`:** repetir la pasada final después de habilitar el catálogo de desarrollo.

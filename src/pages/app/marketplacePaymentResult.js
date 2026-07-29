@@ -4,7 +4,7 @@ import { t } from '../../i18n/index.js';
 
 export function render({ path }) {
   const canceled = path.endsWith('/cancel');
-  return `<section class="market-payment-result container" data-market-payment-result><p>${t('marketplace.payment.eyebrow')}</p><h1>${t(canceled ? 'marketplace.payment.canceled' : 'marketplace.payment.processing')}</h1><span>${t(canceled ? 'marketplace.payment.canceledBody' : 'marketplace.payment.webhook')}</span><div class="route-loading"><span class="skeleton skeleton-copy"></span></div><a class="button button-secondary" href="/account/marketplace" data-link>${t('marketplace.mine')}</a></section>`;
+  return `<section class="market-payment-result container" data-market-payment-result><p>${t('marketplace.payment.eyebrow')}</p><h1>${t(canceled ? 'marketplace.payment.canceled' : 'marketplace.payment.processing')}</h1><span>${t(canceled ? 'marketplace.payment.canceledBody' : 'marketplace.payment.webhook')}</span><div class="route-loading" role="status" aria-live="polite"><span class="skeleton skeleton-copy"></span></div><a class="button button-secondary" href="/account/marketplace" data-link>${t('marketplace.mine')}</a></section>`;
 }
 
 export function bind({ path, authService }) {
@@ -28,5 +28,8 @@ export function bind({ path, authService }) {
         break;
       }
     }
+  }).catch(() => {
+    const status = root?.isConnected ? root.querySelector('.route-loading, .form-message') : null;
+    if (status) status.outerHTML = `<p class="form-message error" role="status">${t('marketplace.errors.paymentCapture')}</p>`;
   });
 }

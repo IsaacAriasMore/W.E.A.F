@@ -1,6 +1,6 @@
 .market-hero { padding: clamp(72px, 9vw, 124px) 0 58px; border-bottom: 1px solid var(--color-line); background: radial-gradient(circle at 82% 18%, oklch(.7 .13 60 / .1), transparent 25rem), oklch(.13 .017 180); }
 .market-hero p, .market-account header > p { color: var(--color-accent); font-size: .72rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
-.market-hero h1, .market-account h1 { max-width: 900px; margin: 10px 0 18px; font-size: clamp(2.8rem, 7vw, 6rem); line-height: .94; letter-spacing: -.045em; }
+.market-hero h1, .market-account h1 { max-width: 900px; margin: 10px 0 18px; font-size: clamp(2.8rem, 7vw, 6rem); line-height: .94; letter-spacing: -.035em; text-wrap: balance; }
 .market-hero span, .market-account header > span { display: block; max-width: 660px; color: var(--color-text-muted); line-height: 1.65; }
 .market-hero .container > div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
 .market-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); padding-block: 54px 94px; }
@@ -21,7 +21,7 @@
 .market-card-media b { position: absolute; top: 12px; left: 12px; border-radius: 999px; padding: 6px 9px; color: var(--bg); background: var(--color-accent); font-size: .62rem; }
 .market-card-body { padding: 22px; }
 .market-card-body > div:first-child { display: flex; justify-content: space-between; gap: 12px; color: var(--color-accent); font-size: .68rem; text-transform: uppercase; }
-.market-card h2 { margin: 10px 0; font-size: 1.45rem; }
+.market-card h2 { margin: 10px 0; font-size: 1.45rem; text-wrap: balance; }
 .market-card p { display: -webkit-box; overflow: hidden; color: var(--color-text-muted); line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .market-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0 0; }
 .market-card dt, .market-detail dt { color: var(--color-text-muted); font-size: .62rem; text-transform: uppercase; }
@@ -32,11 +32,11 @@
 .market-safety { margin-bottom: 100px; border-top: 1px solid var(--color-line); padding-top: 44px; }
 .market-safety h2 { margin: 0; font-size: clamp(1.8rem, 4vw, 3rem); }
 .market-safety p { max-width: 700px; color: var(--color-text-muted); line-height: 1.65; }
-.market-safety a { color: var(--color-accent); }
+.market-safety a { display: inline-flex; min-height: 44px; align-items: center; color: var(--color-accent); }
 .market-shell, .market-account { padding-block: 54px 110px; }
 .market-detail { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(230px, .5fr); gap: clamp(36px, 6vw, 90px); margin-top: 44px; }
 .market-detail-copy > span { color: var(--color-accent); font-size: .72rem; text-transform: uppercase; }
-.market-detail h1 { margin: 12px 0 20px; font-size: clamp(2.6rem, 6vw, 5.4rem); line-height: .96; letter-spacing: -.045em; }
+.market-detail h1 { margin: 12px 0 20px; font-size: clamp(2.6rem, 6vw, 5.4rem); line-height: .96; letter-spacing: -.035em; text-wrap: balance; }
 .market-detail-copy > p { max-width: 760px; color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.75; white-space: pre-line; }
 .market-detail dl { display: grid; gap: 18px; margin: 36px 0; }
 .market-detail aside { align-self: start; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 30px; background: var(--color-surface); }
@@ -46,6 +46,7 @@
 .market-report { margin-top: 28px; border-top: 1px solid var(--color-line); padding-top: 20px; }
 .market-report summary { color: var(--color-text-muted); cursor: pointer; font-size: .78rem; }
 .market-report form { display: grid; gap: 14px; margin-top: 18px; }
+.market-report .form-message:empty { display: none; }
 .market-report label { display: grid; gap: 6px; color: var(--color-text-muted); font-size: .72rem; }
 .market-report select, .market-report textarea { width: 100%; border: 1px solid var(--color-line); border-radius: var(--radius-control); padding: 10px 12px; color: var(--color-text); background: var(--color-surface); font: inherit; }
 .market-account header { padding-bottom: 38px; border-bottom: 1px solid var(--color-line); }
@@ -55,7 +56,7 @@
 .market-form .form-section h2 { margin-top: 0; }
 .market-rules { display: grid; grid-template-columns: auto 1fr; gap: 12px; color: var(--color-text-muted); line-height: 1.55; }
 .market-rules input { margin-top: 4px; }
-.market-plan-choice { display: grid; gap: 5px; border-left: 3px solid var(--color-accent); padding: 14px 18px; background: oklch(.17 .02 180); }
+.market-plan-choice { display: grid; gap: 5px; border: 1px solid color-mix(in oklch, var(--color-accent) 45%, var(--color-line)); border-radius: var(--radius-control); padding: 14px 18px; background: oklch(.17 .02 180); }
 .market-plan-choice span, .market-plan-choice small { color: var(--color-text-muted); }
 .market-plan-options { display: grid; gap: 10px; border: 0; padding: 0; }
 .market-plan-options legend { margin-bottom: 10px; font-weight: 700; }
