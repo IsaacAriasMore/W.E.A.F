@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /app
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /onboarding
+Disallow: /profile
+Disallow: /servers/publish
+Disallow: /servers/success
+Disallow: /servers/cancel
+
+Sitemap: https://weaf.vercel.app/sitemap.xml

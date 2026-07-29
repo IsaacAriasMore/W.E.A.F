@@ -1,4 +1,5 @@
 import { destinationFromSearch, pathWithNext } from './utils/navigation.js';
+import { applyRouteMetadata } from './seo/metadata.js';
 
 const routeLoaders = {
   '/': () => import('./pages/public/home.js'),
@@ -139,7 +140,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
           <a class="button button-primary" href="/" data-link>Volver al inicio</a>
         </section>
       `;
-      document.title = 'Página no encontrada | W.E.A.F';
+      applyRouteMetadata(path, { notFound: true });
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
       return;
@@ -151,10 +152,12 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       outlet.innerHTML = page.render({ path, ...context });
       cleanup = page.bind?.({ path, navigate, ...context }) || null;
       document.title = titles[path];
+      applyRouteMetadata(path);
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
       window.requestAnimationFrame(() => scrollToCurrentHash('auto'));
     } catch (error) {
+      applyRouteMetadata(path, { notFound: !routeLoaders[path] });
       outlet.innerHTML = `
         <section class="empty-page container">
           <p class="section-kicker">No pudimos cargar esta página</p>

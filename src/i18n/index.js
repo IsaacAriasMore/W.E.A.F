@@ -46,6 +46,12 @@ export function setLanguage(language) {
   currentLanguage = language;
   document.documentElement.lang = language;
   try { window.localStorage.setItem(STORAGE_KEY, language); } catch { /* Storage can be unavailable. */ }
+  if (window.location?.href && window.history?.replaceState) {
+    const url = new URL(window.location.href);
+    if (language === 'es') url.searchParams.delete('lang');
+    else url.searchParams.set('lang', language);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }
   translateStaticDom();
   subscribers.forEach((callback) => callback(language));
 }
@@ -58,7 +64,8 @@ export function subscribeLanguageChange(callback) {
 export function initI18n() {
   let saved;
   try { saved = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(LEGACY_KEY); } catch { saved = null; }
-  currentLanguage = normalizeStoredLanguage(saved) || 'es';
+  const requested = typeof window === 'undefined' ? null : new URLSearchParams(window.location?.search || '').get('lang');
+  currentLanguage = normalizeStoredLanguage(requested) || normalizeStoredLanguage(saved) || 'es';
   document.documentElement.lang = currentLanguage;
   if (saved && window.localStorage.getItem(STORAGE_KEY) !== currentLanguage) {
     try { window.localStorage.setItem(STORAGE_KEY, currentLanguage); } catch { /* Storage can be unavailable. */ }
