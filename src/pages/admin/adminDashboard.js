@@ -11,6 +11,12 @@ import {
   normalizeRates,
 } from '../../config/serverListing.js';
 import { promotableServers } from '../../utils/serverPromotion.js';
+import {
+  beginMarketplaceLoad,
+  canSaveMarketplace,
+  completeMarketplaceLoad,
+  createMarketplaceState,
+} from '../../utils/adminMarketplaceState.js';
 
 const sectionNames = {
   overview: ['Pulso de plataforma', 'Señales operativas para decidir qué necesita atención.'],
@@ -871,10 +877,24 @@ function audit(data) {
 }
 
 function marketplace(data) {
-  const workspace = data.marketplace || { listings: [], reports: [], payments: [], audit: [], setting: {} };
+  const state = data.marketplaceState;
+  const workspace = state?.data;
+  if (!workspace) {
+    if (state?.status === 'error') {
+      return `<section class="admin-marketplace-state" role="alert"><span>Error de lectura</span><h2>No pudimos cargar Marketplace</h2><p>${escapeHtml(state.error)}</p><button class="admin-action" type="button" data-marketplace-retry>Reintentar</button></section>`;
+    }
+    return '<section class="admin-marketplace-state" role="status" aria-live="polite"><span>Cargando</span><h2>Consultando la configuración real</h2><p>Los controles permanecerán bloqueados hasta confirmar los datos.</p></section>';
+  }
   const setting = workspace.setting || {};
-  return `<div class="admin-governance"><section><div class="admin-block-heading"><span>Configuración</span><h2>Publicaciones destacadas</h2></div><form class="admin-inline-form" data-marketplace-settings><label><span>Precio destacado (USD)</span><input name="price" type="number" min="0.01" step="0.01" value="${setting.price_minor ? (setting.price_minor / 100).toFixed(2) : ''}" placeholder="Sin definir"></label><label><span>Moneda</span><select name="currency"><option value="USD">USD</option></select></label><label><input name="marketplace_enabled" type="checkbox" ${setting.marketplace_enabled ? 'checked' : ''}> Marketplace activo</label><label><input name="payments_enabled" type="checkbox" ${setting.payments_enabled ? 'checked' : ''}> Destacados PayPal Sandbox</label><button class="admin-action" type="submit">Guardar configuración</button></form><p class="admin-muted">No habilites pagos hasta definir el precio y desplegar el checkout de PayPal Orders Sandbox.</p></section>
-  <section><div class="admin-block-heading"><span>Moderación</span><h2>Anuncios</h2></div>${table(['Anuncio','Propietario','Estado','Expira','Acción'],(workspace.listings || []).map((item)=>`<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.listing_type)} · ${escapeHtml(item.resource_name)}</small></td><td>${escapeHtml(item.owner_user_id)}</td><td>${status(item.status)}</td><td>${item.expires_at ? formatRelativeTime(item.expires_at) : 'Sin fecha'}</td><td><div class="admin-market-actions"><button class="admin-action" data-market-moderate="${item.id}" data-next="hidden">Ocultar</button><button class="admin-action" data-market-moderate="${item.id}" data-next="rejected">Rechazar</button></div></td></tr>`),'No hay anuncios.')}</section>
+  const locked = state.status !== 'loaded';
+  const disabled = locked ? ' disabled aria-disabled="true"' : '';
+  const notice = state.status === 'loading'
+    ? '<div class="admin-marketplace-notice" role="status">Actualizando datos; se conserva la última lectura válida.</div>'
+    : state.status === 'error'
+      ? `<div class="admin-marketplace-notice is-error" role="alert"><span>${escapeHtml(state.error)}</span><button class="admin-action" type="button" data-marketplace-retry>Reintentar</button></div>`
+      : '';
+  return `<div class="admin-governance">${notice}<section><div class="admin-block-heading"><span>Configuración</span><h2>Publicaciones destacadas</h2></div><form class="admin-inline-form" data-marketplace-settings><label><span>Precio destacado (USD)</span><input name="price" type="number" min="0.01" step="0.01" value="${setting.price_minor ? (setting.price_minor / 100).toFixed(2) : ''}" placeholder="Sin definir"${disabled}></label><label><span>Moneda</span><select name="currency"${disabled}><option value="USD">USD</option></select></label><label><input name="marketplace_enabled" type="checkbox" ${setting.marketplace_enabled ? 'checked' : ''}${disabled}> Marketplace activo</label><label><input name="payments_enabled" type="checkbox" ${setting.payments_enabled ? 'checked' : ''}${disabled}> Destacados PayPal Sandbox</label><button class="admin-action" type="submit"${disabled}>Guardar configuración</button></form><p class="admin-muted">No habilites pagos hasta definir el precio y desplegar el checkout de PayPal Orders Sandbox.</p></section>
+  <section><div class="admin-block-heading"><span>Moderación</span><h2>Anuncios</h2></div>${table(['Anuncio','Propietario','Estado','Expira','Acción'],(workspace.listings || []).map((item)=>`<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.listing_type)} · ${escapeHtml(item.resource_name)}</small></td><td>${escapeHtml(item.owner_user_id)}</td><td>${status(item.status)}</td><td>${item.expires_at ? formatRelativeTime(item.expires_at) : 'Sin fecha'}</td><td><div class="admin-market-actions"><button class="admin-action" data-market-moderate="${item.id}" data-next="hidden"${disabled}>Ocultar</button><button class="admin-action" data-market-moderate="${item.id}" data-next="rejected"${disabled}>Rechazar</button></div></td></tr>`),'No hay anuncios.')}</section>
   <section><div class="admin-block-heading"><span>Reportes</span><h2>Seguridad comunitaria</h2></div>${table(['Anuncio','Motivo','Estado','Fecha'],(workspace.reports || []).map((item)=>`<tr><td>${escapeHtml(item.listing_id)}</td><td><strong>${escapeHtml(item.reason)}</strong><small>${escapeHtml(item.details)}</small></td><td>${status(item.status)}</td><td>${formatRelativeTime(item.created_at)}</td></tr>`),'No hay reportes del marketplace.')}</section>
   <section><div class="admin-block-heading"><span>PayPal Sandbox</span><h2>Pagos destacados</h2></div>${table(['Anuncio','Monto','Estado','Fecha'],(workspace.payments || []).map((item)=>`<tr><td>${escapeHtml(item.listing_id)}</td><td>${(item.amount_minor/100).toFixed(2)} ${escapeHtml(item.currency)}</td><td>${status(item.status)}</td><td>${formatRelativeTime(item.created_at)}</td></tr>`),'Todavía no hay pagos destacados.')}</section></div>`;
 }
@@ -893,6 +913,27 @@ export function bind({ state, authService, navigate }) {
   const service = createAdminService(authService.getClient());
   const main = document.querySelector('[data-admin-main]');
   let data;
+  let marketplaceState = createMarketplaceState();
+
+  function renderSection(section = currentSection()) {
+    const view = main.querySelector('[data-admin-view]');
+    if (!view || !data) return;
+    data.marketplaceState = marketplaceState;
+    view.innerHTML = renderers[section](data);
+  }
+
+  async function loadMarketplace(section = currentSection()) {
+    marketplaceState = beginMarketplaceLoad(marketplaceState);
+    renderSection(section);
+    let result;
+    try {
+      result = await service.getMarketplaceWorkspace();
+    } catch (error) {
+      result = { data: null, error: error?.message || 'No pudimos cargar el marketplace.' };
+    }
+    marketplaceState = completeMarketplaceLoad(marketplaceState, result);
+    if (currentSection() === section) renderSection(section);
+  }
 
   function fillEditor(entity, record) {
     const form = main.querySelector(`[data-${entity}-form]`);
@@ -934,8 +975,13 @@ export function bind({ state, authService, navigate }) {
 
   async function load(section = currentSection()) {
     main.setAttribute('aria-busy', 'true');
-    const [result, serverResult, contentResult, billingResult, marketplaceResult] = await Promise.all([
-      service.getWorkspace(), service.getServerWorkspace(), service.getContentWorkspace(), service.getBillingWorkspace(), service.getMarketplaceWorkspace(),
+    marketplaceState = beginMarketplaceLoad(marketplaceState);
+    const marketplaceRequest = service.getMarketplaceWorkspace().catch((error) => ({
+      data: null,
+      error: error?.message || 'No pudimos cargar el marketplace.',
+    }));
+    const [result, serverResult, contentResult, billingResult] = await Promise.all([
+      service.getWorkspace(), service.getServerWorkspace(), service.getContentWorkspace(), service.getBillingWorkspace(),
     ]);
     if (result.error) {
       main.innerHTML = `<section class="admin-failure"><span>403</span><h1>Centro de comando bloqueado</h1><p>${escapeHtml(result.error)}</p><a class="button button-primary" href="/app" data-link>Volver a la tribu</a></section>`;
@@ -944,7 +990,7 @@ export function bind({ state, authService, navigate }) {
     data = result.data;
     data.serverOps = serverResult.data || { listings: [], totals: {} };
     data.billing = billingResult.data || { plans: [], offers: [], subscriptions: [], audit: [] };
-    data.marketplace = marketplaceResult.data || { listings: [], reports: [], payments: [], audit: [], setting: {} };
+    data.marketplaceState = marketplaceState;
     if (contentResult.data) {
       data.maps = contentResult.data.maps || [];
       data.bosses = contentResult.data.bosses || [];
@@ -957,6 +1003,8 @@ export function bind({ state, authService, navigate }) {
       <div class="admin-view" data-admin-view>${renderers[section](data)}</div>`;
     main.removeAttribute('aria-busy');
     document.querySelectorAll('[data-admin-section]').forEach((link) => link.toggleAttribute('aria-current', link.dataset.adminSection === section));
+    marketplaceState = completeMarketplaceLoad(marketplaceState, await marketplaceRequest);
+    if (currentSection() === section) renderSection(section);
   }
 
   async function action(result, success = 'Cambio aplicado.') {
@@ -1024,6 +1072,12 @@ export function bind({ state, authService, navigate }) {
   });
 
   main.addEventListener('click', async (event) => {
+    const marketplaceRetry = event.target.closest('[data-marketplace-retry]');
+    if (marketplaceRetry) {
+      marketplaceRetry.disabled = true;
+      await loadMarketplace();
+      return;
+    }
     const user = event.target.closest('[data-user-suspension]');
     if (user) {
       await runButtonAction(user, 'Actualizando…', () => service.setUserSuspension(user.dataset.userSuspension, user.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado del usuario actualizado.');
@@ -1098,6 +1152,10 @@ export function bind({ state, authService, navigate }) {
       return;
     }
     const moderation = event.target.closest('[data-market-moderate]');
+    if (moderation && !canSaveMarketplace(marketplaceState)) {
+      showToast('No se puede moderar hasta recuperar los datos reales del marketplace.', 'error');
+      return;
+    }
     if (moderation && window.confirm(`¿Cambiar este anuncio a ${moderation.dataset.next}?`)) {
       await runButtonAction(moderation, 'Actualizando…', () => service.moderateMarketplaceListing(moderation.dataset.marketModerate, moderation.dataset.next, 'Moderación desde centro de comando'), 'Anuncio moderado.');
     }
@@ -1108,6 +1166,10 @@ export function bind({ state, authService, navigate }) {
     const values = new FormData(event.target);
     const value = (name) => String(values.get(name) || '').trim();
     if (event.target.matches('[data-marketplace-settings]')) {
+      if (!canSaveMarketplace(marketplaceState)) {
+        showToast('No se puede guardar hasta recuperar la configuración real del marketplace.', 'error');
+        return;
+      }
       const price = value('price');
       await action(await service.setMarketplaceSettings({
         marketplaceEnabled: values.has('marketplace_enabled'), paymentsEnabled: values.has('payments_enabled'),

@@ -133,6 +133,12 @@ body[data-route-kind="admin"] #main-content { min-height: 100vh; }
 .admin-inline-form button { min-width: 132px; }
 .admin-market-actions, .admin-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .admin-market-actions .admin-action.is-danger, .admin-row-actions .admin-action.is-danger { margin-left: 0; }
+.admin-marketplace-state { min-height: 280px; display: grid; place-content: center; justify-items: start; border-block: 1px solid var(--admin-line); }
+.admin-marketplace-state > span { color: var(--color-accent); font-size: .64rem; text-transform: uppercase; letter-spacing: .12em; }
+.admin-marketplace-state h2 { margin: 8px 0 0; }
+.admin-marketplace-state p { max-width: 560px; color: #838c87; }
+.admin-marketplace-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border: 1px solid rgba(197,143,50,.3); color: #cbb98e; background: rgba(197,143,50,.08); font-size: .72rem; }
+.admin-marketplace-notice.is-error { border-color: rgba(216,149,130,.34); color: #e0a38f; background: rgba(216,149,130,.07); }
 .admin-legal-editor { margin-top: 18px; border-top: 1px solid var(--admin-line); padding-top: 14px; }
 .admin-legal-editor summary { color: var(--color-accent); cursor: pointer; font-size: .72rem; }
 .admin-legal-editor form { display: grid; gap: 10px; margin-top: 14px; }
