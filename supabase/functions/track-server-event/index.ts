@@ -53,7 +53,7 @@ export default {
       const forwarded = request.headers.get("cf-connecting-ip")
         || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
         || "unknown"
-      const secret = Deno.env.get("CLICK_HASH_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+      const secret = Deno.env.get("CLICK_HASH_SECRET")
       if (!secret) return ignored("tracking_not_configured", body.listingId, body.eventType)
 
       try {

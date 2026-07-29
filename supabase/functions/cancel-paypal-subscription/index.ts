@@ -4,14 +4,16 @@ import { withSupabase } from "@supabase/server"
 import { PayPalError, paypalRequest } from "../_shared/paypal.ts"
 
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: corsHeaders })
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405)
   if (Deno.env.get("PAYPAL_ENABLED") !== "true" || Deno.env.get("PAYPAL_MODE") !== "sandbox") return json({ error: "paypal_disabled" }, 503)
+  if (Number(req.headers.get("content-length") || 0) > 4096) return json({ error: "payload_too_large" }, 413)
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return json({ error: "invalid_json" }, 400) }
-  if (!/^[0-9a-f-]{36}$/i.test(String(body.subscription_id || "")) || body.confirm !== true) return json({ error: "cancellation_confirmation_required" }, 400)
+  if (!uuidPattern.test(String(body.subscription_id || "")) || body.confirm !== true) return json({ error: "cancellation_confirmation_required" }, 400)
   const reason = String(body.reason || "User requested cancellation").trim().slice(0, 127)
-const userId = ctx.userClaims?.id
+  const userId = ctx.userClaims?.sub || ctx.userClaims?.id
   if (!userId) return json({ error: "authentication_required" }, 401)
   const { data: selected, error } = await ctx.supabaseAdmin.rpc("get_paypal_subscription_for_cancel", { p_user_id: userId, p_subscription_id: body.subscription_id })
   if (error || !selected) return json({ error: "subscription_not_owned" }, 403)

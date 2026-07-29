@@ -30,7 +30,7 @@ RLS, borrados de historial y merge automático.
 | `npm run test:e2e` | 1 fallo, ejecución agotó 120 s | `/servers/owners` recibió cero planes desde catálogo remoto; 18 casos llegaron a ejecutarse. |
 | Migraciones | Alineadas | 29 timestamps coinciden local/remoto; no requiere repair. |
 | `supabase db lint` | 1 warning legacy | Variable `new_subscription_id` nunca leída en función Stripe histórica. |
-| `npm audit` | Pendiente de red | Registry rechazó la consulta en sandbox; repetir con acceso de red. |
+| `npm audit --audit-level=low` | Pasa | 0 vulnerabilidades conocidas. |
 
 El fallo E2E se tratará como fragilidad de aislamiento: una prueba pública no debe depender de que
 el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
@@ -56,7 +56,7 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [x] Comparar migraciones local/remoto y ejecutar lint remoto de solo lectura.
 - [x] Registrar check, unitarios, build y E2E.
 - [x] Crear `AGENTS.md` y este plan.
-- [ ] Repetir `npm audit` con red y capturar resultado.
+- [x] Repetir `npm audit` con red y capturar resultado.
 
 ### 1. Seguridad integral — pendiente
 

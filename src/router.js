@@ -169,6 +169,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
 
   function navigate(destination) {
     const url = new URL(destination, window.location.origin);
+    if (url.origin !== window.location.origin) return;
     const path = normalizePath(url.pathname);
     const nextUrl = `${path}${url.search}${url.hash}`;
     const currentUrl = `${normalizePath(window.location.pathname)}${window.location.search}${window.location.hash}`;
@@ -182,6 +183,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
 
   function replace(destination) {
     const url = new URL(destination, window.location.origin);
+    if (url.origin !== window.location.origin) return;
     window.history.replaceState({}, '', `${normalizePath(url.pathname)}${url.search}${url.hash}`);
     render(url.pathname);
   }

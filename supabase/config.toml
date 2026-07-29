@@ -459,15 +459,15 @@ entrypoint = "./functions/stripe-webhook/index.ts"
 
 [functions.create-server-listing-checkout]
 enabled = true
-# Authentication is enforced by @supabase/server with auth: "user".
-verify_jwt = false
+# Platform JWT verification plus the function's ownership check.
+verify_jwt = true
 import_map = "./functions/create-server-listing-checkout/deno.json"
 entrypoint = "./functions/create-server-listing-checkout/index.ts"
 
 [functions.create-billing-portal-session]
 enabled = true
-# Authentication is enforced by @supabase/server with auth: "user".
-verify_jwt = false
+# Platform JWT verification plus the function's ownership check.
+verify_jwt = true
 import_map = "./functions/create-billing-portal-session/deno.json"
 entrypoint = "./functions/create-billing-portal-session/index.ts"
 
@@ -480,15 +480,15 @@ entrypoint = "./functions/expire-server-listings/index.ts"
 
 [functions.manage-paypal-catalog]
 enabled = true
-# Authentication is enforced by @supabase/server with auth: "user".
-verify_jwt = false
+# Platform JWT verification plus the function's global-admin check.
+verify_jwt = true
 import_map = "./functions/manage-paypal-catalog/deno.json"
 entrypoint = "./functions/manage-paypal-catalog/index.ts"
 
 [functions.create-paypal-subscription]
 enabled = true
-# Authentication is enforced by @supabase/server with auth: "user".
-verify_jwt = false
+# Platform JWT verification plus the function's ownership check.
+verify_jwt = true
 import_map = "./functions/create-paypal-subscription/deno.json"
 entrypoint = "./functions/create-paypal-subscription/index.ts"
 
@@ -500,8 +500,8 @@ entrypoint = "./functions/paypal-webhook/index.ts"
 
 [functions.cancel-paypal-subscription]
 enabled = true
-# Authentication is enforced by @supabase/server with auth: "user".
-verify_jwt = false
+# Platform JWT verification plus the function's ownership check.
+verify_jwt = true
 import_map = "./functions/cancel-paypal-subscription/deno.json"
 entrypoint = "./functions/cancel-paypal-subscription/index.ts"
 

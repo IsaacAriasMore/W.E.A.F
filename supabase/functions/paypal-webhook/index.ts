@@ -123,53 +123,34 @@ const handler = withSupabase(
       event.event_type || "",
     )
 
-    if (
-      !event.id ||
-      !eventType ||
-      !eventTypes.has(eventType)
-    ) {
+    if (!event.id || !eventType) {
+      return json({ error: "invalid_paypal_event" }, 400)
+    }
+
+    try {
+      const verified = await verifyPayPalWebhook(req, event)
+
+      if (!verified) {
+        return json({ error: "invalid_paypal_signature" }, 400)
+      }
+    } catch (error) {
+      console.error(
+        "paypal_webhook_verification_failed",
+        error instanceof PayPalError ? error.code : "unknown",
+      )
+
+      return json(
+        { error: error instanceof PayPalError ? error.code : "webhook_verification_failed" },
+        error instanceof PayPalError ? error.status : 502,
+      )
+    }
+
+    if (!eventTypes.has(eventType)) {
       return json({
         received: true,
         processed: false,
         reason: "unsupported_event",
       })
-    }
-
-    try {
-      const verified =
-        await verifyPayPalWebhook(
-          req,
-          event,
-        )
-
-      if (!verified) {
-        return json(
-          {
-            error:
-              "invalid_paypal_signature",
-          },
-          400,
-        )
-      }
-    } catch (error) {
-      console.error(
-        "paypal_webhook_verification_failed",
-        error instanceof PayPalError
-          ? error.code
-          : "unknown",
-      )
-
-      return json(
-        {
-          error:
-            error instanceof PayPalError
-              ? error.code
-              : "webhook_verification_failed",
-        },
-        error instanceof PayPalError
-          ? error.status
-          : 502,
-      )
     }
 
     const resource =
