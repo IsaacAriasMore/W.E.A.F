@@ -27,8 +27,13 @@ export function bind({ path, authService }) {
     if (canceled) return;
     const listing = result.data?.listings?.find((item) => item.id === listingId);
     if (listing?.status === 'active') {
-      const date = new Date(listing.expires_at).toLocaleDateString(getLanguage() === 'es' ? 'es-CR' : 'en-US');
-      target.innerHTML = `<p>${t('servers.result.active')}</p><h1>${t('servers.result.published', { title: escapeHtml(listing.title) })}</h1><p>${t('servers.result.validUntil', { plan: escapeHtml(listing.plan_type || listing.plan), date })}</p><a class="button button-primary" href="/servers" data-link>${t('servers.result.directory')}</a><a class="button button-quiet" href="/account/billing" data-link>${t('servers.result.billing')}</a>`;
+      const subscription = result.data?.subscriptions?.find((item) => item.listing_id === listingId);
+      const billingDate = subscription?.next_billing_time || subscription?.current_period_end || listing.current_period_end || listing.expires_at;
+      const date = billingDate ? new Date(billingDate).toLocaleDateString(getLanguage() === 'es' ? 'es-CR' : 'en-US') : null;
+      const timing = date
+        ? t(subscription?.auto_renew ? 'servers.result.nextCharge' : 'servers.result.validUntil', { plan: escapeHtml(listing.plan_type || listing.plan), date })
+        : t('servers.result.activeNoDate');
+      target.innerHTML = `<p>${t('servers.result.active')}</p><h1>${t('servers.result.published', { title: escapeHtml(listing.title) })}</h1><p>${timing}</p><a class="button button-primary" href="/servers" data-link>${t('servers.result.directory')}</a><a class="button button-quiet" href="/account/billing" data-link>${t('servers.result.billing')}</a>`;
       return;
     }
     if (result.error) {

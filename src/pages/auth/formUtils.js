@@ -1,3 +1,6 @@
+import { getAuthCopy } from '../../config/auth.js';
+import { getLanguage } from '../../i18n/index.js';
+
 export function setFormStatus(form, message = '', tone = 'error') {
   const status = form.querySelector('[data-form-status]');
   if (!status) return;
@@ -6,33 +9,36 @@ export function setFormStatus(form, message = '', tone = 'error') {
   status.hidden = !message;
 }
 
-export function setSubmitting(form, submitting, label) {
+export function setSubmitting(form, submitting, label, processingLabel = getAuthCopy(getLanguage()).processing) {
   const button = form.querySelector('[type="submit"]');
   if (!button) return;
   button.disabled = submitting;
-  button.textContent = submitting ? 'Procesando…' : label;
+  button.setAttribute('aria-disabled', String(submitting));
+  button.textContent = submitting ? processingLabel : label;
   form.setAttribute('aria-busy', String(submitting));
 }
 
-export function bindPasswordToggle(container) {
+export function bindPasswordToggle(container, language = getLanguage()) {
+  const copy = getAuthCopy(language);
   container.querySelectorAll('[data-password-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
       const input = container.querySelector(`#${button.getAttribute('aria-controls')}`);
       if (!input) return;
       const showing = input.type === 'text';
       input.type = showing ? 'password' : 'text';
-      button.textContent = showing ? 'Mostrar' : 'Ocultar';
+      button.textContent = showing ? copy.show : copy.hide;
       button.setAttribute('aria-pressed', String(!showing));
     });
   });
 }
 
-export function configurationNotice(configured) {
+export function configurationNotice(configured, language = getLanguage()) {
   if (configured) return '';
+  const copy = getAuthCopy(language);
   return `
     <aside class="config-notice" role="note">
-      <strong>Conexión pendiente</strong>
-      <p>La interfaz está lista. Define <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> para activar Auth.</p>
+      <strong>${copy.configTitle}</strong>
+      <p>${copy.configBody}</p>
     </aside>
   `;
 }

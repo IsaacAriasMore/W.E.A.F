@@ -1,24 +1,20 @@
 import { getSupabaseClient } from '../config/supabase.js';
 import { LEGAL_VERSION } from '../config/legal.js';
 import { pathWithNext, safeInternalDestination } from '../utils/navigation.js';
-import { REQUIRE_EMAIL_CONFIRMATION } from '../config/auth.js';
+import { REQUIRE_EMAIL_CONFIRMATION, getAuthCopy } from '../config/auth.js';
+import { getLanguage } from '../i18n/index.js';
 
-const authErrorMessages = {
-  invalid_credentials: 'El correo o la contraseña no coinciden.',
-  email_not_confirmed: REQUIRE_EMAIL_CONFIRMATION
-    ? 'Confirma tu correo antes de ingresar.'
-    : 'Supabase todavía exige confirmar el correo. Desactiva “Confirm email” para permitir el acceso directo.',
-  user_already_exists: 'Ya existe una cuenta con este correo.',
-  signup_disabled: 'El registro está deshabilitado temporalmente.',
-  weak_password: 'Usa una contraseña más segura.',
-  over_request_rate_limit: 'Demasiados intentos. Espera un momento y vuelve a probar.',
-};
-
-function friendlyAuthError(error) {
+export function friendlyAuthError(error, { context = 'default', language = getLanguage() } = {}) {
   if (!error) return null;
-  return authErrorMessages[error.code]
-    || (error.status === 429 ? authErrorMessages.over_request_rate_limit : null)
-    || 'No pudimos completar la solicitud. Revisa tus datos e inténtalo de nuevo.';
+  const copy = getAuthCopy(language).errors;
+  if (error.status === 429 || error.code === 'over_request_rate_limit') return copy.rateLimit;
+  if (context === 'recovery') return null;
+  if (context === 'signup' && error.code === 'user_already_exists') return copy.signupUnavailable;
+  if (error.code === 'invalid_credentials') return copy.invalidCredentials;
+  if (error.code === 'email_not_confirmed') return REQUIRE_EMAIL_CONFIRMATION ? copy.confirmEmail : copy.confirmEmailConfig;
+  if (error.code === 'signup_disabled') return copy.signupDisabled;
+  if (error.code === 'weak_password') return copy.weakPassword;
+  return context === 'signup' ? copy.signupUnavailable : copy.generic;
 }
 
 export function createAuthService(client = getSupabaseClient()) {
@@ -37,7 +33,7 @@ export function createAuthService(client = getSupabaseClient()) {
       return error ? null : data.session;
     },
 
-    async signUp({ email, password, displayName, gameMode, next = null }) {
+    async signUp({ email, password, displayName, gameMode, next = null, captchaToken }) {
       if (!client) return unavailable();
       const redirectBase = (import.meta.env?.VITE_PUBLIC_SITE_URL || window.location.origin).replace(/\/$/, '');
       const onboardingPath = pathWithNext('/onboarding', safeInternalDestination(next, null));
@@ -46,6 +42,7 @@ export function createAuthService(client = getSupabaseClient()) {
         password,
         options: {
           emailRedirectTo: `${redirectBase}${onboardingPath}`,
+          ...(captchaToken ? { captchaToken } : {}),
           data: {
             display_name: displayName,
             default_game_mode: gameMode,
@@ -54,29 +51,31 @@ export function createAuthService(client = getSupabaseClient()) {
           },
         },
       });
-      return { data, error: friendlyAuthError(error) };
+      return { data, error: friendlyAuthError(error, { context: 'signup' }) };
     },
 
-    async signIn({ email, password }) {
+    async signIn({ email, password, captchaToken }) {
       if (!client) return unavailable();
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      const { data, error } = await client.auth.signInWithPassword({
+        email,
+        password,
+        ...(captchaToken ? { options: { captchaToken } } : {}),
+      });
       if (!error && REQUIRE_EMAIL_CONFIRMATION && data?.user && !data.user.email_confirmed_at) {
         await client.auth.signOut({ scope: 'local' });
-        return { data: null, error: authErrorMessages.email_not_confirmed };
+        return { data: null, error: getAuthCopy(getLanguage()).errors.confirmEmail };
       }
       return { data, error: friendlyAuthError(error) };
     },
 
-    async requestPasswordReset(email) {
+    async requestPasswordReset(email, captchaToken) {
       if (!client) return unavailable();
       const redirectBase = (import.meta.env?.VITE_PUBLIC_SITE_URL || window.location.origin).replace(/\/$/, '');
       const { data, error } = await client.auth.resetPasswordForEmail(email, {
         redirectTo: `${redirectBase}/reset-password`,
+        ...(captchaToken ? { captchaToken } : {}),
       });
-      return {
-        data,
-        error: error ? 'No se pudo enviar el correo de recuperación. Inténtalo más tarde.' : null,
-      };
+      return { data, error: friendlyAuthError(error, { context: 'recovery' }) };
     },
 
     async updatePassword(password) {

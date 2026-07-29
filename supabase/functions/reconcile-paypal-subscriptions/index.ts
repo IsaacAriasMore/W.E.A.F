@@ -7,9 +7,11 @@ const json = (body: unknown, status = 200) => Response.json(body, { status, head
 const handler = withSupabase({ auth: "secret" }, async (req, ctx) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405)
   if (Deno.env.get("PAYPAL_ENABLED") !== "true" || Deno.env.get("PAYPAL_MODE") !== "sandbox") return json({ error: "paypal_disabled" }, 503)
+  if (Number(req.headers.get("content-length") || 0) > 1024) return json({ error: "payload_too_large" }, 413)
   let requestedLimit = 25
   try { requestedLimit = Number((await req.json())?.limit || 25) } catch { /* optional body */ }
-  const { data: batch, error } = await ctx.supabaseAdmin.rpc("get_paypal_reconciliation_batch", { p_limit: Math.min(Math.max(requestedLimit, 1), 50) })
+  const safeLimit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 50) : 25
+  const { data: batch, error } = await ctx.supabaseAdmin.rpc("get_paypal_reconciliation_batch", { p_limit: safeLimit })
   if (error) return json({ error: "reconciliation_batch_failed" }, 500)
   const summary = { checked: 0, updated: 0, failed: 0, alerts: [] as Array<{ subscription_id: string; error: string }> }
   for (const item of batch || []) {

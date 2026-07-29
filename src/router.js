@@ -1,4 +1,5 @@
 import { destinationFromSearch, pathWithNext } from './utils/navigation.js';
+import { applyRouteMetadata } from './seo/metadata.js';
 
 const routeLoaders = {
   '/': () => import('./pages/public/home.js'),
@@ -6,6 +7,11 @@ const routeLoaders = {
   '/maps-bosses': () => import('./pages/public/mapsBosses.js'),
   '/creatures': () => import('./pages/public/creatures.js'),
   '/servers': () => import('./pages/public/servers.js'),
+  '/marketplace': () => import('./pages/public/marketplace.js'),
+  '/marketplace/new': () => import('./pages/app/marketplaceAccount.js'),
+  '/account/marketplace': () => import('./pages/app/marketplaceAccount.js'),
+  '/marketplace/payment/success': () => import('./pages/app/marketplacePaymentResult.js'),
+  '/marketplace/payment/cancel': () => import('./pages/app/marketplacePaymentResult.js'),
   '/servers/owners': () => import('./pages/public/serverOwners.js'),
   '/servers/publish': () => import('./pages/public/serverPublish.js'),
   '/servers/success': () => import('./pages/public/serverBillingResult.js'),
@@ -70,8 +76,19 @@ function normalizePath(pathname) {
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
   '/onboarding', '/profile', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
-  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/admin',
+  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/marketplace/new', '/account/marketplace', '/marketplace/payment/success', '/marketplace/payment/cancel', '/admin',
 ]);
+
+function resolveLoader(path) {
+  if (routeLoaders[path]) return routeLoaders[path];
+  if (/^\/marketplace\/[^/]+\/edit$/.test(path)) return () => import('./pages/app/marketplaceAccount.js');
+  if (/^\/marketplace\/[^/]+$/.test(path)) return () => import('./pages/public/marketplace.js');
+  return null;
+}
+
+function requiresAuthentication(path) {
+  return protectedRoutes.has(path) || /^\/marketplace\/[^/]+\/edit$/.test(path);
+}
 
 export function createRouter({ outlet, onRouteChange, getContext }) {
   let cleanup = null;
@@ -95,7 +112,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
     const path = normalizePath(pathname);
     const context = getContext();
 
-    if (protectedRoutes.has(path) && !context.state.session) {
+    if (requiresAuthentication(path) && !context.state.session) {
       replace(pathWithNext('/login', `${path}${window.location.search}${window.location.hash}`));
       return;
     }
@@ -129,7 +146,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       </section>
     `;
 
-    const loader = routeLoaders[path];
+    const loader = resolveLoader(path);
     if (!loader) {
       outlet.innerHTML = `
         <section class="empty-page container">
@@ -139,7 +156,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
           <a class="button button-primary" href="/" data-link>Volver al inicio</a>
         </section>
       `;
-      document.title = 'Página no encontrada | W.E.A.F';
+      applyRouteMetadata(path, { notFound: true });
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
       return;
@@ -151,10 +168,12 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       outlet.innerHTML = page.render({ path, ...context });
       cleanup = page.bind?.({ path, navigate, ...context }) || null;
       document.title = titles[path];
+      applyRouteMetadata(path);
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
       window.requestAnimationFrame(() => scrollToCurrentHash('auto'));
     } catch (error) {
+      applyRouteMetadata(path, { notFound: !resolveLoader(path) });
       outlet.innerHTML = `
         <section class="empty-page container">
           <p class="section-kicker">No pudimos cargar esta página</p>
@@ -169,6 +188,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
 
   function navigate(destination) {
     const url = new URL(destination, window.location.origin);
+    if (url.origin !== window.location.origin) return;
     const path = normalizePath(url.pathname);
     const nextUrl = `${path}${url.search}${url.hash}`;
     const currentUrl = `${normalizePath(window.location.pathname)}${window.location.search}${window.location.hash}`;
@@ -182,6 +202,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
 
   function replace(destination) {
     const url = new URL(destination, window.location.origin);
+    if (url.origin !== window.location.origin) return;
     window.history.replaceState({}, '', `${normalizePath(url.pathname)}${url.search}${url.hash}`);
     render(url.pathname);
   }

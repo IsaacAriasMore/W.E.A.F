@@ -21,6 +21,9 @@ const messages = {
   invalid_offer_payload: 'Revisa precio, descuento, duración y vigencia de la oferta.',
   paypal_plan_not_synced: 'Sincroniza esta versión con PayPal Sandbox antes de publicarla.',
   offer_not_found: 'La oferta ya no existe.',
+  invalid_marketplace_report_id: 'El reporte seleccionado no es válido.',
+  invalid_marketplace_report_status: 'El estado solicitado para el reporte no es válido.',
+  marketplace_report_not_found: 'El reporte ya no existe.',
   authentication_required:
   'Tu sesión expiró. Inicia sesión nuevamente.',
 
@@ -62,6 +65,7 @@ export function createAdminService(client) {
     getContentWorkspace: () => rpc('get_admin_content_workspace', {}, 'No pudimos cargar el catálogo editorial.'),
     getServerWorkspace: () => rpc('get_admin_server_workspace', {}, 'No pudimos cargar la operación de servidores.'),
     getBillingWorkspace: () => rpc('get_admin_billing_workspace', {}, 'No pudimos cargar planes y ofertas.'),
+    getMarketplaceWorkspace: () => rpc('get_admin_marketplace_workspace', {}, 'No pudimos cargar el marketplace.'),
     setUserSuspension: (userId, suspended, reason) => rpc('admin_set_user_suspension', {
       p_user_id: userId, p_suspended: suspended, p_reason: reason || null,
     }),
@@ -102,6 +106,16 @@ export function createAdminService(client) {
     saveBillingOffer: (offerId, payload) => rpc('admin_save_billing_offer', { p_offer_id: offerId || null, p_payload: payload }),
     setBillingOfferStatus: (offerId, status) => rpc('admin_set_billing_offer_status', { p_offer_id: offerId, p_status: status }),
     duplicateBillingOffer: (offerId) => rpc('admin_duplicate_billing_offer', { p_offer_id: offerId }),
+    setMarketplaceSettings: ({ marketplaceEnabled, paymentsEnabled, priceMinor, currency }) => rpc('admin_set_marketplace_setting', {
+      p_marketplace_enabled: marketplaceEnabled, p_payments_enabled: paymentsEnabled,
+      p_price_minor: priceMinor, p_currency: currency,
+    }),
+    moderateMarketplaceListing: (listingId, status, reason) => rpc('admin_moderate_marketplace_listing', {
+      p_listing_id: listingId, p_status: status, p_reason: reason || null,
+    }),
+    updateMarketplaceReportStatus: (reportId, status) => rpc('admin_update_marketplace_report_status', {
+      p_report_id: reportId, p_status: status,
+    }, 'No pudimos actualizar el reporte del marketplace.'),
     async managePayPalCatalog(action, planVersionId = null) {
   if (!client) return unavailable;
 

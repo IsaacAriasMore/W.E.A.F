@@ -11,6 +11,12 @@ import {
   normalizeRates,
 } from '../../config/serverListing.js';
 import { promotableServers } from '../../utils/serverPromotion.js';
+import {
+  beginMarketplaceLoad,
+  canSaveMarketplace,
+  completeMarketplaceLoad,
+  createMarketplaceState,
+} from '../../utils/adminMarketplaceState.js';
 
 const sectionNames = {
   overview: ['Pulso de plataforma', 'Señales operativas para decidir qué necesita atención.'],
@@ -19,6 +25,7 @@ const sectionNames = {
   content: ['Contenido público', 'Catálogo editorial compartido por ASA y ASE.'],
   operations: ['Operaciones', 'Servidores, planes y trazabilidad de pagos.'],
   billing: ['Planes y ofertas', 'Catálogo versionado y sincronización segura con PayPal Sandbox.'],
+  marketplace: ['Marketplace', 'Anuncios, reportes, pagos destacados y expiración de siete días.'],
   governance: ['Gobernanza', 'Moderación, flags, anuncios y documentos legales.'],
   audit: ['Auditoría', 'Registro inmutable de decisiones sensibles.'],
 };
@@ -192,7 +199,7 @@ function operations(data) {
         ${adminChoiceGroup({ legend: '¿Tiene mods?', help: 'Solo se registra si usa mods; no se solicitan nombres.', name: 'has_mods', type: 'radio', items: [{ value: 'true', label: 'Sí' }, { value: 'false', label: 'No' }], selected: ['false'] })}
         ${adminRates()}
         <div class="admin-field-pair"><label><span>Cluster</span><input name="cluster_name"></label><label><span>Último wipe</span><input name="wipe_date" type="date"></label></div>
-        <label><span>Discord</span><input name="discord" type="url" placeholder="https://discord.gg/..." required></label><label><span>Sitio web (opcional)</span><input name="website" type="url"></label><label><span>Banner original/licenciado (opcional)</span><input name="banner" type="url"></label><label><span>Descripción pública</span><textarea name="description" minlength="20" maxlength="4000" rows="5" required></textarea></label>
+        <label><span>Discord</span><input name="discord" type="url" pattern="https://(discord[.]gg|discord[.]com/invite)/.+" maxlength="500" placeholder="https://discord.gg/..." required></label><label><span>Sitio web (opcional)</span><input name="website" type="url" pattern="https://.+" maxlength="2048"></label><label><span>Banner original/licenciado (opcional)</span><input name="banner" type="url" pattern="https://.+" maxlength="2048"></label><label><span>Descripción pública</span><textarea name="description" minlength="20" maxlength="4000" rows="5" required></textarea></label>
         <label class="admin-check"><input name="verified" type="checkbox"><span>Servidor verificado</span></label><label class="admin-check"><input name="propagators" type="checkbox"><span>Usa propagadores</span></label><button class="button button-primary" type="submit">Publicar servidor</button>
       </form></aside></div>
     <div class="admin-split"><section><div class="admin-block-heading"><span>Oferta</span><h2>Planes</h2></div>${data.plans.map((plan) => `<div class="admin-line"><p><strong>${escapeHtml(plan.name)}</strong><small>${escapeHtml(plan.code)}</small></p><span>$${((plan.base_price_minor || plan.price_usd_cents || 0) / 100).toFixed(2)}</span></div>`).join('') || empty('Los planes se cargan desde la base de datos.')}</section>
@@ -869,7 +876,43 @@ function audit(data) {
   return table(['Momento', 'Actor', 'Acción', 'Entidad'], data.audit.map((item) => `<tr><td>${formatRelativeTime(item.created_at)}</td><td>${escapeHtml(item.actor_name || 'Sistema')}</td><td><strong>${escapeHtml(item.action)}</strong></td><td>${escapeHtml(item.entity_type)}<small>${escapeHtml(item.entity_id || 'sin ID')}</small></td></tr>`), 'Todavía no hay eventos de auditoría.');
 }
 
-const renderers = { overview, users, tribes, content, operations, billing, governance, audit };
+function marketplaceReportRow(item, locked = false) {
+  const actions = [
+    ['reviewing', 'Revisar'],
+    ['resolved', 'Resolver'],
+    ['dismissed', 'Descartar'],
+  ].map(([next, label]) => {
+    const unavailable = locked || item.status === next;
+    return `<button class="admin-action" type="button" data-market-report-status="${escapeHtml(item.id)}" data-next="${next}" ${unavailable ? 'disabled aria-disabled="true"' : ''}>${label}</button>`;
+  }).join('');
+
+  return `<tr data-market-report-row="${escapeHtml(item.id)}"><td>${escapeHtml(item.listing_id)}</td><td><strong>${escapeHtml(item.reason)}</strong><small>${escapeHtml(item.details)}</small></td><td>${status(item.status)}</td><td>${formatRelativeTime(item.updated_at || item.created_at)}</td><td><div class="admin-market-report-actions">${actions}</div></td></tr>`;
+}
+
+function marketplace(data) {
+  const state = data.marketplaceState;
+  const workspace = state?.data;
+  if (!workspace) {
+    if (state?.status === 'error') {
+      return `<section class="admin-marketplace-state" role="alert"><span>Error de lectura</span><h2>No pudimos cargar Marketplace</h2><p>${escapeHtml(state.error)}</p><button class="admin-action" type="button" data-marketplace-retry>Reintentar</button></section>`;
+    }
+    return '<section class="admin-marketplace-state" role="status" aria-live="polite"><span>Cargando</span><h2>Consultando la configuración real</h2><p>Los controles permanecerán bloqueados hasta confirmar los datos.</p></section>';
+  }
+  const setting = workspace.setting || {};
+  const locked = state.status !== 'loaded';
+  const disabled = locked ? ' disabled aria-disabled="true"' : '';
+  const notice = state.status === 'loading'
+    ? '<div class="admin-marketplace-notice" role="status">Actualizando datos; se conserva la última lectura válida.</div>'
+    : state.status === 'error'
+      ? `<div class="admin-marketplace-notice is-error" role="alert"><span>${escapeHtml(state.error)}</span><button class="admin-action" type="button" data-marketplace-retry>Reintentar</button></div>`
+      : '';
+  return `<div class="admin-governance">${notice}<section><div class="admin-block-heading"><span>Configuración</span><h2>Publicaciones destacadas</h2></div><form class="admin-inline-form" data-marketplace-settings><label><span>Precio destacado (USD)</span><input name="price" type="number" min="0.01" step="0.01" value="${setting.price_minor ? (setting.price_minor / 100).toFixed(2) : ''}" placeholder="Sin definir"${disabled}></label><label><span>Moneda</span><select name="currency"${disabled}><option value="USD">USD</option></select></label><label><input name="marketplace_enabled" type="checkbox" ${setting.marketplace_enabled ? 'checked' : ''}${disabled}> Marketplace activo</label><label><input name="payments_enabled" type="checkbox" ${setting.payments_enabled ? 'checked' : ''}${disabled}> Destacados PayPal Sandbox</label><button class="admin-action" type="submit"${disabled}>Guardar configuración</button></form><p class="admin-muted">No habilites pagos hasta definir el precio y desplegar el checkout de PayPal Orders Sandbox.</p></section>
+  <section><div class="admin-block-heading"><span>Moderación</span><h2>Anuncios</h2></div>${table(['Anuncio','Propietario','Estado','Expira','Acción'],(workspace.listings || []).map((item)=>`<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.listing_type)} · ${escapeHtml(item.resource_name)}</small></td><td>${escapeHtml(item.owner_user_id)}</td><td>${status(item.status)}</td><td>${item.expires_at ? formatRelativeTime(item.expires_at) : 'Sin fecha'}</td><td><div class="admin-market-actions"><button class="admin-action" data-market-moderate="${item.id}" data-next="hidden"${disabled}>Ocultar</button><button class="admin-action" data-market-moderate="${item.id}" data-next="rejected"${disabled}>Rechazar</button></div></td></tr>`),'No hay anuncios.')}</section>
+  <section><div class="admin-block-heading"><span>Reportes</span><h2>Seguridad comunitaria</h2></div>${table(['Anuncio','Motivo','Estado','Actualización','Acción'],(workspace.reports || []).map((item) => marketplaceReportRow(item, locked)),'No hay reportes del marketplace.')}</section>
+  <section><div class="admin-block-heading"><span>PayPal Sandbox</span><h2>Pagos destacados</h2></div>${table(['Anuncio','Monto','Estado','Fecha'],(workspace.payments || []).map((item)=>`<tr><td>${escapeHtml(item.listing_id)}</td><td>${(item.amount_minor/100).toFixed(2)} ${escapeHtml(item.currency)}</td><td>${status(item.status)}</td><td>${formatRelativeTime(item.created_at)}</td></tr>`),'Todavía no hay pagos destacados.')}</section></div>`;
+}
+
+const renderers = { overview, users, tribes, content, operations, billing, marketplace, governance, audit };
 
 export function render({ state }) {
   const section = currentSection();
@@ -883,6 +926,27 @@ export function bind({ state, authService, navigate }) {
   const service = createAdminService(authService.getClient());
   const main = document.querySelector('[data-admin-main]');
   let data;
+  let marketplaceState = createMarketplaceState();
+
+  function renderSection(section = currentSection()) {
+    const view = main.querySelector('[data-admin-view]');
+    if (!view || !data) return;
+    data.marketplaceState = marketplaceState;
+    view.innerHTML = renderers[section](data);
+  }
+
+  async function loadMarketplace(section = currentSection()) {
+    marketplaceState = beginMarketplaceLoad(marketplaceState);
+    renderSection(section);
+    let result;
+    try {
+      result = await service.getMarketplaceWorkspace();
+    } catch (error) {
+      result = { data: null, error: error?.message || 'No pudimos cargar el marketplace.' };
+    }
+    marketplaceState = completeMarketplaceLoad(marketplaceState, result);
+    if (currentSection() === section) renderSection(section);
+  }
 
   function fillEditor(entity, record) {
     const form = main.querySelector(`[data-${entity}-form]`);
@@ -924,6 +988,11 @@ export function bind({ state, authService, navigate }) {
 
   async function load(section = currentSection()) {
     main.setAttribute('aria-busy', 'true');
+    marketplaceState = beginMarketplaceLoad(marketplaceState);
+    const marketplaceRequest = service.getMarketplaceWorkspace().catch((error) => ({
+      data: null,
+      error: error?.message || 'No pudimos cargar el marketplace.',
+    }));
     const [result, serverResult, contentResult, billingResult] = await Promise.all([
       service.getWorkspace(), service.getServerWorkspace(), service.getContentWorkspace(), service.getBillingWorkspace(),
     ]);
@@ -934,6 +1003,7 @@ export function bind({ state, authService, navigate }) {
     data = result.data;
     data.serverOps = serverResult.data || { listings: [], totals: {} };
     data.billing = billingResult.data || { plans: [], offers: [], subscriptions: [], audit: [] };
+    data.marketplaceState = marketplaceState;
     if (contentResult.data) {
       data.maps = contentResult.data.maps || [];
       data.bosses = contentResult.data.bosses || [];
@@ -946,11 +1016,35 @@ export function bind({ state, authService, navigate }) {
       <div class="admin-view" data-admin-view>${renderers[section](data)}</div>`;
     main.removeAttribute('aria-busy');
     document.querySelectorAll('[data-admin-section]').forEach((link) => link.toggleAttribute('aria-current', link.dataset.adminSection === section));
+    marketplaceState = completeMarketplaceLoad(marketplaceState, await marketplaceRequest);
+    if (currentSection() === section) renderSection(section);
   }
 
   async function action(result, success = 'Cambio aplicado.') {
-    if (result.error) showToast(result.error, 'error');
-    else { showToast(success); await load(); }
+    if (result.error) {
+      showToast(result.error, 'error');
+      return false;
+    }
+    showToast(success);
+    await load();
+    return true;
+  }
+
+  async function runButtonAction(button, pendingText, task, success) {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = pendingText;
+    try {
+      return await action(await task(), success);
+    } catch (error) {
+      showToast(error?.message || 'No se pudo completar la acción.', 'error');
+      return false;
+    } finally {
+      if (button.isConnected) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
   }
 
   main.addEventListener('change', async (event) => {
@@ -991,91 +1085,142 @@ export function bind({ state, authService, navigate }) {
   });
 
   main.addEventListener('click', async (event) => {
+    const marketplaceRetry = event.target.closest('[data-marketplace-retry]');
+    if (marketplaceRetry) {
+      marketplaceRetry.disabled = true;
+      await loadMarketplace();
+      return;
+    }
     const user = event.target.closest('[data-user-suspension]');
-    if (user) await action(await service.setUserSuspension(user.dataset.userSuspension, user.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado del usuario actualizado.');
+    if (user) {
+      await runButtonAction(user, 'Actualizando…', () => service.setUserSuspension(user.dataset.userSuspension, user.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado del usuario actualizado.');
+      return;
+    }
     const tribe = event.target.closest('[data-tribe-active]');
-    if (tribe) await action(await service.setTribeActive(tribe.dataset.tribeActive, tribe.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado de la tribu actualizado.');
+    if (tribe) {
+      await runButtonAction(tribe, 'Actualizando…', () => service.setTribeActive(tribe.dataset.tribeActive, tribe.dataset.next === 'true', 'Acción desde centro de comando'), 'Estado de la tribu actualizado.');
+      return;
+    }
     const archive = event.target.closest('[data-archive-content]');
     if (archive && window.confirm('¿Archivar esta entrada del catálogo público?')) {
       const entity = archive.dataset.archiveContent;
-      const result = entity === 'species'
-        ? await service.archiveContent(entity, archive.dataset.id)
-        : await service.archivePublicContent(entity === 'requirement' ? 'boss_requirement' : entity, archive.dataset.id);
-      await action(result, 'Contenido archivado.');
+      await runButtonAction(archive, 'Archivando…', () => (entity === 'species'
+        ? service.archiveContent(entity, archive.dataset.id)
+        : service.archivePublicContent(entity === 'requirement' ? 'boss_requirement' : entity, archive.dataset.id)), 'Contenido archivado.');
+      return;
     }
     const edit = event.target.closest('[data-edit-content]');
     if (edit) {
       const collection = edit.dataset.editContent === 'requirement' ? 'requirements' : `${edit.dataset.editContent}s`;
       fillEditor(edit.dataset.editContent, data[collection]?.find((item) => item.id === edit.dataset.id));
+      return;
     }
     const addItem = event.target.closest('[data-add-requirement-item]');
-    if (addItem) addItem.closest('[data-requirement-group]').querySelector('[data-requirement-items]').insertAdjacentHTML('beforeend', requirementItem(addItem.dataset.addRequirementItem));
+    if (addItem) {
+      addItem.closest('[data-requirement-group]').querySelector('[data-requirement-items]').insertAdjacentHTML('beforeend', requirementItem(addItem.dataset.addRequirementItem));
+      return;
+    }
     const removeItem = event.target.closest('[data-remove-requirement-item]');
     if (removeItem) {
       const container = removeItem.closest('[data-requirement-items]');
       if (container.children.length > 1) removeItem.closest('[data-requirement-item]').remove();
       else removeItem.closest('[data-requirement-item]').querySelectorAll('input').forEach((input) => { input.value = input.type === 'number' ? '1' : ''; });
+      return;
     }
     const renew = event.target.closest('[data-renew-server]');
-    if (renew) { const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value); await action(await service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.'); }
+    if (renew) {
+      const duration = Number(main.querySelector(`[data-renew-duration="${renew.dataset.renewServer}"]`).value);
+      await runButtonAction(renew, 'Renovando…', () => service.renewServerListing(renew.dataset.renewServer, duration), 'Publicación renovada.');
+      return;
+    }
     const remove = event.target.closest('[data-delete-server]');
-    if (remove && window.confirm('¿Eliminar definitivamente esta publicación y su analítica?')) await action(await service.deleteServerListing(remove.dataset.deleteServer), 'Publicación eliminada.');
-const productSync = event.target.closest('[data-paypal-product-sync]');
-
-if (productSync) {
-  productSync.disabled = true;
-
-  const originalText = productSync.textContent;
-  productSync.textContent = 'Sincronizando...';
-
-  showToast('Sincronizando producto con PayPal Sandbox...');
-
-  const result = await service.managePayPalCatalog('sync_product');
-
-  productSync.textContent = originalText;
-
-  await action(
-    result,
-    'Producto PayPal sincronizado correctamente.',
-  );
-}
+    if (remove) {
+      if (window.confirm('¿Eliminar definitivamente esta publicación y su analítica?')) {
+        await runButtonAction(remove, 'Eliminando…', () => service.deleteServerListing(remove.dataset.deleteServer), 'Publicación eliminada.');
+      }
+      return;
+    }
+    const productSync = event.target.closest('[data-paypal-product-sync]');
+    if (productSync) {
+      showToast('Sincronizando producto con PayPal Sandbox…');
+      await runButtonAction(productSync, 'Sincronizando…', () => service.managePayPalCatalog('sync_product'), 'Producto PayPal sincronizado correctamente.');
+      return;
+    }
     const planSync = event.target.closest('[data-sync-paypal-plan]');
-
-if (planSync) {
-  planSync.disabled = true;
-
-  const originalText = planSync.textContent;
-
-  planSync.textContent = 'Sincronizando...';
-
-  showToast('Sincronizando plan con PayPal Sandbox...');
-
-  const result = await service.managePayPalCatalog(
-    'sync_plan',
-    planSync.dataset.syncPaypalPlan,
-  );
-
-  if (result.error) {
-    planSync.disabled = false;
-    planSync.textContent = originalText;
-    showToast(result.error, 'error');
-    return;
-  }
-
-  showToast('Plan PayPal sincronizado correctamente.');
-
-  await load();
-}
+    if (planSync) {
+      showToast('Sincronizando plan con PayPal Sandbox…');
+      await runButtonAction(planSync, 'Sincronizando…', () => service.managePayPalCatalog('sync_plan', planSync.dataset.syncPaypalPlan), 'Plan PayPal sincronizado correctamente.');
+      return;
+    }
     const offerStatus = event.target.closest('[data-offer-status]');
-    if (offerStatus && window.confirm(`¿Cambiar la oferta a ${offerStatus.dataset.next}?`)) await action(await service.setBillingOfferStatus(offerStatus.dataset.offerStatus, offerStatus.dataset.next), 'Estado de oferta actualizado.');
+    if (offerStatus) {
+      if (window.confirm(`¿Cambiar la oferta a ${offerStatus.dataset.next}?`)) {
+        await runButtonAction(offerStatus, 'Actualizando…', () => service.setBillingOfferStatus(offerStatus.dataset.offerStatus, offerStatus.dataset.next), 'Estado de oferta actualizado.');
+      }
+      return;
+    }
     const duplicate = event.target.closest('[data-duplicate-offer]');
-    if (duplicate) await action(await service.duplicateBillingOffer(duplicate.dataset.duplicateOffer), 'Oferta duplicada como borrador.');
+    if (duplicate) {
+      await runButtonAction(duplicate, 'Duplicando…', () => service.duplicateBillingOffer(duplicate.dataset.duplicateOffer), 'Oferta duplicada como borrador.');
+      return;
+    }
+    const reportAction = event.target.closest('[data-market-report-status]');
+    if (reportAction) {
+      if (!canSaveMarketplace(marketplaceState)) {
+        showToast('No se puede moderar hasta recuperar los datos reales del marketplace.', 'error');
+        return;
+      }
+      const nextStatus = reportAction.dataset.next;
+      const labels = { reviewing: 'revisar', resolved: 'resolver', dismissed: 'descartar' };
+      if (!window.confirm(`¿Confirmas ${labels[nextStatus]} este reporte?`)) return;
+
+      const originalText = reportAction.textContent;
+      reportAction.disabled = true;
+      reportAction.textContent = 'Actualizando…';
+      const result = await service.updateMarketplaceReportStatus(reportAction.dataset.marketReportStatus, nextStatus);
+      if (result.error) {
+        showToast(result.error, 'error');
+        if (reportAction.isConnected) {
+          reportAction.disabled = false;
+          reportAction.textContent = originalText;
+        }
+        return;
+      }
+
+      const updated = result.data;
+      marketplaceState.data.reports = (marketplaceState.data.reports || []).map((item) => (
+        item.id === updated.id ? { ...item, ...updated } : item
+      ));
+      const row = main.querySelector(`[data-market-report-row="${updated.id}"]`);
+      if (row) row.outerHTML = marketplaceReportRow(updated);
+      showToast('Reporte del marketplace actualizado.');
+      return;
+    }
+    const moderation = event.target.closest('[data-market-moderate]');
+    if (moderation && !canSaveMarketplace(marketplaceState)) {
+      showToast('No se puede moderar hasta recuperar los datos reales del marketplace.', 'error');
+      return;
+    }
+    if (moderation && window.confirm(`¿Cambiar este anuncio a ${moderation.dataset.next}?`)) {
+      await runButtonAction(moderation, 'Actualizando…', () => service.moderateMarketplaceListing(moderation.dataset.marketModerate, moderation.dataset.next, 'Moderación desde centro de comando'), 'Anuncio moderado.');
+    }
   });
 
   main.addEventListener('submit', async (event) => {
     event.preventDefault();
     const values = new FormData(event.target);
     const value = (name) => String(values.get(name) || '').trim();
+    if (event.target.matches('[data-marketplace-settings]')) {
+      if (!canSaveMarketplace(marketplaceState)) {
+        showToast('No se puede guardar hasta recuperar la configuración real del marketplace.', 'error');
+        return;
+      }
+      const price = value('price');
+      await action(await service.setMarketplaceSettings({
+        marketplaceEnabled: values.has('marketplace_enabled'), paymentsEnabled: values.has('payments_enabled'),
+        priceMinor: price ? Math.round(Number(price) * 100) : null, currency: value('currency') || 'USD',
+      }), 'Configuración del marketplace actualizada.'); return;
+    }
     if (event.target.matches('[data-billing-offer-form]')) {
       const cents = (name) => Math.round(Number(value(name)) * 100);
       const discountType = value('discount_type'); const discountValue = Number(value('discount_value') || 0);

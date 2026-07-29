@@ -4,7 +4,7 @@ import { withSupabase } from "@supabase/server"
 import { approvalUrl, PayPalError, paypalRequest } from "../_shared/paypal.ts"
 
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: corsHeaders })
-const isUuid = (value: unknown) => /^[0-9a-f-]{36}$/i.test(String(value || ""))
+const isUuid = (value: unknown) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""))
 
 const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405)
@@ -15,8 +15,14 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return json({ error: "invalid_json" }, 400) }
   if (!isUuid(body.server_listing_id) || !isUuid(body.plan_version_id) || !isUuid(body.idempotency_key)) return json({ error: "invalid_subscription_request" }, 400)
-  const userId = ctx.userClaims?.id
+  const userId = ctx.userClaims?.sub || ctx.userClaims?.id
   if (!userId) return json({ error: "authentication_required" }, 401)
+  const { data: paymentFlag, error: paymentFlagError } = await ctx.supabaseAdmin
+    .from("feature_flags")
+    .select("enabled")
+    .eq("key", "paypal_payments")
+    .maybeSingle()
+  if (paymentFlagError || paymentFlag?.enabled !== true) return json({ error: "billing_disabled" }, 503)
   const { data: owned } = await ctx.supabase.from("server_listings").select("id,owner_user_id").eq("id", body.server_listing_id).maybeSingle()
   if (!owned || owned.owner_user_id !== userId) return json({ error: "listing_not_owned" }, 403)
   const { data: prepared, error: prepareError } = await ctx.supabaseAdmin.rpc("prepare_paypal_subscription", {

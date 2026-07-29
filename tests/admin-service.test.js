@@ -55,3 +55,14 @@ test('manual server publication is scoped to the protected admin RPC', async () 
   await service.upsertServerListing({ payload, durationMonths: 3 });
   assert.deepEqual(call, { name: 'admin_upsert_server_listing', params: { p_listing_id: null, p_payload: payload, p_duration_months: 3 } });
 });
+
+test('marketplace report moderation sends only report id and allowed target status to its RPC', async () => {
+  let call;
+  const service = createAdminService({ async rpc(name, params) { call = { name, params }; return { data: { id: 'report-id', status: 'resolved' }, error: null }; } });
+  const result = await service.updateMarketplaceReportStatus('report-id', 'resolved');
+  assert.deepEqual(call, {
+    name: 'admin_update_marketplace_report_status',
+    params: { p_report_id: 'report-id', p_status: 'resolved' },
+  });
+  assert.equal(result.data.status, 'resolved');
+});

@@ -125,6 +125,57 @@ body[data-route-kind='auth'] main {
   margin-top: 0.35rem;
 }
 
+.auth-captcha {
+  display: grid;
+  min-width: 0;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--bg-raised);
+  transition: border-color 180ms var(--ease-out), background-color 180ms var(--ease-out);
+}
+
+.auth-captcha-widget {
+  width: 100%;
+  min-height: 65px;
+  overflow: hidden;
+}
+
+.auth-captcha-widget > div,
+.auth-captcha-widget iframe {
+  max-width: 100%;
+}
+
+.auth-captcha-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.auth-captcha[data-state='verified'] {
+  border-color: oklch(0.73 0.12 155 / 0.55);
+  background: oklch(0.73 0.12 155 / 0.08);
+}
+
+.auth-captcha[data-state='verified'] .auth-captcha-status {
+  color: oklch(0.84 0.1 155);
+}
+
+.auth-captcha[data-state='expired'],
+.auth-captcha[data-state='error'] {
+  border-color: oklch(0.67 0.16 25 / 0.55);
+  background: oklch(0.67 0.16 25 / 0.08);
+}
+
+.auth-captcha[data-state='expired'] .auth-captcha-status,
+.auth-captcha[data-state='error'] .auth-captcha-status {
+  color: oklch(0.82 0.1 35);
+}
+
 .auth-switch {
   display: flex;
   flex-wrap: wrap;
@@ -570,4 +621,10 @@ body[data-route-kind='auth'] main {
 
 .session-dialog > p {
   margin-bottom: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-captcha {
+    transition: none;
+  }
 }

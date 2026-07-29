@@ -25,7 +25,11 @@ export function mountWeafThreeHero(container) {
 
   const start = async () => {
     try {
-      const THREE = await import('three');
+      const [core, rendererModule] = await Promise.all([
+        import('./threeHeroCore.js'),
+        import('./threeHeroRenderer.js'),
+      ]);
+      const THREE = { ...core, ...rendererModule };
       if (disposed) return;
 
       const scene = new THREE.Scene();
@@ -64,27 +68,45 @@ export function mountWeafThreeHero(container) {
       const particles = new THREE.Points(particlesGeometry, particlesMaterial);
       scene.add(particles);
 
-      const forgeGeometry = new THREE.IcosahedronGeometry(1.58, 1);
-      const forgeMaterial = new THREE.MeshBasicMaterial({
+      const forgeGeometry = new THREE.BufferGeometry();
+      forgeGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+        0, 1.58, 0, -1.2, 0, 0, 0, 0, 1.2,
+        0, 1.58, 0, 0, 0, 1.2, 1.2, 0, 0,
+        0, 1.58, 0, 1.2, 0, 0, 0, 0, -1.2,
+        0, 1.58, 0, 0, 0, -1.2, -1.2, 0, 0,
+        0, -1.58, 0, 0, 0, 1.2, -1.2, 0, 0,
+        0, -1.58, 0, 1.2, 0, 0, 0, 0, 1.2,
+        0, -1.58, 0, 0, 0, -1.2, 1.2, 0, 0,
+        0, -1.58, 0, -1.2, 0, 0, 0, 0, -1.2,
+      ]), 3));
+      const forgeMaterial = new THREE.PointsMaterial({
         color: 0x467998,
         opacity: 0.12,
+        size: 0.045,
         transparent: true,
-        wireframe: true,
         depthWrite: false,
       });
-      const forge = new THREE.Mesh(forgeGeometry, forgeMaterial);
+      const forge = new THREE.Points(forgeGeometry, forgeMaterial);
       forge.position.set(2.7, -0.25, -1.1);
       forge.rotation.set(0.28, -0.4, 0.12);
       scene.add(forge);
 
-      const orbitGeometry = new THREE.TorusGeometry(2.08, 0.008, 4, 84);
-      const orbitMaterial = new THREE.MeshBasicMaterial({
+      const orbitPositions = new Float32Array(84 * 3);
+      for (let index = 0; index < 84; index += 1) {
+        const angle = (index / 84) * Math.PI * 2;
+        orbitPositions[index * 3] = Math.cos(angle) * 2.08;
+        orbitPositions[index * 3 + 1] = Math.sin(angle) * 2.08;
+      }
+      const orbitGeometry = new THREE.BufferGeometry();
+      orbitGeometry.setAttribute('position', new THREE.BufferAttribute(orbitPositions, 3));
+      const orbitMaterial = new THREE.PointsMaterial({
         color: 0xd99a4d,
         opacity: 0.16,
+        size: 0.02,
         transparent: true,
         depthWrite: false,
       });
-      const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+      const orbit = new THREE.Points(orbitGeometry, orbitMaterial);
       orbit.position.copy(forge.position);
       orbit.rotation.set(1.12, 0.2, -0.35);
       scene.add(orbit);

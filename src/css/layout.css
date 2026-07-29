@@ -97,8 +97,8 @@
 }
 
 .language-switch button {
-  min-width: 34px;
-  min-height: 32px;
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -225,6 +225,9 @@
 }
 
 .creator-card > div:nth-child(2) a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
   color: oklch(0.86 0.022 265);
   font-size: 0.72rem;
 }
@@ -246,6 +249,9 @@
 }
 
 .footer-links a {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
   color: var(--muted);
 }
 

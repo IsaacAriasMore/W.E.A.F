@@ -7,6 +7,7 @@ const navigation = [
   { href: '/maps-bosses', key: 'nav.mapsBosses' },
   { href: '/creatures', key: 'nav.creatures' },
   { href: '/servers', key: 'nav.servers' },
+  { href: '/marketplace', key: 'nav.marketplace' },
 ];
 
 export function createPublicHeader() {

@@ -5,6 +5,7 @@ const PRIVATE_PATHS = [
   '/login', '/register', '/reset-password', '/onboarding', '/app', '/admin',
   '/auth', '/functions', '/stripe', '/checkout', '/billing', '/account/billing',
   '/servers/publish', '/servers/success', '/servers/cancel',
+  '/marketplace/new', '/marketplace/payment/success', '/marketplace/payment/cancel', '/account/marketplace',
 ];
 
 self.addEventListener('install', (event) => {
@@ -24,6 +25,7 @@ function mustUseNetwork(request, url) {
   return request.method !== 'GET'
     || url.origin !== self.location.origin
     || request.headers.has('Authorization')
+    || /^\/marketplace\/[^/]+\/edit$/.test(url.pathname)
     || PRIVATE_PATHS.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`));
 }
 

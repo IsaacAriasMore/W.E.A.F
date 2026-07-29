@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url><loc>https://weaf.vercel.app/</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>1.0</priority><xhtml:link rel="alternate" hreflang="es" href="https://weaf.vercel.app/?lang=es"/><xhtml:link rel="alternate" hreflang="en" href="https://weaf.vercel.app/?lang=en"/></url>
+  <url><loc>https://weaf.vercel.app/inis</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://weaf.vercel.app/maps-bosses</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://weaf.vercel.app/creatures</loc><lastmod>2026-07-29</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://weaf.vercel.app/servers</loc><lastmod>2026-07-29</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://weaf.vercel.app/servers/owners</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://weaf.vercel.app/marketplace</loc><lastmod>2026-07-29</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://weaf.vercel.app/terms</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://weaf.vercel.app/privacy</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://weaf.vercel.app/cookies</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://weaf.vercel.app/disclaimer</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://weaf.vercel.app/refund-policy</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://weaf.vercel.app/server-listing-policy</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://weaf.vercel.app/report-content</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://weaf.vercel.app/contact</loc><lastmod>2026-07-29</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+</urlset>
