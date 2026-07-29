@@ -510,3 +510,15 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/reconcile-paypal-subscriptions/deno.json"
 entrypoint = "./functions/reconcile-paypal-subscriptions/index.ts"
+
+[functions.create-marketplace-paypal-order]
+enabled = true
+verify_jwt = true
+import_map = "./functions/create-marketplace-paypal-order/deno.json"
+entrypoint = "./functions/create-marketplace-paypal-order/index.ts"
+
+[functions.capture-marketplace-paypal-order]
+enabled = true
+verify_jwt = true
+import_map = "./functions/capture-marketplace-paypal-order/deno.json"
+entrypoint = "./functions/capture-marketplace-paypal-order/index.ts"

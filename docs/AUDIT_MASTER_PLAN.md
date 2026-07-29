@@ -83,7 +83,8 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [ ] Medir Core Web Vitals en Preview y dispositivo móvil real.
 - [x] Añadir marketplace gratuito, RLS/RPCs, moderación, reportes y expiración automática de siete días.
 - [ ] Aplicar y probar la migración del marketplace en Supabase después de corregir el BOM local.
-- [ ] Completar y probar PayPal Orders Sandbox para anuncios destacados.
+- [x] Implementar PayPal Orders Sandbox, captura server-side y webhook idempotente para anuncios destacados.
+- [ ] Desplegar y probar una orden destacada completa en PayPal Sandbox después de aplicar migraciones y definir precio.
 
 ### 6. SEO técnico — pendiente
 

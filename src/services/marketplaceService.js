@@ -13,6 +13,8 @@ const errorKeys = {
   html_not_allowed: 'htmlNotAllowed', prohibited_marketplace_content: 'prohibited',
   listing_not_owned: 'notOwned', listing_not_editable: 'notEditable',
   listing_not_owned_or_hidden: 'notOwned', listing_not_available: 'notAvailable',
+  marketplace_payments_disabled: 'paymentsDisabled', marketplace_order_not_available: 'paymentStart',
+  marketplace_payment_not_available: 'paymentCapture',
 };
 
 function friendly(error, fallbackKey) {
@@ -58,6 +60,18 @@ export function createMarketplaceService(client) {
       if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
       const { data, error } = await client.rpc('report_marketplace_listing', { p_listing_id: listingId, p_reason: reason, p_details: details });
       return { data, error: friendly(error, 'report') };
+    },
+    async startFeaturedOrder(listingId, idempotencyKey) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.functions.invoke('create-marketplace-paypal-order', {
+        body: { listing_id: listingId, idempotency_key: idempotencyKey },
+      });
+      return { data, error: error ? t('marketplace.errors.paymentStart') : null };
+    },
+    async captureFeaturedOrder(paymentId) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.functions.invoke('capture-marketplace-paypal-order', { body: { payment_id: paymentId } });
+      return { data, error: error ? t('marketplace.errors.paymentCapture') : null };
     },
   };
 }

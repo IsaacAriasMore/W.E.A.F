@@ -10,6 +10,8 @@ const routeLoaders = {
   '/marketplace': () => import('./pages/public/marketplace.js'),
   '/marketplace/new': () => import('./pages/app/marketplaceAccount.js'),
   '/account/marketplace': () => import('./pages/app/marketplaceAccount.js'),
+  '/marketplace/payment/success': () => import('./pages/app/marketplacePaymentResult.js'),
+  '/marketplace/payment/cancel': () => import('./pages/app/marketplacePaymentResult.js'),
   '/servers/owners': () => import('./pages/public/serverOwners.js'),
   '/servers/publish': () => import('./pages/public/serverPublish.js'),
   '/servers/success': () => import('./pages/public/serverBillingResult.js'),
@@ -74,7 +76,7 @@ function normalizePath(pathname) {
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
   '/onboarding', '/profile', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
-  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/marketplace/new', '/account/marketplace', '/admin',
+  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/marketplace/new', '/account/marketplace', '/marketplace/payment/success', '/marketplace/payment/cancel', '/admin',
 ]);
 
 function resolveLoader(path) {

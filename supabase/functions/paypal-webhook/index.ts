@@ -56,6 +56,14 @@ const eventTypes = new Set([
   "PAYMENT.SALE.REVERSED",
 ])
 
+const marketplaceEventTypes = new Set([
+  "CHECKOUT.ORDER.APPROVED",
+  "PAYMENT.CAPTURE.COMPLETED",
+  "PAYMENT.CAPTURE.DENIED",
+  "PAYMENT.CAPTURE.REFUNDED",
+  "PAYMENT.CAPTURE.REVERSED",
+])
+
 const minor = (value: unknown) => {
   const amount = Number(value)
 
@@ -145,7 +153,7 @@ const handler = withSupabase(
       )
     }
 
-    if (!eventTypes.has(eventType)) {
+    if (!eventTypes.has(eventType) && !marketplaceEventTypes.has(eventType)) {
       return json({
         received: true,
         processed: false,
@@ -171,6 +179,26 @@ const handler = withSupabase(
       resource
         .supplementary_data
         ?.related_ids || {}
+
+    if (marketplaceEventTypes.has(eventType)) {
+      const marketplaceAmount = resource.amount || resource.purchase_units?.[0]?.amount || {}
+      const marketplaceData = {
+        order_id: eventType === "CHECKOUT.ORDER.APPROVED" ? resource.id : (related.order_id || null),
+        capture_id: eventType.startsWith("PAYMENT.CAPTURE.") ? (resource.id || null) : null,
+        custom_id: resource.custom_id || resource.purchase_units?.[0]?.custom_id || null,
+        amount_minor: minor(marketplaceAmount.value),
+        currency: marketplaceAmount.currency_code || null,
+        event_time: event.create_time || resource.update_time || resource.create_time || new Date().toISOString(),
+      }
+      const { data: processed, error } = await ctx.supabaseAdmin.rpc("process_marketplace_paypal_event", {
+        p_event_id: event.id, p_event_type: eventType, p_data: marketplaceData, p_payload: event,
+      })
+      if (error) {
+        console.error("paypal_marketplace_event_failed", event.id, eventType, error.code || "database_error")
+        return json({ error: "paypal_marketplace_event_failed" }, 500)
+      }
+      return json({ received: true, processed: Boolean(processed) })
+    }
 
     const subscriptionId =
       resource.billing_agreement_id ||

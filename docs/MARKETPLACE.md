@@ -37,7 +37,17 @@ La configuración `featured_listing` guarda `price_minor`, moneda, entorno y kil
 
 Mientras no exista precio o pagos estén desactivados, el plan gratuito funciona y la UI explica que Destacado no está disponible. El precio comercial no se inventa.
 
-PayPal Destacado se implementa con Orders v2 como pago único en Sandbox. La captura del retorno no debe convertir el anuncio en destacado por sí sola: la confirmación final corresponde a un webhook firmado e idempotente.
+PayPal Destacado se implementa con Orders v2 como pago único en Sandbox. `create-marketplace-paypal-order` obtiene precio y moneda del servidor, usa `PayPal-Request-Id` y crea la orden. `capture-marketplace-paypal-order` captura tras el retorno autenticado, pero no concede el beneficio. Solo `paypal-webhook`, después de verificar la firma, llama `process_marketplace_paypal_event` y activa siete días destacados.
+
+Eventos configurables en el mismo webhook PayPal Sandbox:
+
+- `CHECKOUT.ORDER.APPROVED`;
+- `PAYMENT.CAPTURE.COMPLETED`;
+- `PAYMENT.CAPTURE.DENIED`;
+- `PAYMENT.CAPTURE.REFUNDED`;
+- `PAYMENT.CAPTURE.REVERSED`.
+
+Los eventos se guardan en `private.billing_events`, cuya clave primaria por proveedor/entorno/evento evita replays. Un monto o moneda diferente al setting server-side falla cerrado. Refund y reversal ocultan el anuncio y retiran `is_featured`.
 
 ## Rutas
 
@@ -61,5 +71,5 @@ Rollback funcional reversible:
 - Aplicar la migración después de corregir el BOM de `.env.local` y repetir `supabase migration list` + `db push --dry-run`.
 - Probar RLS con dos usuarios reales de desarrollo y un admin.
 - Configurar precio desde Admin únicamente cuando se vaya a probar Orders Sandbox.
-- Desplegar Edge Functions de creación/captura y extender webhook antes de habilitar pagos.
+- Desplegar `create-marketplace-paypal-order`, `capture-marketplace-paypal-order` y la nueva versión de `paypal-webhook` antes de habilitar pagos.
 - Definir política legal final, retención y respuesta a reportes con asesoría profesional.

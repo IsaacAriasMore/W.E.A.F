@@ -57,6 +57,17 @@
 .market-rules input { margin-top: 4px; }
 .market-plan-choice { display: grid; gap: 5px; border-left: 3px solid var(--color-accent); padding: 14px 18px; background: oklch(.17 .02 180); }
 .market-plan-choice span, .market-plan-choice small { color: var(--color-text-muted); }
+.market-plan-options { display: grid; gap: 10px; border: 0; padding: 0; }
+.market-plan-options legend { margin-bottom: 10px; font-weight: 700; }
+.market-plan-options label { display: grid; grid-template-columns: auto 1fr; gap: 12px; border: 1px solid var(--color-line); border-radius: var(--radius-control); padding: 16px; cursor: pointer; }
+.market-plan-options label:has(input:checked) { border-color: var(--color-accent); background: oklch(.17 .025 70 / .55); }
+.market-plan-options span { display: grid; gap: 4px; }
+.market-plan-options small { color: var(--color-text-muted); }
+.market-payment-result { min-height: 68svh; padding-block: clamp(72px, 10vw, 130px); }
+.market-payment-result > p { color: var(--color-accent); font-size: .72rem; text-transform: uppercase; }
+.market-payment-result h1 { max-width: 850px; margin: 12px 0 18px; font-size: clamp(2.6rem, 7vw, 5.6rem); line-height: .95; }
+.market-payment-result > span { display: block; max-width: 680px; color: var(--color-text-muted); line-height: 1.65; }
+.market-payment-result .route-loading, .market-payment-result .form-message { max-width: 680px; margin: 28px 0; }
 .market-account-actions { margin: 30px 0; }
 .market-account-list { display: grid; gap: 14px; margin-top: 32px; }
 .market-account-list article { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 24px; background: var(--color-surface); }
