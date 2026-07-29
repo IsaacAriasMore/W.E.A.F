@@ -62,3 +62,25 @@ test('PayPal remains hard-locked to Sandbox', () => {
   assert.match(example, /PAYPAL_MODE=sandbox/);
   assert.doesNotMatch(example, /PAYPAL_MODE=live/);
 });
+
+test('Marketplace checkout chains its local switch to the global PayPal kill switch', () => {
+  const edge = read('supabase/functions/create-marketplace-paypal-order/index.ts');
+  const migration = read('supabase/migrations/20260729055627_marketplace_paypal_global_kill_switch.sql');
+  for (const source of [edge, migration]) {
+    assert.match(source, /paypal_payments/);
+    assert.match(source, /billing_disabled/);
+  }
+  assert.match(edge, /BILLING_ENABLED/);
+  assert.match(edge, /PAYPAL_ENABLED/);
+  assert.match(edge, /https:\/\/api-m\.sandbox\.paypal\.com/);
+  assert.ok(migration.indexOf("key = 'paypal_payments'") < migration.indexOf('insert into public.marketplace_payments'));
+  assert.ok(migration.indexOf('payments_enabled') < migration.indexOf('insert into public.marketplace_payments'));
+
+  const permitsCheckout = (globalPayPal, marketplacePayments) => globalPayPal && marketplacePayments;
+  assert.deepEqual([
+    permitsCheckout(false, false),
+    permitsCheckout(false, true),
+    permitsCheckout(true, false),
+    permitsCheckout(true, true),
+  ], [false, false, false, true]);
+});

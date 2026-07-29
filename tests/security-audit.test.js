@@ -16,6 +16,15 @@ test('Vercel applies CSP, clickjacking protection and no-store to private surfac
   )));
 });
 
+test('exact app and account routes and their children are private and never cached', () => {
+  const config = JSON.parse(read('vercel.json'));
+  for (const source of ['/(app|account)', '/(app|account)/(.*)']) {
+    const rule = config.headers.find((candidate) => candidate.source === source);
+    const cache = rule?.headers?.find((header) => header.key === 'Cache-Control')?.value;
+    assert.equal(cache, 'private, no-store, max-age=0');
+  }
+});
+
 test('user Edge Functions keep platform JWT verification enabled', () => {
   const config = read('supabase/config.toml');
   for (const name of [
