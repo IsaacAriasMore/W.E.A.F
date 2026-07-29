@@ -10,7 +10,7 @@ export function marketplacePayload(formData) {
   const value = (key) => String(formData.get(key) || '').trim();
   return {
     category_id: value('category_id'), listing_type: value('listing_type'), title: value('title'),
-    description: value('description'), game: value('game'), resource_name: value('resource_name'),
+    description: value('description'), game: 'ascended', resource_name: value('resource_name'),
     quantity: value('quantity') || null, trade_terms: value('trade_terms'), server_name: value('server_name') || null,
     region: value('region'), platform: value('platform'), language: value('language'),
     discord_invite_url: value('discord_invite_url'), image_url: value('image_url') || null,
