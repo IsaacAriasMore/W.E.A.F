@@ -30,6 +30,10 @@ const publicMetadata = {
     es: ['Publica tu servidor ARK | W.E.A.F', 'Compara los planes Normal y Plus para publicar un servidor de ARK en el directorio de W.E.A.F.'],
     en: ['List your ARK server | W.E.A.F', 'Compare Normal and Plus plans to list an ARK server in the W.E.A.F directory.'],
   },
+  '/marketplace': {
+    es: ['Marketplace de recursos ARK | W.E.A.F', 'Compra, vende o intercambia recursos de ARK ASE y ASA mediante anuncios comunitarios de siete días.'],
+    en: ['ARK resource marketplace | W.E.A.F', 'Buy, sell, or trade ARK ASE and ASA resources through seven-day community listings.'],
+  },
   '/terms': { es: ['Términos de uso | W.E.A.F', 'Consulta los términos preliminares de uso de W.E.A.F.'], en: ['Terms of use | W.E.A.F', 'Read the preliminary W.E.A.F terms of use.'] },
   '/privacy': { es: ['Política de privacidad | W.E.A.F', 'Consulta cómo W.E.A.F trata datos personales y protege espacios privados.'], en: ['Privacy policy | W.E.A.F', 'Learn how W.E.A.F handles personal data and protects private spaces.'] },
   '/cookies': { es: ['Política de cookies | W.E.A.F', 'Revisa las preferencias y categorías de cookies utilizadas por W.E.A.F.'], en: ['Cookie policy | W.E.A.F', 'Review the cookie categories and preferences used by W.E.A.F.'] },
@@ -105,7 +109,11 @@ function structuredData(path, schema) {
 
 export function applyRouteMetadata(path, { notFound = false } = {}) {
   const language = getLanguage();
-  const metadata = publicMetadata[path];
+  const marketplaceDetail = /^\/marketplace\/[^/]+$/.test(path) && path !== '/marketplace/new';
+  const metadata = publicMetadata[path] || (marketplaceDetail ? {
+    es: ['Anuncio de recursos ARK | W.E.A.F', 'Consulta un anuncio activo del marketplace comunitario de recursos ARK de W.E.A.F.'],
+    en: ['ARK resource listing | W.E.A.F', 'View an active listing in the W.E.A.F community ARK resource marketplace.'],
+  } : null);
   const indexable = Boolean(metadata) && !notFound;
   const [title, description] = metadata?.[language] || [
     notFound ? (language === 'es' ? 'Página no encontrada | W.E.A.F' : 'Page not found | W.E.A.F') : document.title,
@@ -146,6 +154,20 @@ export function applyRouteMetadata(path, { notFound = false } = {}) {
     script.textContent = JSON.stringify(schema).replaceAll('<', '\\u003c');
     document.head.append(script);
   }
+}
+
+export function applyMarketplaceListingMetadata(path, title, description) {
+  const canonical = `${SITE_URL}${path}`;
+  const pageTitle = `${String(title).slice(0, 72)} | W.E.A.F`;
+  const pageDescription = String(description).replace(/\s+/g, ' ').slice(0, 155);
+  document.title = pageTitle;
+  upsertMeta('name', 'description', pageDescription);
+  upsertMeta('property', 'og:title', pageTitle);
+  upsertMeta('property', 'og:description', pageDescription);
+  upsertMeta('property', 'og:url', canonical);
+  upsertMeta('name', 'twitter:title', pageTitle);
+  upsertMeta('name', 'twitter:description', pageDescription);
+  upsertLink('canonical', canonical);
 }
 
 export function isPrivateSeoPath(path) {

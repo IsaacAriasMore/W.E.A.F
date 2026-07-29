@@ -7,6 +7,9 @@ const routeLoaders = {
   '/maps-bosses': () => import('./pages/public/mapsBosses.js'),
   '/creatures': () => import('./pages/public/creatures.js'),
   '/servers': () => import('./pages/public/servers.js'),
+  '/marketplace': () => import('./pages/public/marketplace.js'),
+  '/marketplace/new': () => import('./pages/app/marketplaceAccount.js'),
+  '/account/marketplace': () => import('./pages/app/marketplaceAccount.js'),
   '/servers/owners': () => import('./pages/public/serverOwners.js'),
   '/servers/publish': () => import('./pages/public/serverPublish.js'),
   '/servers/success': () => import('./pages/public/serverBillingResult.js'),
@@ -71,8 +74,19 @@ function normalizePath(pathname) {
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
   '/onboarding', '/profile', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
-  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/admin',
+  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/marketplace/new', '/account/marketplace', '/admin',
 ]);
+
+function resolveLoader(path) {
+  if (routeLoaders[path]) return routeLoaders[path];
+  if (/^\/marketplace\/[^/]+\/edit$/.test(path)) return () => import('./pages/app/marketplaceAccount.js');
+  if (/^\/marketplace\/[^/]+$/.test(path)) return () => import('./pages/public/marketplace.js');
+  return null;
+}
+
+function requiresAuthentication(path) {
+  return protectedRoutes.has(path) || /^\/marketplace\/[^/]+\/edit$/.test(path);
+}
 
 export function createRouter({ outlet, onRouteChange, getContext }) {
   let cleanup = null;
@@ -96,7 +110,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
     const path = normalizePath(pathname);
     const context = getContext();
 
-    if (protectedRoutes.has(path) && !context.state.session) {
+    if (requiresAuthentication(path) && !context.state.session) {
       replace(pathWithNext('/login', `${path}${window.location.search}${window.location.hash}`));
       return;
     }
@@ -130,7 +144,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       </section>
     `;
 
-    const loader = routeLoaders[path];
+    const loader = resolveLoader(path);
     if (!loader) {
       outlet.innerHTML = `
         <section class="empty-page container">
@@ -157,7 +171,7 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       outlet.focus({ preventScroll: true });
       window.requestAnimationFrame(() => scrollToCurrentHash('auto'));
     } catch (error) {
-      applyRouteMetadata(path, { notFound: !routeLoaders[path] });
+      applyRouteMetadata(path, { notFound: !resolveLoader(path) });
       outlet.innerHTML = `
         <section class="empty-page container">
           <p class="section-kicker">No pudimos cargar esta página</p>

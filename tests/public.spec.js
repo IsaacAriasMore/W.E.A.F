@@ -102,3 +102,12 @@ test('mobile navigation opens without horizontal overflow', async ({ page }) => 
   expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport);
   await page.screenshot({ path: 'artifacts/browser-qa/home-mobile.png', fullPage: true });
 });
+
+test('marketplace is public while publishing remains protected', async ({ page }) => {
+  await page.goto('/marketplace');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Encuentra lo que tu tribu necesita');
+  await expect(page.getByRole('heading', { name: 'Anuncios activos' })).toBeVisible();
+  await expect(page.locator('.market-empty')).toBeVisible();
+  await page.goto('/marketplace/new');
+  await expect(page).toHaveURL(/\/login\?next=%2Fmarketplace%2Fnew/);
+});

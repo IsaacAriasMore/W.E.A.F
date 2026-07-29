@@ -7,6 +7,7 @@ import './css/app.css';
 import './css/breeds.css';
 import './css/admin.css';
 import './css/servers.css';
+import './css/marketplace.css';
 import './css/phase8.css';
 import './css/motion.css';
 import './css/responsive.css';

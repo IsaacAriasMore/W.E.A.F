@@ -81,6 +81,9 @@ el catálogo remoto esté disponible. No se declarará verde hasta repetirla.
 - [ ] Aislar pruebas del catálogo remoto y prevenir doble envío.
 - [x] Reducir y separar Three.js; documentar la línea base y presupuesto.
 - [ ] Medir Core Web Vitals en Preview y dispositivo móvil real.
+- [x] Añadir marketplace gratuito, RLS/RPCs, moderación, reportes y expiración automática de siete días.
+- [ ] Aplicar y probar la migración del marketplace en Supabase después de corregir el BOM local.
+- [ ] Completar y probar PayPal Orders Sandbox para anuncios destacados.
 
 ### 6. SEO técnico — pendiente
 

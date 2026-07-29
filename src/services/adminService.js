@@ -62,6 +62,7 @@ export function createAdminService(client) {
     getContentWorkspace: () => rpc('get_admin_content_workspace', {}, 'No pudimos cargar el catálogo editorial.'),
     getServerWorkspace: () => rpc('get_admin_server_workspace', {}, 'No pudimos cargar la operación de servidores.'),
     getBillingWorkspace: () => rpc('get_admin_billing_workspace', {}, 'No pudimos cargar planes y ofertas.'),
+    getMarketplaceWorkspace: () => rpc('get_admin_marketplace_workspace', {}, 'No pudimos cargar el marketplace.'),
     setUserSuspension: (userId, suspended, reason) => rpc('admin_set_user_suspension', {
       p_user_id: userId, p_suspended: suspended, p_reason: reason || null,
     }),
@@ -102,6 +103,13 @@ export function createAdminService(client) {
     saveBillingOffer: (offerId, payload) => rpc('admin_save_billing_offer', { p_offer_id: offerId || null, p_payload: payload }),
     setBillingOfferStatus: (offerId, status) => rpc('admin_set_billing_offer_status', { p_offer_id: offerId, p_status: status }),
     duplicateBillingOffer: (offerId) => rpc('admin_duplicate_billing_offer', { p_offer_id: offerId }),
+    setMarketplaceSettings: ({ marketplaceEnabled, paymentsEnabled, priceMinor, currency }) => rpc('admin_set_marketplace_setting', {
+      p_marketplace_enabled: marketplaceEnabled, p_payments_enabled: paymentsEnabled,
+      p_price_minor: priceMinor, p_currency: currency,
+    }),
+    moderateMarketplaceListing: (listingId, status, reason) => rpc('admin_moderate_marketplace_listing', {
+      p_listing_id: listingId, p_status: status, p_reason: reason || null,
+    }),
     async managePayPalCatalog(action, planVersionId = null) {
   if (!client) return unavailable;
 
