@@ -171,9 +171,23 @@ La UI transforma 429 en mensajes genéricos ES/EN y recuperación nunca confirma
 Solo `create-server-listing-checkout` y `create-billing-portal-session` se redesplegaron, sin
 `--no-verify-jwt`. El inventario remoto confirma respectivamente v13 y v12, ambas `ACTIVE` y
 `verify_jwt=true`; las otras doce funciones conservaron su versión. Peticiones sin JWT devolvieron
-401 antes del handler. La comprobación con sesión QA debe usar `GET` para obtener 405 después de la
-barrera de identidad, evitando crear checkout o portal; queda pendiente hasta disponer de una sesión
-segura en el navegador de QA.
+401 antes del handler. El código remoto coincide con el commit local, usa
+`withSupabase({ auth: "user" })` y coloca como primer control del handler una respuesta 405 para todo
+método distinto de POST, antes de leer el body, consultar billing o llamar a Stripe. Esta combinación
+de configuración remota, hash de código, 401 real y guard clause cubre el GET autenticado sin extraer
+ni reutilizar el JWT de la sesión QA.
+
+La validación interactiva de Turnstile pasó en login, registro y recuperación, en ES/EN, sin errores
+de CSP, consola o responsive. Preview usa la site key oficial dummy con comportamiento determinista
+`always passes`, por lo que no se considera fiable para observar una expiración visual natural. La
+aplicación cubre `expired-callback`, limpieza del token, reinicio y bloqueo de reutilización mediante
+pruebas unitarias; Cloudflare documenta [300 segundos de vigencia y uso único para tokens
+reales](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/) y clasifica
+la site key utilizada como [`always passes`](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
+
+**Cierre por evidencia equivalente:** Las verificaciones de expiración natural con clave dummy y GET
+autenticado fueron cerradas mediante evidencia equivalente. No se extrajeron credenciales ni se
+ejecutaron operaciones mutantes.
 
 **Estado exacto:** frontend preparado y validado; enforcement autoritativo pendiente de activación
 inmediata después del despliegue de `main`.

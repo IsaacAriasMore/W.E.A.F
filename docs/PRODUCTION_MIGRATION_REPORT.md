@@ -177,13 +177,25 @@ exclusivamente las dos funciones Stripe legacy solicitadas con la configuración
 | `create-billing-portal-session` | v11, JWT desalineado | v12 | `ACTIVE`, `verify_jwt=true`, sin JWT → 401 |
 
 Las otras doce funciones conservaron sus versiones. No se usó `--no-verify-jwt`, no se creó checkout,
-no se abrió portal y no se llamó a Stripe o PayPal. El smoke con JWT de usuario queda limitado a un
-`GET` esperado 405 cuando haya sesión QA compartida.
+no se abrió portal y no se llamó a Stripe o PayPal. Ambas funciones usan
+`withSupabase({ auth: "user" })`; el código remoto coincide con el commit local y su primer control
+devuelve 405 para cualquier método distinto de POST, antes de leer body, consultar billing o llamar a
+Stripe. Junto con `verify_jwt=true`, el 401 real sin JWT y los hashes remotos, esto cierra el smoke GET
+autenticado mediante evidencia equivalente sin extraer el JWT del navegador.
 
 El frontend añadió Turnstile sin dependencia nueva y con rollout por flag. `.env.example` contiene
 solo `VITE_AUTH_CAPTCHA_ENABLED=false` y `VITE_TURNSTILE_SITE_KEY=`; no existe variable de secret. La
 CSP permite únicamente el origen oficial en script/frame. Preview de la rama recibió ambas variables
 públicas con la site key oficial de prueba; Production y Supabase CAPTCHA no se tocaron.
+
+La clave dummy oficial tiene comportamiento determinista `always passes`, por lo que una expiración
+visual natural no es una señal fiable en Preview. Login, registro y recuperación se recorrieron
+interactivamente en ES/EN sin errores de CSP, consola o responsive. `expired-callback`, limpieza del
+token, reinicio y bloqueo de reutilización están cubiertos por pruebas unitarias; para tokens reales,
+Cloudflare documenta 300 segundos de vigencia y un solo uso.
+
+Las verificaciones de expiración natural con clave dummy y GET autenticado fueron cerradas mediante
+evidencia equivalente. No se extrajeron credenciales ni se ejecutaron operaciones mutantes.
 
 La inspección pública remota confirmó registro habilitado, autoconfirmación de email, mínimo de 8
 caracteres y ausencia actual de enforcement CAPTCHA. Los límites privados y MFA deben revisarse en el

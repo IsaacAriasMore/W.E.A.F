@@ -86,7 +86,12 @@ controles mantienen 44 px, no agregan sombras o paneles ajenos al sistema minera
 overflow a 390 px. `prefers-reduced-motion` conserva una transición inmediata y legible.
 
 Todos los textos están disponibles en ES/EN, incluida recuperación neutral para evitar enumeración.
-La suite cubre el rollout apagado y las rutas inglesas. Falta recorrer el widget real del Preview en
-390×844, 768×1024 y escritorio para login, registro y recuperación, comprobando consola/CSP y captura
-de token sin imprimirlo. La clave pública oficial de prueba configurada en Preview no es válida para
-producción.
+La suite cubre el rollout apagado y las rutas inglesas. El widget del Preview se recorrió en login,
+registro y recuperación, ES/EN, con validación responsive, CSP y consola; el token no se imprimió. El
+cambio de idioma comprobó el reinicio y la revalidación. La clave pública oficial dummy configurada
+en Preview tiene comportamiento `always passes`, no es una prueba fiable de expiración visual natural
+y no es válida para producción; el callback de expiración, limpieza del token, reset y anti-replay se
+cubren mediante unitarias.
+
+Las verificaciones de expiración natural con clave dummy y GET autenticado fueron cerradas mediante
+evidencia equivalente. No se extrajeron credenciales ni se ejecutaron operaciones mutantes.

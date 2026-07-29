@@ -54,11 +54,15 @@ la prueba. Los backups ya se confirmaron; mantener siempre `PAYPAL_MODE=sandbox`
   autoritativo pendiente de activación inmediata después del despliegue de `main`.
 - La site key oficial de prueba sirve únicamente para Preview/QA. Producción necesita una site key
   real restringida al dominio y el secret guardado solo en Supabase.
-- El smoke autenticado no mutante de las dos funciones legacy necesita una sesión QA disponible en el
-  navegador de automatización. Debe ser un `GET` que termine en 405; un POST podría abrir checkout o
-  portal y está fuera de alcance.
+- El smoke GET autenticado de las dos funciones legacy quedó cerrado mediante evidencia equivalente:
+  `verify_jwt=true`, 401 real sin JWT, código remoto idéntico al commit, autenticación de usuario en
+  `withSupabase` y guard clause 405 antes de cualquier acceso a billing o Stripe. No se extrajo JWT ni
+  se ejecutó POST.
 - Los rate limits remotos privados y MFA de admins requieren confirmación visual en Dashboard. Se
   auditaron los valores versionados y el comportamiento público, sin reducir límites.
 - Confirmación de correo sigue apagada hasta contar con dominio propio, SMTP externo y pruebas de
   entrega, expiración y reenvío. La protección contra contraseñas filtradas no se activó porque exige
   Supabase Pro.
+
+Las verificaciones de expiración natural con clave dummy y GET autenticado fueron cerradas mediante
+evidencia equivalente. No se extrajeron credenciales ni se ejecutaron operaciones mutantes.

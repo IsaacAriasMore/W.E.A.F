@@ -144,7 +144,7 @@ habilitar Sandbox y recorrer una única orden con cuenta Sandbox.
   inexistente y audit log.
 - [x] `/app`, `/account` y rutas privadas comprobadas con requests reales; caché privada/no-store.
 - [x] Admin/Marketplace/Facturación/Servidores sin overflow a 390, 768 y 1280 px; ES/EN público.
-- [x] `check`, 140 unitarias, 20 E2E, build, CI, Vercel y audit (0 vulnerabilidades) en verde.
+- [x] `check`, 152 unitarias, 21 E2E, build, CI, Vercel y audit (0 vulnerabilidades) en verde.
 - [ ] Matriz financiera PayPal Sandbox continúa pendiente y requiere autorización separada.
 
 Rollback específico: restaurar la Edge desde `5d6a8d4` y crear una migración compensatoria para la
@@ -157,18 +157,27 @@ función de checkout o la RPC; no borrar el historial `20260729055627` ni `20260
 - [x] `create-server-listing-checkout` v13 y `create-billing-portal-session` v12 están `ACTIVE` con
   `verify_jwt=true`; ninguna otra Edge Function cambió.
 - [x] Ambas rechazan una petición sin JWT con 401.
-- [ ] Con sesión QA, enviar solo `GET` y confirmar 405; no usar POST ni abrir checkout/portal.
+- [x] GET autenticado cerrado por evidencia equivalente: ambas usan
+  `withSupabase({ auth: "user" })`, el código remoto coincide con el commit local y el primer control
+  del handler devuelve 405 para cualquier método distinto de POST, antes de body, billing o Stripe.
 - [x] Registro, login y recuperación entregan `captchaToken` a Supabase Auth.
 - [x] Token en memoria, single-use, expiración, reset, bloqueo de doble envío y 429 ES/EN cubiertos.
 - [x] CSP mínima para `challenges.cloudflare.com`, sin quitar headers existentes.
 - [x] Preview de esta rama tiene `VITE_AUTH_CAPTCHA_ENABLED=true` y la site key pública oficial de
   prueba. Production no fue modificada.
+- [x] El inventario Vercel de Production no contiene `VITE_TURNSTILE_SITE_KEY` ni
+  `VITE_AUTH_CAPTCHA_ENABLED`; ambas variables están limitadas a Preview y a esta rama.
 - [x] Supabase CAPTCHA global continúa apagado; una solicitud inválida sin token alcanzó la
   validación remota de contraseña.
 - [x] Confirmación de correo continúa apagada y el trigger de perfiles no cambió.
 - [x] PayPal sigue Sandbox; `paypal_payments=false` y Marketplace `payments_enabled=false` no se
   modificaron. No se hicieron pagos, portales ni cancelaciones.
-- [ ] Widget, token, CSP, consola y responsive deben validarse en el nuevo Preview del commit final.
+- [x] Widget y token validados interactivamente en login, registro y recuperación, ES/EN, sin errores
+  de CSP, consola o responsive. La expiración natural no se usa como señal con la clave dummy oficial
+  `always passes`; `expired-callback`, limpieza, reset y anti-replay están cubiertos por unitarias.
+
+Las verificaciones de expiración natural con clave dummy y GET autenticado fueron cerradas mediante
+evidencia equivalente. No se extrajeron credenciales ni se ejecutaron operaciones mutantes.
 
 ### Orden exacto posterior al merge
 
