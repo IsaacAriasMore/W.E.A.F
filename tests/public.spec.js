@@ -106,8 +106,20 @@ test('mobile navigation opens without horizontal overflow', async ({ page }) => 
 test('marketplace is public while publishing remains protected', async ({ page }) => {
   await page.goto('/marketplace');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Encuentra lo que tu tribu necesita');
+  await expect(page.getByRole('heading', { name: 'Destacados', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Anuncios activos' })).toBeVisible();
-  await expect(page.locator('.market-empty')).toBeVisible();
+  await expect(page.locator('.market-empty').first()).toBeVisible();
+  await expect(page.locator('[data-market-game]')).toHaveCount(0);
   await page.goto('/marketplace/new');
   await expect(page).toHaveURL(/\/login\?next=%2Fmarketplace%2Fnew/);
+});
+
+test('ASA marketplace stays contained at mobile and tablet widths', async ({ page }) => {
+  for (const width of [390, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/marketplace');
+    await expect(page.getByText('ARK: Survival Ascended · ASA')).toBeVisible();
+    const dimensions = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: window.innerWidth }));
+    expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport);
+  }
 });
