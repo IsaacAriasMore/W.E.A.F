@@ -876,6 +876,19 @@ function audit(data) {
   return table(['Momento', 'Actor', 'Acción', 'Entidad'], data.audit.map((item) => `<tr><td>${formatRelativeTime(item.created_at)}</td><td>${escapeHtml(item.actor_name || 'Sistema')}</td><td><strong>${escapeHtml(item.action)}</strong></td><td>${escapeHtml(item.entity_type)}<small>${escapeHtml(item.entity_id || 'sin ID')}</small></td></tr>`), 'Todavía no hay eventos de auditoría.');
 }
 
+function marketplaceReportRow(item, locked = false) {
+  const actions = [
+    ['reviewing', 'Revisar'],
+    ['resolved', 'Resolver'],
+    ['dismissed', 'Descartar'],
+  ].map(([next, label]) => {
+    const unavailable = locked || item.status === next;
+    return `<button class="admin-action" type="button" data-market-report-status="${escapeHtml(item.id)}" data-next="${next}" ${unavailable ? 'disabled aria-disabled="true"' : ''}>${label}</button>`;
+  }).join('');
+
+  return `<tr data-market-report-row="${escapeHtml(item.id)}"><td>${escapeHtml(item.listing_id)}</td><td><strong>${escapeHtml(item.reason)}</strong><small>${escapeHtml(item.details)}</small></td><td>${status(item.status)}</td><td>${formatRelativeTime(item.updated_at || item.created_at)}</td><td><div class="admin-market-report-actions">${actions}</div></td></tr>`;
+}
+
 function marketplace(data) {
   const state = data.marketplaceState;
   const workspace = state?.data;
@@ -895,7 +908,7 @@ function marketplace(data) {
       : '';
   return `<div class="admin-governance">${notice}<section><div class="admin-block-heading"><span>Configuración</span><h2>Publicaciones destacadas</h2></div><form class="admin-inline-form" data-marketplace-settings><label><span>Precio destacado (USD)</span><input name="price" type="number" min="0.01" step="0.01" value="${setting.price_minor ? (setting.price_minor / 100).toFixed(2) : ''}" placeholder="Sin definir"${disabled}></label><label><span>Moneda</span><select name="currency"${disabled}><option value="USD">USD</option></select></label><label><input name="marketplace_enabled" type="checkbox" ${setting.marketplace_enabled ? 'checked' : ''}${disabled}> Marketplace activo</label><label><input name="payments_enabled" type="checkbox" ${setting.payments_enabled ? 'checked' : ''}${disabled}> Destacados PayPal Sandbox</label><button class="admin-action" type="submit"${disabled}>Guardar configuración</button></form><p class="admin-muted">No habilites pagos hasta definir el precio y desplegar el checkout de PayPal Orders Sandbox.</p></section>
   <section><div class="admin-block-heading"><span>Moderación</span><h2>Anuncios</h2></div>${table(['Anuncio','Propietario','Estado','Expira','Acción'],(workspace.listings || []).map((item)=>`<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.listing_type)} · ${escapeHtml(item.resource_name)}</small></td><td>${escapeHtml(item.owner_user_id)}</td><td>${status(item.status)}</td><td>${item.expires_at ? formatRelativeTime(item.expires_at) : 'Sin fecha'}</td><td><div class="admin-market-actions"><button class="admin-action" data-market-moderate="${item.id}" data-next="hidden"${disabled}>Ocultar</button><button class="admin-action" data-market-moderate="${item.id}" data-next="rejected"${disabled}>Rechazar</button></div></td></tr>`),'No hay anuncios.')}</section>
-  <section><div class="admin-block-heading"><span>Reportes</span><h2>Seguridad comunitaria</h2></div>${table(['Anuncio','Motivo','Estado','Fecha'],(workspace.reports || []).map((item)=>`<tr><td>${escapeHtml(item.listing_id)}</td><td><strong>${escapeHtml(item.reason)}</strong><small>${escapeHtml(item.details)}</small></td><td>${status(item.status)}</td><td>${formatRelativeTime(item.created_at)}</td></tr>`),'No hay reportes del marketplace.')}</section>
+  <section><div class="admin-block-heading"><span>Reportes</span><h2>Seguridad comunitaria</h2></div>${table(['Anuncio','Motivo','Estado','Actualización','Acción'],(workspace.reports || []).map((item) => marketplaceReportRow(item, locked)),'No hay reportes del marketplace.')}</section>
   <section><div class="admin-block-heading"><span>PayPal Sandbox</span><h2>Pagos destacados</h2></div>${table(['Anuncio','Monto','Estado','Fecha'],(workspace.payments || []).map((item)=>`<tr><td>${escapeHtml(item.listing_id)}</td><td>${(item.amount_minor/100).toFixed(2)} ${escapeHtml(item.currency)}</td><td>${status(item.status)}</td><td>${formatRelativeTime(item.created_at)}</td></tr>`),'Todavía no hay pagos destacados.')}</section></div>`;
 }
 
@@ -1149,6 +1162,38 @@ export function bind({ state, authService, navigate }) {
     const duplicate = event.target.closest('[data-duplicate-offer]');
     if (duplicate) {
       await runButtonAction(duplicate, 'Duplicando…', () => service.duplicateBillingOffer(duplicate.dataset.duplicateOffer), 'Oferta duplicada como borrador.');
+      return;
+    }
+    const reportAction = event.target.closest('[data-market-report-status]');
+    if (reportAction) {
+      if (!canSaveMarketplace(marketplaceState)) {
+        showToast('No se puede moderar hasta recuperar los datos reales del marketplace.', 'error');
+        return;
+      }
+      const nextStatus = reportAction.dataset.next;
+      const labels = { reviewing: 'revisar', resolved: 'resolver', dismissed: 'descartar' };
+      if (!window.confirm(`¿Confirmas ${labels[nextStatus]} este reporte?`)) return;
+
+      const originalText = reportAction.textContent;
+      reportAction.disabled = true;
+      reportAction.textContent = 'Actualizando…';
+      const result = await service.updateMarketplaceReportStatus(reportAction.dataset.marketReportStatus, nextStatus);
+      if (result.error) {
+        showToast(result.error, 'error');
+        if (reportAction.isConnected) {
+          reportAction.disabled = false;
+          reportAction.textContent = originalText;
+        }
+        return;
+      }
+
+      const updated = result.data;
+      marketplaceState.data.reports = (marketplaceState.data.reports || []).map((item) => (
+        item.id === updated.id ? { ...item, ...updated } : item
+      ));
+      const row = main.querySelector(`[data-market-report-row="${updated.id}"]`);
+      if (row) row.outerHTML = marketplaceReportRow(updated);
+      showToast('Reporte del marketplace actualizado.');
       return;
     }
     const moderation = event.target.closest('[data-market-moderate]');

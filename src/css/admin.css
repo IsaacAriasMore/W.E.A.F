@@ -131,7 +131,7 @@ body[data-route-kind="admin"] #main-content { min-height: 100vh; }
 .admin-inline-form label:has(input[type="checkbox"]) { min-height: 44px; display: flex; align-items: center; gap: 10px; }
 .admin-inline-form input[type="checkbox"] { width: 20px; height: 20px; flex: 0 0 20px; margin: 0; padding: 0; accent-color: var(--color-accent); }
 .admin-inline-form button { min-width: 132px; }
-.admin-market-actions, .admin-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-market-actions, .admin-market-report-actions, .admin-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .admin-market-actions .admin-action.is-danger, .admin-row-actions .admin-action.is-danger { margin-left: 0; }
 .admin-marketplace-state { min-height: 280px; display: grid; place-content: center; justify-items: start; border-block: 1px solid var(--admin-line); }
 .admin-marketplace-state > span { color: var(--color-accent); font-size: .64rem; text-transform: uppercase; letter-spacing: .12em; }
@@ -225,6 +225,6 @@ body[data-route-kind="admin"] #main-content { min-height: 100vh; }
 
 @media (max-width: 620px) {
   .admin-field-pair, .admin-requirement-item { grid-template-columns: 1fr; }
-  .admin-row-actions, .admin-market-actions { flex-direction: column; }
-  .admin-row-actions .admin-action, .admin-market-actions .admin-action { width: 100%; }
+  .admin-row-actions, .admin-market-actions, .admin-market-report-actions { flex-direction: column; }
+  .admin-row-actions .admin-action, .admin-market-actions .admin-action, .admin-market-report-actions .admin-action { width: 100%; }
 }

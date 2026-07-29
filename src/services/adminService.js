@@ -21,6 +21,9 @@ const messages = {
   invalid_offer_payload: 'Revisa precio, descuento, duración y vigencia de la oferta.',
   paypal_plan_not_synced: 'Sincroniza esta versión con PayPal Sandbox antes de publicarla.',
   offer_not_found: 'La oferta ya no existe.',
+  invalid_marketplace_report_id: 'El reporte seleccionado no es válido.',
+  invalid_marketplace_report_status: 'El estado solicitado para el reporte no es válido.',
+  marketplace_report_not_found: 'El reporte ya no existe.',
   authentication_required:
   'Tu sesión expiró. Inicia sesión nuevamente.',
 
@@ -110,6 +113,9 @@ export function createAdminService(client) {
     moderateMarketplaceListing: (listingId, status, reason) => rpc('admin_moderate_marketplace_listing', {
       p_listing_id: listingId, p_status: status, p_reason: reason || null,
     }),
+    updateMarketplaceReportStatus: (reportId, status) => rpc('admin_update_marketplace_report_status', {
+      p_report_id: reportId, p_status: status,
+    }, 'No pudimos actualizar el reporte del marketplace.'),
     async managePayPalCatalog(action, planVersionId = null) {
   if (!client) return unavailable;
 
