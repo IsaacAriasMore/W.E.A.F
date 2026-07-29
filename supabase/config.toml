@@ -459,14 +459,16 @@ entrypoint = "./functions/stripe-webhook/index.ts"
 
 [functions.create-server-listing-checkout]
 enabled = true
-# Platform JWT verification plus the function's ownership check.
+# Required defense in depth: platform JWT verification plus the function's ownership check.
+# Never deploy this user-facing billing function with --no-verify-jwt.
 verify_jwt = true
 import_map = "./functions/create-server-listing-checkout/deno.json"
 entrypoint = "./functions/create-server-listing-checkout/index.ts"
 
 [functions.create-billing-portal-session]
 enabled = true
-# Platform JWT verification plus the function's ownership check.
+# Required defense in depth: platform JWT verification plus the function's ownership check.
+# Never deploy this user-facing billing function with --no-verify-jwt.
 verify_jwt = true
 import_map = "./functions/create-billing-portal-session/deno.json"
 entrypoint = "./functions/create-billing-portal-session/index.ts"
