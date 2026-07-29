@@ -61,3 +61,18 @@ Normal y Plus, Admin, usuario autenticado, ownership con dos usuarios y contenid
 2. **P2 · `$impeccable optimize`:** medir LCP, CLS e INP en Preview y un móvil real.
 3. **P3 · `$impeccable typeset`:** normalizar tokens tipográficos de Admin en una fase independiente.
 4. **P3 · `$impeccable polish`:** repetir la pasada final después de habilitar el catálogo de desarrollo.
+
+## Validación responsive del hotfix de Admin
+
+- Admin Marketplace, Facturación y Servidores se recorrieron a 390×844, 768×1024 y 1280×720 con
+  datos sintéticos no persistentes.
+- El documento no produjo scroll horizontal; las tablas anchas quedaron dentro de wrappers
+  `overflow-x:auto`; no hubo controles recortados y las acciones alcanzaron 44 px.
+- Marketplace público se verificó a 390 px en español e inglés, y Servidores a 768 px en inglés.
+- El estado inicial de error fue visible; Reintentar recuperó datos reales del fixture y Guardar solo
+  se habilitó en `loaded`.
+- La consola de W.E.A.F no registró errores ni warnings. Los únicos mensajes observados pertenecían
+  al login SSO de Vercel y no al sitio.
+- El Preview protegido se validó mediante requests reales para CSP/caché. La inspección visual usó
+  el mismo commit en Vite porque la sesión SSO anterior no estaba compartida con el navegador de esta
+  tarea. El fixture `qa-admin.*` fue eliminado al terminar.

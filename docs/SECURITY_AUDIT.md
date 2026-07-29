@@ -112,5 +112,21 @@ app, admin, billing, publish, success, cancel, Stripe y Functions.
 
 - `tests/security-audit.test.js` cubre headers, JWT, límites de confianza, URLs, navegación y salt.
 - Ejecutar `supabase db push --dry-run`, `supabase db lint --linked`, unitarios y build antes de
-  aplicar/desplegar.
+aplicar/desplegar.
+
+## Cierre de hallazgos del Preview
+
+- La defensa de checkout destacado exige simultáneamente el flag global `paypal_payments`, el switch
+  local, precio server-side y entorno/base Sandbox en Edge y PostgreSQL. Con cualquier switch
+  apagado, `prepare_marketplace_paypal_order` falla antes del `INSERT`.
+- La nueva RPC `admin_update_marketplace_report_status(uuid,text)` usa `SECURITY DEFINER`,
+  `search_path=''`, estados cerrados, validación de admin global y auditoría. `PUBLIC` y `anon` no
+  tienen ejecución; `authenticated` puede entrar solo para que la autorización interna compruebe el
+  rol persistido.
+- La prueba remota con `ROLLBACK` confirmó que un reportante normal no puede escribir la tabla ni
+  usar la RPC, mientras el admin sí puede y genera un solo evento de auditoría.
+- Requests reales al Preview confirmaron CSP, HSTS, `DENY`, `nosniff`, Permissions Policy y
+  `private, no-store`; las rutas exactas `/app` y `/account` incluyen `max-age=0`.
+- El lint remoto conserva solo dos warnings preexistentes: volatilidad de
+  `private.validate_marketplace_payload` y `new_subscription_id` sin uso en Stripe legacy.
 - En Preview comprobar login, Discord, checkout/cancelación Sandbox y consola CSP.

@@ -105,3 +105,20 @@ legacy vivas y un rollback alternativo.
   la suscripción de un usuario real.
 - El dry-run y el push controlado se completaron después de crear backups externos válidos; el historial
   local/remoto quedó alineado. PayPal continúa en Sandbox y `paypal_payments=false`.
+
+## Hotfix del checkout destacado Marketplace
+
+`create-marketplace-paypal-order` y la función SQL autoritativa ahora requieren a la vez:
+
+1. `feature_flags.paypal_payments=true`;
+2. `marketplace_settings.payments_enabled=true`;
+3. precio positivo y no nulo;
+4. `marketplace_settings.environment='sandbox'`;
+5. `PAYPAL_MODE=sandbox`;
+6. `PAYPAL_API_BASE=https://api-m.sandbox.paypal.com`.
+
+La migración bloquea antes de insertar en `marketplace_payments`; el Edge devuelve un error controlado
+cuando billing o Marketplace están apagados. Tras el despliegue ambos switches siguen `false`, el
+entorno sigue Sandbox y la tabla conserva 0 pagos. No se invocó la API de Orders ni se ejecutó ningún
+evento financiero. Para rollback, redesplegar la Edge anterior y restaurar la función SQL mediante
+una migración compensatoria; nunca debilitar el flag global.

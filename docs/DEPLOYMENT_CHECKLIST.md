@@ -127,9 +127,25 @@ habilitar Sandbox y recorrer una única orden con cuenta Sandbox.
 
 ## 7. Rollback
 
-1. Confirmar que `paypal_payments=false` y `marketplace_payments=false` en configuración server-side.
+1. Confirmar que `paypal_payments=false` y Marketplace `payments_enabled=false` en configuración server-side.
 2. Mantener webhooks y reconciliación para obligaciones existentes.
 3. Revertir el frontend/Edge Functions a la versión anterior mediante deployment, sin borrar tablas.
 4. Preservar billing, eventos, pagos, reportes y auditoría.
 5. Si el esquema requiere reversión, preparar una migración nueva revisada y respaldada; nunca editar
    migraciones ya aplicadas ni ejecutar `DROP` ad hoc.
+
+## 8. Hotfix de Preview
+
+- [x] Historial previo alineado; dry-run limitado a las dos migraciones nuevas del hotfix.
+- [x] Dos migraciones aplicadas; 35 timestamps local/remoto alineados.
+- [x] Desplegada solo `create-marketplace-paypal-order`.
+- [x] `paypal_payments=false`, Marketplace `payments_enabled=false`, entorno Sandbox y 0 pagos.
+- [x] RPC de reportes verificada en transacción con `ROLLBACK` para normal/reportante/admin, estados,
+  inexistente y audit log.
+- [x] `/app`, `/account` y rutas privadas comprobadas con requests reales; caché privada/no-store.
+- [x] Admin/Marketplace/Facturación/Servidores sin overflow a 390, 768 y 1280 px; ES/EN público.
+- [x] `check`, 140 unitarias, 20 E2E, build, CI, Vercel y audit (0 vulnerabilidades) en verde.
+- [ ] Matriz financiera PayPal Sandbox continúa pendiente y requiere autorización separada.
+
+Rollback específico: restaurar la Edge desde `5d6a8d4` y crear una migración compensatoria para la
+función de checkout o la RPC; no borrar el historial `20260729055627` ni `20260729060503`.

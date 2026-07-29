@@ -9,7 +9,7 @@ autorización del propietario. Proyecto: `vwxqewpvtucygbaethkv`. Rama:
 
 - PR #3 permanece Draft y no se hizo merge.
 - PayPal opera exclusivamente en Sandbox.
-- `paypal_payments=false` y `marketplace_payments=false`.
+- `paypal_payments=false` y Marketplace `payments_enabled=false`.
 - No se ejecutaron cargos, no se activó PayPal Live y Stripe histórico no se eliminó.
 - No se imprimieron, versionaron ni copiaron secretos.
 
@@ -132,3 +132,36 @@ mecanismo temporal y revocable.
 El despliegue técnico de base y funciones está completado, pero no se autoriza activar pagos ni pasar
 el PR a Ready. Antes se requiere QA visual/Admin y la matriz PayPal Sandbox. PayPal Live continúa fuera
 de alcance.
+
+## Hotfix posterior de Preview (2026-07-29 UTC)
+
+El historial se comparó de nuevo antes del push: las 33 migraciones previas estaban alineadas y el
+dry-run mostró exclusivamente:
+
+- `20260729055627_marketplace_paypal_global_kill_switch.sql`;
+- `20260729060503_admin_marketplace_report_status.sql`.
+
+Ambas se aplicaron en ese orden y el listado final quedó con 35 timestamps locales/remotos
+alineados. No se reparó, borró ni reescribió historial. Se desplegó únicamente la Edge Function
+modificada `create-marketplace-paypal-order`.
+
+Validación final:
+
+- `paypal_payments=false`, Marketplace `payments_enabled=false`, `environment=sandbox`;
+- `marketplace_enabled=true` mantiene disponible el tablón gratuito;
+- 0 filas en `marketplace_payments`; no hubo orden, cargo, cancelación, refund ni reversal;
+- prueba SQL transaccional con `ROLLBACK`: usuario normal/reportante bloqueado, escritura directa
+  bloqueada, estado inválido y reporte inexistente bloqueados, admin permitido y audit log creado;
+- `check`, 140 unitarias, 20 E2E, build y `npm audit` (0 vulnerabilidades) pasaron;
+- CI y Vercel pasaron para el Preview
+  `https://weaf-git-codex-audit-security-s-af7809-isaacariasmores-projects.vercel.app`.
+
+Requests reales autenticados por Vercel CLI confirmaron CSP y `private, no-store` en todas las rutas
+privadas pedidas; `/app` y `/account`, exactas y con hijas, incluyen también `max-age=0`. El layout
+Admin se verificó con fixture sintético a 390×844, 768×1024 y 1280×720, sin overflow del documento
+ni controles recortados. El fixture, servidor local, enlace Vercel y token temporal se retiraron.
+
+Rollback del hotfix: mantener ambos interruptores de pago en `false`, redesplegar la Edge Function
+desde `5d6a8d4` si fuera necesario y usar una migración compensatoria para restaurar la definición
+anterior de `prepare_marketplace_paypal_order` o retirar la RPC nueva. No editar los dos archivos ya
+aplicados ni borrar reportes, auditoría o pagos.

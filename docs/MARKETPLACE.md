@@ -72,7 +72,26 @@ Rollback funcional reversible:
 ## Estado operativo y pendientes
 
 - Las dos migraciones se aplicaron en orden tras backup, comparación de historial y dry-run; local y remoto están alineados.
-- La prueba RLS A/B con usuarios sintéticos pasó; falta validar moderación y settings con un Admin seguro.
+- La prueba RLS A/B pasó y el hotfix añadió una prueba transaccional de moderación Admin con rollback.
 - Configurar precio desde Admin únicamente cuando se vaya a probar Orders Sandbox.
 - `create-marketplace-paypal-order`, `capture-marketplace-paypal-order` y `paypal-webhook` están desplegadas; pagos siguen apagados.
 - Definir política legal final, retención y respuesta a reportes con asesoría profesional.
+
+## Moderación y operación tras el hotfix
+
+Migraciones adicionales aplicadas:
+
+- `20260729055627_marketplace_paypal_global_kill_switch.sql`;
+- `20260729060503_admin_marketplace_report_status.sql`.
+
+Admin muestra estados explícitos `loading`, `loaded` y `error`. Una lectura fallida nunca se convierte
+en switches falsos inventados: si existe una lectura anterior se conserva solo como referencia
+bloqueada, Guardar y moderación permanecen deshabilitados y Reintentar vuelve a consultar el servidor.
+
+Los reportes permiten pasar únicamente a `reviewing`, `resolved` o `dismissed`, con confirmación,
+loader, error y actualización de la fila sin recargar el dashboard. PostgreSQL vuelve a comprobar el
+admin global y registra `report_status_updated` en `marketplace_audit_log`.
+
+El tablón gratuito permanece activo (`marketplace_enabled=true`), pero destacados y PayPal siguen
+apagados. La Edge de Orders se desplegó con el kill switch global encadenado y la tabla de pagos tiene
+0 filas al cierre de esta validación.

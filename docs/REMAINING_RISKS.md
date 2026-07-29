@@ -8,10 +8,6 @@ puntos requieren entorno desplegado, identidades reales de desarrollo o decision
 - **Matriz PayPal incompleta en Sandbox.** Normal tiene evidencia histórica, pero Plus, cancelación,
   suspensión, failure, refund, reversal, expiración, reconciliación y pago único marketplace necesitan
   pruebas end-to-end con webhook Sandbox desplegado.
-- **QA Admin pendiente.** La matriz A/B remota confirmó ownership y RLS con cuentas sintéticas, pero
-  falta validar moderación, reportes y settings con una sesión Admin segura.
-- **Preview protegido.** Vercel Authentication impidió la inspección visual anónima. Deben verificarse
-  rutas privadas, consola/CSP y responsive después de iniciar sesión en el Preview.
 
 ## Medios
 
@@ -36,6 +32,15 @@ puntos requieren entorno desplegado, identidades reales de desarrollo o decision
 - Recuperación de contraseña depende de SMTP; la UI falla de forma clara, pero la entregabilidad necesita
   dominio, SPF, DKIM y DMARC válidos.
 - Falta incorporar Search Console/Bing Webmaster Tools y datos de campo; no se inventaron tokens de verificación.
+
+## Riesgos reducidos por el hotfix
+
+- La autorización de reportes se comprobó con una transacción remota y `ROLLBACK`: reportante normal
+  y escritura directa bloqueados; admin permitido; estado inválido, inexistente y audit log verificados.
+- CSP y caché de rutas privadas se comprobaron mediante requests reales al Preview protegido.
+- El layout Admin se verificó con fixture no persistente a 390, 768 y 1280 px, y la consola de W.E.A.F
+  quedó limpia. Aún conviene una pasada visual autenticada directamente sobre el Preview cuando el
+  navegador de QA comparta la sesión SSO, especialmente con contenido de longitud máxima.
 
 ## Criterio para liberar
 
