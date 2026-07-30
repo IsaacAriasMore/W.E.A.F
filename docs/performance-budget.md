@@ -44,10 +44,35 @@ This document defines a **recommended** budget for manual or automated validatio
 - Store raw JSON reports outside the repository (e.g. `$TEMP\weaf-lighthouse-<base-sha>\`).
 - Laboratory metrics differ from real‑user Core Web Vitals; monitor both.
 
-## Future CI Integration (not implemented)
+## CI Integration
 
-1. **E2E workflow** — Add `.github/workflows/e2e.yml` that runs Playwright tests on push/PR.
-2. **Lighthouse CI** — Add `.github/workflows/lighthouse.yml` using `@lhci/cli` or `lighthouse` directly.
-3. **Artifacts** — Upload Lighthouse JSON reports as workflow artifacts.
-4. **Non‑destructive thresholds** — Start with informational annotations, not blocking checks.
-5. **Review period** — Run alongside manual testing before converting thresholds into required checks.
+The following workflows are now active:
+
+| Workflow | File | Triggers |
+|---|---|---|
+| **CI** (check + unit + audit + build) | `.github/workflows/ci.yml` | push/PR to main |
+| **E2E** (Playwright) | `.github/workflows/e2e.yml` | push/PR to main |
+| **Lighthouse** | `.github/workflows/lighthouse.yml` | push/PR to main |
+
+### Budget enforcement
+
+- **Bundle sizes** are checked by `scripts/check-performance-budget.mjs` (BLOCKING — exit 1 on violation).
+- **Lighthouse thresholds** are enforced by `scripts/lighthouse-audit.mjs`:
+  - **WARNING** (non‑blocking): Performance < 90, Best Practices < 95, LCP > 2500 ms, CLS > 0.1, TBT > 200 ms.
+  - **ERROR** (blocking — exit 1): Accessibility < 95, SEO < 95, route timeout/unreachable.
+- Reports are stored as GitHub Actions artifacts (30‑day retention for Lighthouse, 14‑day for Playwright).
+
+### Local commands
+
+```bash
+npm run check:budget        # verify bundle sizes against dist/
+npm run lighthouse:audit    # run Lighthouse audits on local preview server
+```
+
+### Related scripts
+
+| Script | Purpose |
+|---|---|
+| `scripts/lighthouse-audit.mjs` | Launches Chrome, runs 3 Lighthouse audits per route, computes median |
+| `scripts/check-performance-budget.mjs` | Reads dist/ files, compares gzip sizes against budgets |
+| (thresholds defined inline in `lighthouse-audit.mjs`) | |

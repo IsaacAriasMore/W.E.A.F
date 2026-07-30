@@ -1,0 +1,50 @@
+name: Lighthouse
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Performance audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Start preview server
+        run: npx vite preview --port 4173 --host 127.0.0.1 &
+        shell: bash
+
+      - name: Wait for server
+        run: npx wait-on http://127.0.0.1:4173
+        shell: bash
+
+      - name: Run Lighthouse audits
+        run: node scripts/lighthouse-audit.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: lighthouse-reports/
+          retention-days: 30

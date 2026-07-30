@@ -6,7 +6,7 @@ export default defineConfig({
   timeout: 30_000,
   fullyParallel: false,
   forbidOnly: true,
-  reporter: 'line',
+  reporter: [['line'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',
@@ -16,13 +16,13 @@ export default defineConfig({
     command: 'npm run dev -- --mode test --host 127.0.0.1 --port 4173',
     env: { VITE_SUPABASE_DISABLED: 'true' },
     url: 'http://127.0.0.1:4173',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
   projects: [
     {
       name: 'desktop-chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 });
