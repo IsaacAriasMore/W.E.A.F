@@ -1,4 +1,4 @@
-import '@fontsource-variable/archivo/wght.css';
+import './css/fonts.css';
 import './css/base.css';
 import './css/layout.css';
 import './css/public.css';

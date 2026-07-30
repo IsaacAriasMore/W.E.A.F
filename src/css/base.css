@@ -302,7 +302,8 @@ input:user-invalid {
 .route-loading,
 .empty-page {
   min-height: 65dvh;
-  padding-block: 8rem;
+  min-height: calc(100svh - 70px);
+  padding-block: 2rem;
 }
 
 .prerender-shell {
