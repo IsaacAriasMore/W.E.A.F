@@ -36,7 +36,13 @@ jobs:
         shell: bash
 
       - name: Wait for server
-        run: npx wait-on http://127.0.0.1:4173
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:4173 > /dev/null && break
+            echo "Waiting for preview server... ($i/30)"
+            sleep 2
+          done
+          curl -s http://127.0.0.1:4173 > /dev/null || { echo "Server did not start"; exit 1; }
         shell: bash
 
       - name: Run Lighthouse audits

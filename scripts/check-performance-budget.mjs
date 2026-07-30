@@ -9,48 +9,11 @@ const BUDGETS = {
   'image-max': 200 * 1024,
 };
 
-const IMAGE_RE = /["']\/assets\/([^"']+\.(?:avif|webp|jpe?g|png|gif))["' )]/gi;
-const FULL_URL_RE = /https:\/\/weaf\.vercel\.app\/assets\/([^"']+\.(?:avif|webp|jpe?g|png|gif))/gi;
-const CSS_URL_RE = /url\(["']?\/assets\/([^"')]+\.(?:avif|webp|jpe?g|png|gif))["']?\)/gi;
+const RASTER_RE = /\.(avif|webp|jpe?g|png|gif)$/i;
 
 async function getGzipSize(filePath) {
   const content = await readFile(filePath);
   return gzipSync(content).length;
-}
-
-async function scanFile(filePath, re) {
-  const names = [];
-  try {
-    const source = await readFile(filePath, 'utf8');
-    for (const m of source.matchAll(re)) names.push(m[1]);
-  } catch { }
-  return names;
-}
-
-async function collectReferencedImages() {
-  const referenced = new Set();
-
-  const rootHtml = join(DIST, 'index.html');
-  for (const name of await scanFile(rootHtml, IMAGE_RE)) referenced.add(name);
-  for (const name of await scanFile(rootHtml, FULL_URL_RE)) referenced.add(name);
-
-  const html = await readFile(rootHtml, 'utf8');
-  for (const src of [...html.matchAll(/<script[^>]+src="([^"]+\.js[^"]*)"/g)].map(m => m[1])) {
-    for (const name of await scanFile(join(DIST, src.replace(/\?.*/, '')), IMAGE_RE)) referenced.add(name);
-  }
-
-  for (const href of [...html.matchAll(/<link[^>]+href="([^"]+\.css[^"]*)"[^>]*rel="stylesheet"/g)].map(m => m[1])) {
-    for (const name of await scanFile(join(DIST, href.replace(/\?.*/, '')), CSS_URL_RE)) referenced.add(name);
-  }
-
-  const dirs = await readdir(DIST, { withFileTypes: true });
-  for (const dir of dirs) {
-    if (!dir.isDirectory() || dir.name === 'assets') continue;
-    const htmlPath = join(DIST, dir.name, 'index.html');
-    for (const name of await scanFile(htmlPath, FULL_URL_RE)) referenced.add(name);
-  }
-
-  return referenced;
 }
 
 async function main() {
@@ -85,20 +48,20 @@ async function main() {
     failures++;
   }
 
-  const referenced = await collectReferencedImages();
   const assetsDir = join(DIST, 'assets');
   const entries = await readdir(assetsDir, { withFileTypes: true });
   for (const entry of entries) {
-    if (!/\.(avif|webp|jpe?g|png|gif)$/i.test(entry.name)) continue;
-    if (!referenced.has(entry.name)) continue;
+    if (!RASTER_RE.test(entry.name)) continue;
 
-    const { size } = await stat(join(assetsDir, entry.name));
+    const filePath = join(assetsDir, entry.name);
+    const { size } = await stat(filePath);
     const label = `${(size / 1024).toFixed(0)} KB`;
+    const limit = `${(BUDGETS['image-max'] / 1024).toFixed(0)} KB`;
     if (size > BUDGETS['image-max']) {
-      console.error(`  Image ${entry.name}: ${label} exceeds ${(BUDGETS['image-max'] / 1024).toFixed(0)} KB`);
+      console.error(`  Image ${entry.name}: ${label} > ${limit} — FAIL`);
       failures++;
     } else {
-      console.log(`  Image ${entry.name}: ${label}`);
+      console.log(`  Image ${entry.name}: ${label} ≤ ${limit} — PASS`);
     }
   }
 

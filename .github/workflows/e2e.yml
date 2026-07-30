@@ -28,7 +28,7 @@ jobs:
 
       - run: npm ci
 
-      - run: npx playwright install chromium
+      - run: npx playwright install --with-deps chromium
 
       - run: npm run test:e2e:ci
 
@@ -44,4 +44,5 @@ jobs:
         with:
           name: test-results
           path: test-results/
+          if-no-files-found: ignore
           retention-days: 14
