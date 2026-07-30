@@ -144,3 +144,4 @@ export function bind({ authService, profileService, store, navigate }) {
     captchaController.destroy();
   };
 }
+import '../../css/auth.css';

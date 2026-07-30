@@ -72,7 +72,7 @@ export function render() {
       <dl class="ini-dialog-meta"><div><dt>${t('inis.fileTarget')}</dt><dd data-dialog-file></dd></div><div><dt>${t('inis.statusLabel')}</dt><dd data-dialog-status></dd></div></dl>
       <pre><code data-dialog-content></code></pre>
       <div class="ini-risk-grid"><section><h3>${t('inis.risk')}</h3><p data-dialog-risk></p></section><section><h3>${t('inis.rollback')}</h3><p data-dialog-rollback></p></section></div>
-      <a data-dialog-source target="_blank" rel="noreferrer"></a>
+      <a data-dialog-source hidden target="_blank" rel="noreferrer"></a>
       <div class="dialog-actions"><button class="button button-primary" type="button" data-dialog-copy>${t('inis.copyDialog')}</button><button class="button button-secondary" type="button" data-dialog-download>${t('inis.download')}</button></div>
     </dialog>`;
 }

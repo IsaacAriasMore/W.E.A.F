@@ -187,16 +187,20 @@ export function mountWeafThreeHero(container) {
     }
   };
 
-  if ('requestIdleCallback' in window) {
-    idleId = window.requestIdleCallback(start, { timeout: 1400 });
-  } else {
-    timeoutId = window.setTimeout(start, 320);
-  }
+  const schedule = () => {
+    if (disposed || document.hidden) return;
+    if ('requestIdleCallback' in window) idleId = window.requestIdleCallback(start, { timeout: 2600 });
+    else timeoutId = window.setTimeout(start, 900);
+  };
+
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule, { once: true });
 
   return () => {
     disposed = true;
     if (idleId !== null) window.cancelIdleCallback?.(idleId);
     if (timeoutId !== null) window.clearTimeout(timeoutId);
+    window.removeEventListener('load', schedule);
     destroyScene();
   };
 }

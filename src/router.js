@@ -3,6 +3,7 @@ import { applyRouteMetadata } from './seo/metadata.js';
 
 const routeLoaders = {
   '/': () => import('./pages/public/home.js'),
+  '/ark-survival-ascended': () => import('./pages/public/arkSurvivalAscended.js'),
   '/inis': () => import('./pages/public/inis.js'),
   '/maps-bosses': () => import('./pages/public/mapsBosses.js'),
   '/creatures': () => import('./pages/public/creatures.js'),
@@ -39,6 +40,7 @@ const routeLoaders = {
 
 const titles = {
   '/': 'W.E.A.F | Wild Evolution & Ascension Forge',
+  '/ark-survival-ascended': 'Herramientas para ARK: Survival Ascended | W.E.A.F',
   '/inis': 'INIs públicas | W.E.A.F',
   '/maps-bosses': 'Mapas & Bosses | W.E.A.F',
   '/creatures': 'Biblioteca de criaturas | W.E.A.F',
@@ -90,7 +92,7 @@ function requiresAuthentication(path) {
   return protectedRoutes.has(path) || /^\/marketplace\/[^/]+\/edit$/.test(path);
 }
 
-export function createRouter({ outlet, onRouteChange, getContext }) {
+export function createRouter({ outlet, onRouteChange, getContext, waitForAuth = async () => {} }) {
   let cleanup = null;
   let navigationId = 0;
 
@@ -110,7 +112,21 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
 
   async function render(pathname) {
     const path = normalizePath(pathname);
-    const context = getContext();
+    const currentNavigation = ++navigationId;
+    let context = getContext();
+    const needsAuthDecision = requiresAuthentication(path) || guestOnlyRoutes.has(path) || path === '/reset-password';
+
+    if (needsAuthDecision && !context.state.ready) {
+      outlet.innerHTML = `
+        <section class="route-loading container" aria-label="Validando sesión">
+          <span class="skeleton skeleton-title"></span>
+          <span class="skeleton skeleton-copy"></span>
+        </section>
+      `;
+      await waitForAuth();
+      if (currentNavigation !== navigationId) return;
+      context = getContext();
+    }
 
     if (requiresAuthentication(path) && !context.state.session) {
       replace(pathWithNext('/login', `${path}${window.location.search}${window.location.hash}`));
@@ -135,7 +151,6 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       return;
     }
 
-    const currentNavigation = ++navigationId;
     cleanup?.();
     cleanup = null;
 
@@ -166,12 +181,16 @@ export function createRouter({ outlet, onRouteChange, getContext }) {
       const page = await loader();
       if (currentNavigation !== navigationId) return;
       outlet.innerHTML = page.render({ path, ...context });
-      cleanup = page.bind?.({ path, navigate, ...context }) || null;
       document.title = titles[path];
       applyRouteMetadata(path);
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
       window.requestAnimationFrame(() => scrollToCurrentHash('auto'));
+      if (page.bind) {
+        if (!getContext().authService) await waitForAuth();
+        if (currentNavigation !== navigationId) return;
+        cleanup = page.bind({ path, navigate, ...getContext() }) || null;
+      }
     } catch (error) {
       applyRouteMetadata(path, { notFound: !resolveLoader(path) });
       outlet.innerHTML = `

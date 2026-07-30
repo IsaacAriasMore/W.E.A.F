@@ -108,3 +108,4 @@ export function bind({ state, store, profileService, navigate }) {
   form.addEventListener('submit', onSubmit);
   return () => form.removeEventListener('submit', onSubmit);
 }
+import '../../css/auth.css';

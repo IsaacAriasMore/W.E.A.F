@@ -22,14 +22,6 @@ export function initGsapMotion(root = document, { pathname = window.location.pat
     if (!gsap) return;
 
     context = gsap.context(() => {
-      const hero = root.querySelector('[data-gsap-hero]');
-      if (hero) {
-        const heroItems = hero.querySelectorAll('[data-gsap-hero-item]');
-        gsap.fromTo(heroItems,
-          { autoAlpha: 0, y: 22, filter: 'blur(5px)' },
-          { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.72, stagger: 0.08, ease: 'expo.out', clearProps: 'filter' });
-      }
-
       const groups = [...root.querySelectorAll('[data-gsap-stagger]')];
       if (!groups.length || !('IntersectionObserver' in window)) return;
 

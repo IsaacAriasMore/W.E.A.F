@@ -162,3 +162,4 @@ export function bind({ authService, navigate }) {
     recoveryCaptcha?.destroy();
   };
 }
+import '../../css/auth.css';

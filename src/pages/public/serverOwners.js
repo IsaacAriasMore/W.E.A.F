@@ -49,3 +49,4 @@ export function bind({ authService }) {
     // Keep the server-rendered fallback plans visible if Supabase is unavailable.
   });
 }
+import '../../css/servers.css';

@@ -946,9 +946,13 @@
   margin-top: 1rem;
 }
 
+.home-hero-brand .brand-emblem,
 .home-hero-brand img {
   width: clamp(68px, 7vw, 88px);
   height: clamp(68px, 7vw, 88px);
+}
+
+.home-hero-brand img {
   object-fit: contain;
   filter: drop-shadow(0 4px 7px oklch(0.72 0.13 60 / 0.18));
 }
@@ -1140,4 +1144,29 @@
   .boss-briefing header { display: block; }
   .ini-contribution { align-items: stretch; flex-direction: column; }
   .ini-contribution > div:last-child { flex-direction: column; }
+}
+.asa-hub-hero {
+  padding-block: clamp(4rem, 9vw, 7.5rem);
+  border-bottom: 1px solid var(--line-soft);
+  background: radial-gradient(circle at 78% 32%, oklch(0.28 0.07 245 / 0.46), transparent 30rem);
+}
+
+.asa-hub-hero h1 { max-width: 13ch; margin-top: 1rem; }
+.asa-hub-hero p:not(.hero-kicker) { max-width: 65ch; margin-top: 1.5rem; font-size: 1.12rem; }
+.asa-hub-hero > div > div { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+.breadcrumbs { display: flex; gap: 0.55rem; margin-bottom: 2rem; color: var(--muted); font-size: 0.9rem; }
+.breadcrumbs a { color: var(--primary); text-decoration: underline; text-underline-offset: 0.25em; }
+.asa-hub-tools { padding-block: clamp(4rem, 8vw, 7rem); }
+.asa-hub-tools > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); margin-top: 2rem; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.asa-hub-tools a { position: relative; min-height: 12rem; padding: 1.5rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-raised); }
+.asa-hub-tools a:hover { background: var(--surface); }
+.asa-hub-tools a p { max-width: 42ch; margin-top: 0.75rem; }
+.asa-hub-tools a > span { position: absolute; right: 1.5rem; bottom: 1.25rem; color: var(--primary); font-size: 1.4rem; }
+.asa-hub-private { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding-block: 3rem; border-block: 1px solid var(--line); }
+.asa-hub-private p { max-width: 60ch; margin-top: 0.75rem; }
+.asa-hub-notice { display: flex; justify-content: space-between; gap: 1.5rem; padding-block: 2.5rem 5rem; }
+.asa-hub-notice a { color: var(--primary); text-decoration: underline; text-underline-offset: 0.25em; }
+
+@media (max-width: 680px) {
+  .asa-hub-private, .asa-hub-notice { align-items: flex-start; flex-direction: column; }
 }

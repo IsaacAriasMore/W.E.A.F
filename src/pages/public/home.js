@@ -1,6 +1,7 @@
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
-import { t } from '../../i18n/index.js';
+import { getLanguage, t } from '../../i18n/index.js';
 import { mountWeafThreeHero } from '../../components/visuals/WeafThreeHero.js';
+import { brandEmblemPicture } from '../../components/media/BrandEmblem.js';
 
 const tool = (href, code, title, body, link) => `<a class="home-tool interactive-card" href="${href}" data-link data-gsap-item><span>${code}</span><h3>${title}</h3><p>${body}</p><strong>${link} →</strong></a>`;
 
@@ -16,7 +17,7 @@ export function render({ state }) {
       <div class="hero-copy" data-gsap-hero-item>
         <p class="hero-kicker">${t('home.hero.eyebrow')}</p>
         <div class="home-hero-brand" aria-label="Wild Evolution">
-          <img src="/assets/wild-evolution-emblem.png" width="112" height="112" alt="Wild Evolution emblem" loading="eager" fetchpriority="high" />
+          ${brandEmblemPicture({ width: 112, sizes: '(max-width: 720px) 68px, 88px', eager: true })}
           <span><strong>Wild</strong><strong>Evolution</strong><small>Ascension Forge</small></span>
         </div>
         <h1>${t('home.hero.title')}</h1>
@@ -33,6 +34,7 @@ export function render({ state }) {
       ${tool('/maps-bosses', 'BOSS', t('home.tools.bossesTitle'), t('home.tools.bossesBody'), t('home.tools.bossesLink'))}
       ${tool('/creatures', 'DEX', t('home.tools.creaturesTitle'), t('home.tools.creaturesBody'), t('home.tools.creaturesLink'))}
       ${tool('/servers', 'LIVE', t('home.tools.serversTitle'), t('home.tools.serversBody'), t('home.tools.serversLink'))}
+      ${tool('/ark-survival-ascended', 'ASA', getLanguage() === 'es' ? 'Centro de herramientas ASA' : 'ASA tools hub', getLanguage() === 'es' ? 'Recorre todas las herramientas de W.E.A.F para ARK: Survival Ascended.' : 'Browse every W.E.A.F tool for ARK: Survival Ascended.', getLanguage() === 'es' ? 'Abrir el centro' : 'Open the hub')}
     </div>
   </section>
 

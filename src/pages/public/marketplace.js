@@ -158,3 +158,4 @@ export function bind({ path, authService, navigate }) {
   load();
   return () => clearTimeout(debounce);
 }
+import '../../css/marketplace.css';

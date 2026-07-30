@@ -76,3 +76,4 @@ export function bind({ authService }) {
     passwordPolicy.destroy();
   };
 }
+import '../../css/auth.css';

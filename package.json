@@ -11,8 +11,10 @@
     "three": "0.185.1"
   },
   "scripts": {
+    "assets:optimize": "node scripts/optimize-images.mjs",
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run seo:generate && vite build && node scripts/prerender.mjs",
+    "seo:generate": "node scripts/generate-sitemap.mjs",
     "preview": "vite preview",
     "check": "node scripts/check.mjs",
     "test:unit": "node --test tests/*.test.js",
@@ -20,6 +22,8 @@
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
+    "lighthouse": "13.4.1",
+    "sharp": "0.35.3",
     "supabase": "2.109.1",
     "vite": "7.3.6"
   }

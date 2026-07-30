@@ -103,6 +103,23 @@ test('mobile navigation opens without horizontal overflow', async ({ page }) => 
   await page.screenshot({ path: 'artifacts/browser-qa/home-mobile.png', fullPage: true });
 });
 
+test('ARK Survival Ascended hub loads and links to every public tool', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+
+  await page.goto('/ark-survival-ascended');
+  await expect(page).toHaveTitle(/ARK: Survival Ascended/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('ARK: Survival Ascended');
+  await expect(page.locator('.vite-error-overlay')).toHaveCount(0);
+  for (const href of ['/inis', '/maps-bosses', '/creatures', '/servers', '/marketplace']) {
+    await expect(page.locator(`a[href="${href}"]`).first()).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+
 test('marketplace is public while publishing remains protected', async ({ page }) => {
   await page.goto('/marketplace');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Encuentra lo que tu tribu necesita');

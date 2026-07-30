@@ -1,5 +1,6 @@
 import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
 import { getLanguage, setLanguage, t } from '../../i18n/index.js';
+import { brandEmblemPicture } from '../media/BrandEmblem.js';
 
 const navigation = [
   { href: '/', key: 'nav.home' },
@@ -15,7 +16,7 @@ export function createPublicHeader() {
     <header class="site-header" data-header>
       <div class="header-inner container">
         <a class="brand" href="/" data-link aria-label="W.E.A.F, inicio">
-          <img src="/assets/wild-evolution-emblem.png" width="44" height="44" alt="Wild Evolution emblem" />
+          ${brandEmblemPicture({ width: 44, sizes: '44px', eager: true })}
           <span><strong>Wild Evolution</strong><small>W.E.A.F · Ascension Forge</small></span>
         </a>
         <nav class="desktop-nav" aria-label="Navegación principal">

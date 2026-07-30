@@ -1,4 +1,4 @@
-const CACHE_NAME = 'weaf-shell-v5';
+const CACHE_NAME = 'weaf-shell-v6';
 const OFFLINE_URL = '/offline.html';
 const APP_SHELL = ['/', OFFLINE_URL, '/assets/weaf-mark.svg'];
 const PRIVATE_PATHS = [
@@ -50,7 +50,7 @@ async function safeCachePut(key, response) {
 async function networkFirstNavigation(request) {
   try {
     const response = await fetch(request);
-    await safeCachePut('/', response);
+    await safeCachePut(request, response);
     return response;
   } catch {
     return (await caches.match(request)) || (await caches.match('/')) || caches.match(OFFLINE_URL);
