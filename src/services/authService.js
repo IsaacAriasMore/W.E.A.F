@@ -83,7 +83,7 @@ export function createAuthService(client = getSupabaseClient()) {
       const { data, error } = await client.auth.updateUser({ password });
       return {
         data,
-        error: error ? 'No pudimos actualizar la contraseña. Solicita un enlace nuevo e inténtalo otra vez.' : null,
+        error: friendlyAuthError(error),
       };
     },
 

@@ -36,6 +36,10 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
         : "marketplace_order_not_available"
     return json({ error: errorCode }, errorCode.endsWith("disabled") ? 503 : 409)
   }
+  if (Number(prepared.amount_minor) !== 300 || prepared.currency !== "USD") {
+    console.error("marketplace_featured_configuration_invalid")
+    return json({ error: "marketplace_payments_disabled" }, 503)
+  }
   try {
     if (prepared.paypal_order_id) {
       const existing = await paypalRequest<{ status?: string; links?: Array<{ rel?: string; href?: string }> }>(`/v2/checkout/orders/${encodeURIComponent(prepared.paypal_order_id)}`)

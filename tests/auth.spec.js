@@ -25,6 +25,15 @@ test('registration captures profile, game and legal consent', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Registrarse' })).toBeEnabled();
 });
 
+test('registration explains and updates every strong password requirement', async ({ page }) => {
+  await page.goto('/register');
+  const password = page.getByLabel('Contraseña');
+  await password.fill('Forge9!A');
+  const requirements = page.locator('[data-password-requirements] li');
+  await expect(requirements).toHaveCount(5);
+  await expect(page.locator('[data-password-requirement][data-valid="true"]')).toHaveCount(5);
+});
+
 test('password recovery is available without breaking login', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Solo necesarias' }).click();

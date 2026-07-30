@@ -31,8 +31,8 @@ const publicMetadata = {
     en: ['List your ARK server | W.E.A.F', 'Compare Normal and Plus plans to list an ARK server in the W.E.A.F directory.'],
   },
   '/marketplace': {
-    es: ['Marketplace de recursos ARK | W.E.A.F', 'Compra, vende o intercambia recursos de ARK ASE y ASA mediante anuncios comunitarios de siete días.'],
-    en: ['ARK resource marketplace | W.E.A.F', 'Buy, sell, or trade ARK ASE and ASA resources through seven-day community listings.'],
+    es: ['Marketplace de recursos ASA | W.E.A.F', 'Compra, vende o intercambia recursos de ARK: Survival Ascended mediante anuncios comunitarios de siete días.'],
+    en: ['ASA resource marketplace | W.E.A.F', 'Buy, sell, or trade ARK: Survival Ascended resources through seven-day community listings.'],
   },
   '/terms': { es: ['Términos de uso | W.E.A.F', 'Consulta los términos preliminares de uso de W.E.A.F.'], en: ['Terms of use | W.E.A.F', 'Read the preliminary W.E.A.F terms of use.'] },
   '/privacy': { es: ['Política de privacidad | W.E.A.F', 'Consulta cómo W.E.A.F trata datos personales y protege espacios privados.'], en: ['Privacy policy | W.E.A.F', 'Learn how W.E.A.F handles personal data and protects private spaces.'] },

@@ -1,4 +1,4 @@
-import { bindPasswordToggle, configurationNotice, setFormStatus, setSubmitting } from './formUtils.js';
+import { bindPasswordRequirements, bindPasswordToggle, configurationNotice, renderPasswordRequirements, setFormStatus, setSubmitting } from './formUtils.js';
 import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
 import { getAuthCopy, REQUIRE_EMAIL_CONFIRMATION } from '../../config/auth.js';
 import { showToast } from '../../utils/feedback.js';
@@ -36,10 +36,11 @@ export function render({ state }) {
           <label>
             <span>${copy.register.password}</span>
             <div class="password-control">
-              <input id="register-password" name="password" type="password" autocomplete="new-password" required minlength="8" aria-describedby="password-help" />
+              <input id="register-password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="64" aria-describedby="password-help register-password-requirements" />
               <button type="button" data-password-toggle aria-controls="register-password" aria-pressed="false">${copy.show}</button>
             </div>
             <small id="password-help" class="field-help">${copy.register.passwordHelp}</small>
+            ${renderPasswordRequirements(copy, 'register-password-requirements')}
           </label>
           <fieldset class="game-selector">
             <legend>${copy.register.gameQuestion}</legend>
@@ -70,6 +71,7 @@ export function bind({ authService, profileService, store, navigate }) {
   const captchaController = bindAuthCaptcha(form, { action: 'signup', language });
   const submissionLock = createSubmissionLock();
   bindPasswordToggle(form, language);
+  const passwordPolicy = bindPasswordRequirements(form, form.elements.password, copy);
 
   const restoreForm = () => {
     setSubmitting(form, false, copy.signUp, copy.processing);
@@ -81,6 +83,7 @@ export function bind({ authService, profileService, store, navigate }) {
     event.preventDefault();
     if (!submissionLock.tryLock()) return;
     setFormStatus(form);
+    passwordPolicy.validate();
     if (!form.reportValidity()) { submissionLock.release(); return; }
     const captcha = captchaController.takeToken();
     if (!captcha.ok) {
@@ -137,6 +140,7 @@ export function bind({ authService, profileService, store, navigate }) {
   form.addEventListener('submit', onSubmit);
   return () => {
     form.removeEventListener('submit', onSubmit);
+    passwordPolicy.destroy();
     captchaController.destroy();
   };
 }

@@ -2,6 +2,9 @@ import { t } from '../../i18n/index.js';
 import { createTribeService } from '../../services/tribeService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
+import { bindPasswordRequirements, bindPasswordToggle, renderPasswordRequirements } from '../auth/formUtils.js';
+import { getAuthCopy } from '../../config/auth.js';
+import { getLanguage } from '../../i18n/index.js';
 
 const gameModes = [
   ['evolved', 'ARK: Survival Evolved'],
@@ -18,6 +21,7 @@ export function render({ state }) {
   const profile = state.profile || {};
   const email = profile.email || state.session?.user?.email || '';
   const initials = (profile.display_name || email || 'W').slice(0, 1).toUpperCase();
+  const authCopy = getAuthCopy(getLanguage());
 
   return `
     <section class="profile-page container reveal-up">
@@ -75,6 +79,22 @@ export function render({ state }) {
           <p>${t('profile.securityNote')}</p>
         </aside>
       </div>
+
+      <section class="profile-password premium-panel-glow" aria-labelledby="profile-password-title">
+        <div>
+          <h2 id="profile-password-title">${authCopy.changePassword.title}</h2>
+          <p>${authCopy.changePassword.body}</p>
+        </div>
+        <form class="auth-form" data-profile-password-form novalidate>
+          <label><span>${authCopy.changePassword.password}</span><div class="password-control">
+            <input id="profile-new-password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="64" aria-describedby="profile-password-requirements" />
+            <button type="button" data-password-toggle aria-controls="profile-new-password" aria-pressed="false">${authCopy.show}</button>
+          </div>${renderPasswordRequirements(authCopy, 'profile-password-requirements')}</label>
+          <label><span>${authCopy.changePassword.confirmation}</span><input name="confirmation" type="password" autocomplete="new-password" required minlength="8" maxlength="64" /></label>
+          <p class="form-status" data-form-status role="alert" hidden></p>
+          <button class="button button-secondary" type="submit">${authCopy.changePassword.submit}</button>
+        </form>
+      </section>
     </section>
   `;
 }
@@ -83,6 +103,10 @@ export function bind({ state, store, profileService, authService }) {
   const form = document.querySelector('[data-profile-form]');
   if (!form) return null;
   const activeTribe = document.querySelector('[data-profile-active-tribe]');
+  const passwordForm = document.querySelector('[data-profile-password-form]');
+  const authCopy = getAuthCopy(getLanguage());
+  bindPasswordToggle(passwordForm);
+  const passwordPolicy = bindPasswordRequirements(passwordForm, passwordForm?.elements.password, authCopy);
   const tribeService = createTribeService(authService.getClient());
   let alive = true;
 
@@ -116,8 +140,32 @@ export function bind({ state, store, profileService, authService }) {
   };
 
   form.addEventListener('submit', onSubmit);
+  const onPasswordSubmit = async (event) => {
+    event.preventDefault();
+    setFormStatus(passwordForm);
+    passwordPolicy.validate();
+    if (!passwordForm.reportValidity()) return;
+    const values = new FormData(passwordForm);
+    if (values.get('password') !== values.get('confirmation')) {
+      setFormStatus(passwordForm, authCopy.passwordRequirements.mismatch);
+      return;
+    }
+    setSubmitting(passwordForm, true, authCopy.changePassword.submit);
+    const { error } = await authService.updatePassword(values.get('password'));
+    if (error) {
+      setFormStatus(passwordForm, error);
+      setSubmitting(passwordForm, false, authCopy.changePassword.submit);
+      return;
+    }
+    passwordForm.reset();
+    setFormStatus(passwordForm, authCopy.changePassword.saved, 'success');
+    setSubmitting(passwordForm, false, authCopy.changePassword.submit);
+  };
+  passwordForm?.addEventListener('submit', onPasswordSubmit);
   return () => {
     alive = false;
     form.removeEventListener('submit', onSubmit);
+    passwordForm?.removeEventListener('submit', onPasswordSubmit);
+    passwordPolicy.destroy();
   };
 }

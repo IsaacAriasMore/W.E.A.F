@@ -1,97 +1,50 @@
 # Marketplace de recursos W.E.A.F
 
-## Alcance
+## Alcance público
 
-El marketplace es un tablón comunitario para comprar, vender o intercambiar recursos dentro de ARK ASE/ASA. W.E.A.F no procesa pagos entre comprador y vendedor, no actúa como escrow y no garantiza el intercambio. El contacto ocurre mediante una invitación HTTPS de Discord.
+El marketplace es un tablón comunitario exclusivo de ARK: Survival Ascended (ASA) para comprar, vender o intercambiar recursos mediante contacto directo por Discord. W.E.A.F no procesa el intercambio entre jugadores, no actúa como escrow y no garantiza una operación.
 
-## Plan gratuito
+Las filas históricas ASE/Both se conservan sin modificación para auditoría y rollback, pero no aparecen en el catálogo público. Nuevas creaciones y ediciones pasan por RPCs server-side que exigen `game='ascended'`.
 
-- Requiere cuenta y aceptación explícita de reglas.
-- Publicación inmediata durante exactamente siete días.
-- Máximo de cinco anuncios activos/borradores/pagos pendientes por usuario y cinco creaciones por 24 horas.
-- El usuario puede editar mientras el anuncio siga activo y no vencido, u ocultarlo.
-- Un job de `pg_cron` ejecuta `expire_marketplace_listings()` cada 15 minutos. La operación es idempotente y elimina `is_featured`.
-- La expiración, el estado y `is_featured` se fijan en funciones server-side; el navegador no puede enviarlos.
+## Publicación gratuita
 
-## Contenido y seguridad
-
-Las validaciones existen en frontend, constraints SQL y RPCs. Se prohíben HTML, credenciales, contraseñas, tokens, cuentas robadas, cheats, exploits, datos sensibles, fraude y enlaces maliciosos. Discord admite únicamente `https://discord.gg/...` o `https://discord.com/invite/...`; la imagen opcional debe ser HTTPS.
-
-Las tablas tienen RLS. No se concede escritura directa a `anon` o `authenticated`: crear, editar, ocultar, reportar y moderar pasa por funciones `SECURITY DEFINER` con `search_path=''`, ownership o rol global comprobado. El catálogo público se entrega por una RPC que selecciona únicamente anuncios `active` y no expirados, sin exponer `owner_user_id`.
-
-## Estados
-
-`draft`, `pending_payment`, `active`, `expired`, `hidden`, `rejected`, `removed`, `payment_failed`, `refunded` y `reversed`.
-
-No se hace hard delete automático. Anuncios, pagos, reportes y auditoría quedan retenidos para fraude, disputas y revisión. Antes de purgar debe aprobarse una política de retención y anonimización.
+- Cuenta y aceptación explícita de reglas.
+- Siete días desde `published_at`.
+- Máximo de cinco anuncios activos/borradores/pagos pendientes y cinco creaciones por 24 horas.
+- El propietario puede editar un anuncio elegible u ocultarlo.
+- Estado, vigencia, precio y destacado nunca proceden del navegador.
+- RLS y grants mínimos permanecen activos; toda escritura usa RPC con ownership.
 
 ## Destacado
 
-La configuración `featured_listing` guarda `price_minor`, moneda, entorno y kill switch. Su estado inicial es:
+Destacado es una exposición adicional, no una garantía de venta. Su precio fijo es USD 3 por siete días y solo está preparado para PayPal Sandbox. `published_at` se conserva; el webhook firmado establece `featured_started_at` y `featured_expires_at`, y extiende `expires_at` solo si hace falta.
 
-- `marketplace_enabled=true`;
-- `payments_enabled=false`;
-- `price_minor=null`;
-- `currency=USD`;
-- `environment=sandbox` (constraint estricto).
+Refund, reversal, denegación, fallo o vencimiento retiran `is_featured` sin eliminar el anuncio, el pago ni los eventos. La captura de retorno del navegador nunca concede el beneficio.
 
-Mientras no exista precio o pagos estén desactivados, el plan gratuito funciona y la UI explica que Destacado no está disponible. El precio comercial no se inventa.
+Los kill switches siguen siendo autoritativos y continúan apagados:
 
-PayPal Destacado se implementa con Orders v2 como pago único en Sandbox. `create-marketplace-paypal-order` obtiene precio y moneda del servidor, usa `PayPal-Request-Id` y crea la orden. `capture-marketplace-paypal-order` captura tras el retorno autenticado, pero no concede el beneficio. Solo `paypal-webhook`, después de verificar la firma, llama `process_marketplace_paypal_event` y activa siete días destacados.
+- `feature_flags.paypal_payments=false`;
+- `marketplace_settings.payments_enabled=false`;
+- entorno `sandbox`.
 
-Eventos configurables en el mismo webhook PayPal Sandbox:
+La allowlist QA vive exclusivamente en el esquema `private`, usa UUID de usuario y no contiene correos hardcodeados en frontend. Es un gate adicional y jamás elude los dos kill switches.
 
-- `CHECKOUT.ORDER.APPROVED`;
-- `PAYMENT.CAPTURE.COMPLETED`;
-- `PAYMENT.CAPTURE.DENIED`;
-- `PAYMENT.CAPTURE.REFUNDED`;
-- `PAYMENT.CAPTURE.REVERSED`.
+## Catálogo v2 y privacidad
 
-Los eventos se guardan en `private.billing_events`, cuya clave primaria por proveedor/entorno/evento evita replays. Un monto o moneda diferente al setting server-side falla cerrado. Refund y reversal ocultan el anuncio y retiran `is_featured`.
+`get_marketplace_catalog_v2` separa hasta cuatro Destacados del resultado orgánico, aplica filtros ASA autoritativos y usa keyset pagination con cursor firmado. El orden es determinista por buckets de 15 minutos y una hora, limita repetición de vendedores y reserva aproximadamente 10 % de exploración orgánica.
 
-## Rutas
+La afinidad persistente es opt-in. El usuario puede activarla, desactivarla y reiniciar eventos/intereses desde `/account/marketplace`. Las señales tienen vida media de 30 días y retención máxima preparada de 90 días. No se habilita cron remoto en esta fase.
 
-- Público: `/marketplace`, `/marketplace/:slug`.
-- Autenticado y `noindex`: `/marketplace/new`, `/marketplace/:id/edit`, `/account/marketplace`.
-- Admin global: `/admin?section=marketplace`.
+No se almacenan IP, fingerprint, contraseñas, JWT, cookies, cabeceras Authorization ni CAPTCHA. Los visitantes sin sesión reciben ranking contextual sin identidad anónima persistente.
 
-## Migración y rollback
+Detalle técnico y rollback: [marketplace-ranking.md](./marketplace-ranking.md).
 
-Migraciones:
+## Contenido, moderación y estados
 
-- `20260729010939_phase_7_marketplace_foundation.sql`;
-- `20260729012207_marketplace_paypal_orders.sql`.
+Se prohíben HTML, credenciales, tokens, cuentas robadas, cheats, exploits, datos sensibles, fraude y enlaces maliciosos. Discord admite `https://discord.gg/...` o `https://discord.com/invite/...`; la imagen opcional debe ser HTTPS.
 
-Rollback funcional reversible:
+Estados legacy conservados: `draft`, `pending_payment`, `active`, `expired`, `hidden`, `rejected`, `removed`, `payment_failed`, `refunded` y `reversed`. La nueva revocación del destacado no fuerza el estado del anuncio a refund/reversed: separa pago, beneficio y publicación.
 
-1. Poner `marketplace_enabled=false` y `payments_enabled=false` desde Admin.
-2. Retirar las rutas públicas en una versión posterior si fuera necesario.
-3. Mantener tablas y logs. No ejecutar `DROP` ni borrar pagos/reportes sin exportación, respaldo y aprobación.
-4. Desprogramar `expire-marketplace-listings` solo si el marketplace completo queda deshabilitado; los anuncios existentes deben ocultarse de forma controlada.
+## Operación pendiente
 
-## Estado operativo y pendientes
-
-- Las dos migraciones se aplicaron en orden tras backup, comparación de historial y dry-run; local y remoto están alineados.
-- La prueba RLS A/B pasó y el hotfix añadió una prueba transaccional de moderación Admin con rollback.
-- Configurar precio desde Admin únicamente cuando se vaya a probar Orders Sandbox.
-- `create-marketplace-paypal-order`, `capture-marketplace-paypal-order` y `paypal-webhook` están desplegadas; pagos siguen apagados.
-- Definir política legal final, retención y respuesta a reportes con asesoría profesional.
-
-## Moderación y operación tras el hotfix
-
-Migraciones adicionales aplicadas:
-
-- `20260729055627_marketplace_paypal_global_kill_switch.sql`;
-- `20260729060503_admin_marketplace_report_status.sql`.
-
-Admin muestra estados explícitos `loading`, `loaded` y `error`. Una lectura fallida nunca se convierte
-en switches falsos inventados: si existe una lectura anterior se conserva solo como referencia
-bloqueada, Guardar y moderación permanecen deshabilitados y Reintentar vuelve a consultar el servidor.
-
-Los reportes permiten pasar únicamente a `reviewing`, `resolved` o `dismissed`, con confirmación,
-loader, error y actualización de la fila sin recargar el dashboard. PostgreSQL vuelve a comprobar el
-admin global y registra `report_status_updated` en `marketplace_audit_log`.
-
-El tablón gratuito permanece activo (`marketplace_enabled=true`), pero destacados y PayPal siguen
-apagados. La Edge de Orders se desplegó con el kill switch global encadenado y la tabla de pagos tiene
-0 filas al cierre de esta validación.
+Las tres migraciones de esta fase y la Edge Function modificada son locales. No se aplicaron migraciones, funciones, cron, flags, Auth ni configuración PayPal remota. Antes de producción se requiere backup válido, historial alineado, revisión SQL, lint, dry-run, Preview, autorización separada y pruebas Sandbox controladas.

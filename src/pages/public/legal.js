@@ -18,8 +18,11 @@ const pages = {
     sections: [
       ['Datos tratados', 'Cuenta, perfil, membresías de tribu, preferencias, actividad funcional y aceptaciones legales. Los pagos son procesados por PayPal y los secretos se gestionan fuera del navegador.'],
       ['Finalidad', 'Autenticar usuarios, aislar contenido por tribu, operar herramientas, prevenir abuso y mejorar estabilidad. No se venderán datos personales.'],
+      ['Recomendaciones del Marketplace', 'La personalización es opcional. Cuando la activas, usamos únicamente filtros, búsquedas, vistas y acciones dentro del Marketplace para ordenar anuncios ASA. Las señales decaen con el tiempo y se eliminan como máximo a los 90 días. Puedes desactivarla o reiniciar eventos e intereses desde Mis anuncios.'],
+      ['Datos que no usamos para recomendar', 'No usamos seguimiento externo, dirección IP, huella del navegador, contraseñas, credenciales, JWT, cookies de autenticación ni tokens CAPTCHA. Los visitantes sin sesión reciben solo resultados contextuales según sus filtros actuales.'],
       ['Conservación y control', 'Las ventanas de conservación y el procedimiento formal de acceso o eliminación requieren revisión legal antes del lanzamiento comercial. Mientras tanto, las solicitudes se reciben por el canal de contacto.'],
       ['Seguridad', 'La arquitectura usa Row Level Security, privilegios mínimos, logs de auditoría y Edge Functions para operaciones con secretos.'],
+      ['Revisión legal pendiente', 'Esta descripción de personalización y retención es preliminar y debe recibir revisión humana profesional antes del lanzamiento comercial.'],
     ],
   },
   '/cookies': {

@@ -120,6 +120,24 @@ body[data-route-kind='auth'] main {
   color: var(--subtle);
 }
 
+.password-requirements {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-control);
+  background: color-mix(in oklch, var(--surface) 82%, transparent);
+  color: var(--subtle);
+  font-size: 0.78rem;
+}
+
+.password-requirements > span { color: var(--ink); font-weight: 800; }
+.password-requirements ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem 0.75rem; margin: 0; padding: 0; list-style: none; }
+.password-requirements li { display: flex; gap: 0.4rem; align-items: center; }
+.password-requirements li[data-valid="true"] { color: var(--success, #8fcf9b); }
+.password-requirements small { overflow-wrap: anywhere; }
+
 .auth-submit {
   width: 100%;
   margin-top: 0.35rem;
@@ -574,10 +592,29 @@ body[data-route-kind='auth'] main {
 .profile-facts strong { color: var(--ink); }
 .profile-facts > p { margin-top: 1rem; font-size: 0.82rem; }
 
+.profile-password {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.65fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 5vw, 4rem);
+  margin-top: 1.25rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.profile-password h2 { margin: 0; }
+.profile-password > div > p { color: var(--subtle); }
+.profile-password .auth-form { margin-top: 0; }
+
 @media (max-width: 760px) {
   .profile-layout,
-  .profile-form-grid { grid-template-columns: 1fr; }
+  .profile-form-grid,
+  .profile-password { grid-template-columns: 1fr; }
   .profile-game-mode { grid-column: auto; }
+}
+
+@media (max-width: 480px) {
+  .password-requirements ul { grid-template-columns: 1fr; }
 }
 
 .onboarding-complete {

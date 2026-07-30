@@ -37,7 +37,8 @@ La configuración del frontend y la de Supabase deben coincidir. La constante re
 - Separación entre admin global y roles owner, admin y member de tribu.
 - Rol global `user` por defecto; nunca se recibe desde metadata del registro.
 - Timeout por inactividad de cuatro horas.
-- Contraseña mínima de ocho caracteres y controles de Supabase Auth.
+- Política local compartida para registro, recuperación y cambio: 8–64 caracteres, mayúscula, minúscula, número y un símbolo permitido. El valor no se recorta, convierte a minúsculas ni normaliza.
+- El login no impone complejidad para conservar acceso a cuentas históricas.
 - Protección contra contraseñas filtradas cuando esté activada en Supabase.
 
 ## Riesgos de usar correos no verificados
@@ -58,6 +59,17 @@ Si SMTP falla, la app muestra:
 > No se pudo enviar el correo de recuperación. Inténtalo más tarde.
 
 Cuando la solicitud funciona se usa un mensaje neutro para no revelar si una dirección está registrada.
+
+## Activación futura de política remota
+
+El frontend ya valida la política fuerte antes de enviar una contraseña nueva. Supabase Auth remoto no se modifica desde esta fase. Antes de activar una política equivalente en Dashboard:
+
+1. verificar límites y símbolos compatibles con el proveedor;
+2. probar registro, recuperación y `updateUser()` en Preview;
+3. confirmar que el login de cuentas antiguas continúa sin validación de complejidad;
+4. documentar el valor previo para rollback;
+5. activar protección de contraseñas filtradas si el plan de Supabase la ofrece;
+6. monitorizar errores genéricos `weak_password` sin exponer detalles del proveedor.
 
 ## Volver a activar confirmación
 
