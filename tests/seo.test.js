@@ -14,9 +14,9 @@ test('robots and sitemap are physical crawlable files', () => {
   assert.doesNotMatch(sitemap, /servers\/publish|account\/billing|\/admin/);
 });
 
-test('route metadata provides canonical, social cards, hreflang, and valid schema boundaries', () => {
+test('route metadata provides canonical, social cards, structured data, and valid schema boundaries', () => {
   const metadata = read('../src/seo/metadata.js');
-  assert.match(metadata, /link\[rel="alternate"\]\[hreflang\]/);
+  assert.match(metadata, /querySelectorAll\('link\[rel="alternate"\]\[hreflang\]'\)\.forEach\(.*\.remove\(\)/);
   assert.match(metadata, /twitter:card/);
   assert.match(metadata, /application\/ld\+json/);
   assert.match(metadata, /FAQPage/);
@@ -30,6 +30,5 @@ test('the initial document exposes useful metadata before JavaScript', () => {
   assert.match(html, /rel="canonical" href="https:\/\/weaf\.vercel\.app\/"/);
   assert.match(html, /property="og:title"/);
   assert.match(html, /name="twitter:card"/);
-  assert.match(html, /hreflang="es"/);
-  assert.match(html, /hreflang="en"/);
+  assert.doesNotMatch(html, /<link[^>]+rel="alternate"[^>]+hreflang=/i);
 });
