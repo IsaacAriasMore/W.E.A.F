@@ -33,3 +33,5 @@ export function bind({ path, authService }) {
     if (status) status.outerHTML = `<p class="form-message error" role="status">${t('marketplace.errors.paymentCapture')}</p>`;
   });
 }
+import '../../css/app.css';
+import '../../css/marketplace.css';

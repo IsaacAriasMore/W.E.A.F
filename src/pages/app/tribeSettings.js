@@ -226,3 +226,4 @@ export function bind({ state, authService, navigate }) {
     view.removeEventListener('click', onClick);
   };
 }
+import '../../css/app.css';

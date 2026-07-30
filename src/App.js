@@ -9,8 +9,6 @@ import { createConsentManager, bindConsentManager } from './components/privacy/C
 import { createInstallPrompt, bindInstallPrompt } from './components/pwa/InstallPrompt.js';
 import { bindSponsoredServerSlots } from './components/ads/SponsoredServerSlot.js';
 import { createRouter } from './router.js';
-import { createAuthService } from './services/authService.js';
-import { createProfileService } from './services/profileService.js';
 import { createAppStore } from './stores/appStore.js';
 import { createInactivityLogout } from './utils/inactivityLogout.js';
 import { showToast } from './utils/feedback.js';
@@ -33,7 +31,7 @@ function createSessionExpiredDialog() {
   `;
 }
 
-export async function startApp(root) {
+export function startApp(root) {
   root.innerHTML = `
     ${createPublicHeader()}
     <main id="main-content" tabindex="-1">
@@ -49,15 +47,16 @@ export async function startApp(root) {
     <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
   `;
 
-  const authService = createAuthService();
-  const profileService = createProfileService(authService.getClient());
-  const store = createAppStore({ configured: authService.isConfigured() });
+  const store = createAppStore();
+  let authService = null;
+  let profileService = null;
   bindConsentManager(root);
   bindInstallPrompt(root);
-  bindSponsoredServerSlots(root.querySelector('#main-content'), authService.getClient());
   let router;
   let inactivity;
   let cleanupRouteMotion = null;
+  let resolveAuthReady;
+  const authReady = new Promise((resolve) => { resolveAuthReady = resolve; });
 
   const hydrateProfile = async (session) => {
     if (!session?.user || !authService.isConfigured()) return null;
@@ -65,16 +64,10 @@ export async function startApp(root) {
     return profile;
   };
 
-  const initialSession = await authService.getSession();
-  store.setState({
-    session: initialSession,
-    profile: await hydrateProfile(initialSession),
-    ready: true,
-  });
-
   router = createRouter({
     outlet: root.querySelector('#main-content'),
     getContext: () => ({ authService, profileService, store, state: store.getState() }),
+    waitForAuth: () => authReady,
     onRouteChange(pathname) {
       cleanupRouteMotion?.();
       cleanupMotion();
@@ -125,14 +118,41 @@ export async function startApp(root) {
     if (refresh) router.refresh();
   };
 
-  updateHeaderAuth(initialSession, store.getState().profile);
-  await syncSession(initialSession, { refresh: false, preserveActivity: true });
+  updateHeaderAuth(null, null, window.location.pathname);
   bindPublicHeader(router.navigate, router.refresh);
+  router.start();
 
-  authService.onAuthStateChange((event, session) => {
-    if (event === 'INITIAL_SESSION') return;
-    window.setTimeout(() => syncSession(session), 0);
-  });
+  async function initializeAuth() {
+    try {
+      const [{ createAuthService }, { createProfileService }] = await Promise.all([
+        import('./services/authService.js'),
+        import('./services/profileService.js'),
+      ]);
+      authService = createAuthService();
+      profileService = createProfileService(authService.getClient());
+      store.setState({ configured: authService.isConfigured() });
+      const initialSession = await authService.getSession();
+      store.setState({
+        session: initialSession,
+        profile: await hydrateProfile(initialSession),
+        ready: true,
+      });
+      updateHeaderAuth(initialSession, store.getState().profile, window.location.pathname);
+      await syncSession(initialSession, { refresh: false, preserveActivity: true });
+      bindSponsoredServerSlots(root.querySelector('#main-content'), authService.getClient());
+      authService.onAuthStateChange((event, session) => {
+        if (event === 'INITIAL_SESSION') return;
+        window.setTimeout(() => syncSession(session), 0);
+      });
+    } catch {
+      store.setState({ configured: false, ready: true, session: null, profile: null });
+      updateHeaderAuth(null, null, window.location.pathname);
+    } finally {
+      resolveAuthReady();
+    }
+  }
+
+  initializeAuth();
 
   document.addEventListener('click', async (event) => {
     const link = event.target.closest('a[data-link]');
@@ -165,5 +185,4 @@ export async function startApp(root) {
     root.querySelector('[name="email"]')?.focus();
   });
 
-  router.start();
 }

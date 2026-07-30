@@ -23,6 +23,12 @@
   flex: 0 0 auto;
 }
 
+.brand-emblem {
+  display: block;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
 .brand img {
   flex: 0 0 auto;
   border-radius: 10px;

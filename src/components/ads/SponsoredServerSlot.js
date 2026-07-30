@@ -1,4 +1,3 @@
-import { createServerService } from '../../services/serverService.js';
 import { hasMeasurementConsent } from '../../services/consentService.js';
 import { dismissAd, isAdDismissed } from '../../utils/adDismissal.js';
 import { escapeHtml } from '../../utils/sanitize.js';
@@ -70,15 +69,24 @@ function renderEmpty(slot) {
 
 export function bindSponsoredServerSlots(container, client) {
   if (!container) return () => {};
-  const service = createServerService(client);
+  let servicePromise = null;
+  const getService = () => {
+    if (!servicePromise) {
+      servicePromise = import('../../services/serverService.js')
+        .then(({ createServerService }) => createServerService(client));
+    }
+    return servicePromise;
+  };
   const activeSlots = new Map();
   const trackedCards = new WeakSet();
   let cache = null;
   let cacheTime = 0;
   let dataPromise = null;
+  let hydrationObserver = null;
 
   async function loadData() {
     if (!client) return { settings: [], servers: [] };
+    const service = await getService();
     if (cache && Date.now() - cacheTime < 30000) return cache;
     if (!dataPromise) {
       dataPromise = Promise.all([
@@ -108,7 +116,7 @@ export function bindSponsoredServerSlots(container, client) {
           if (!hasMeasurementConsent() || !entry.isIntersecting || entry.intersectionRatio < 0.55 || trackedCards.has(entry.target)) return;
           trackedCards.add(entry.target);
           state.impressionObserver.unobserve(entry.target);
-          service.track(entry.target.dataset.sponsoredServer, 'impression');
+          getService().then((service) => service.track(entry.target.dataset.sponsoredServer, 'impression')).catch(() => {});
         });
       }, { threshold: 0.55 });
     }
@@ -176,15 +184,36 @@ export function bindSponsoredServerSlots(container, client) {
       const action = event.target.closest('[data-sponsored-event]');
       const card = action?.closest('[data-sponsored-server]');
       if (action && card && hasMeasurementConsent()) {
-        service.track(card.dataset.sponsoredServer, action.dataset.sponsoredEvent);
+        getService().then((service) => service.track(card.dataset.sponsoredServer, action.dataset.sponsoredEvent)).catch(() => {});
       }
     }, { signal: controller.signal });
     attachImpressions(slot, state);
   }
 
+  function queueHydration(slot) {
+    slot.dataset.sponsoredObserved = 'true';
+    if (!hydrationObserver) {
+      const schedule = () => hydrate(slot);
+      if ('requestIdleCallback' in window) window.requestIdleCallback(schedule, { timeout: 1800 });
+      else window.setTimeout(schedule, 350);
+      return;
+    }
+    hydrationObserver.observe(slot);
+  }
+
+  if ('IntersectionObserver' in window) {
+    hydrationObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        hydrationObserver.unobserve(entry.target);
+        hydrate(entry.target);
+      });
+    }, { rootMargin: '500px 0px', threshold: 0.01 });
+  }
+
   function scan() {
     activeSlots.forEach((_, slot) => { if (!slot.isConnected) cleanupSlot(slot); });
-    container.querySelectorAll('[data-sponsored-placement]:not([data-sponsored-hydrated])').forEach(hydrate);
+    container.querySelectorAll('[data-sponsored-placement]:not([data-sponsored-hydrated]):not([data-sponsored-observed])').forEach(queueHydration);
   }
 
   const mutationObserver = new MutationObserver(scan);
@@ -194,6 +223,7 @@ export function bindSponsoredServerSlots(container, client) {
   scan();
   return () => {
     mutationObserver.disconnect();
+    hydrationObserver?.disconnect();
     window.removeEventListener('weaf:consent-changed', onConsentChanged);
     activeSlots.forEach((_, slot) => cleanupSlot(slot));
   };

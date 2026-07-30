@@ -1,5 +1,6 @@
 import { t } from '../../i18n/index.js';
 import { OFFICIAL_DISCORD, SUPPORT_EMAIL, SUPPORT_MAILTO } from '../../config/contact.js';
+import { brandEmblemPicture } from '../media/BrandEmblem.js';
 
 export function createFooter() {
   return `
@@ -7,7 +8,7 @@ export function createFooter() {
       <div class="footer-grid container">
         <div class="footer-brand">
           <a class="brand" href="/" data-link>
-            <img src="/assets/wild-evolution-emblem.png" width="48" height="48" alt="Wild Evolution emblem" />
+            ${brandEmblemPicture({ width: 48, sizes: '48px' })}
             <span><strong>Wild Evolution</strong><small>W.E.A.F · Ascension Forge</small></span>
           </a>
           <p data-i18n="footer.tagline">${t('footer.tagline')}</p>
@@ -22,6 +23,7 @@ export function createFooter() {
           <span class="creator-badge" data-i18n="footer.creator">${t('footer.creator')}</span>
         </div>
         <nav class="footer-links" aria-label="Enlaces legales">
+          <a href="/ark-survival-ascended" data-link>ARK: Survival Ascended</a>
           <a href="/terms" data-link data-i18n="footer.terms">${t('footer.terms')}</a>
           <a href="/privacy" data-link data-i18n="footer.privacy">${t('footer.privacy')}</a>
           <a href="/cookies" data-link data-i18n="footer.cookies">${t('footer.cookies')}</a>

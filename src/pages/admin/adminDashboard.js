@@ -1323,3 +1323,4 @@ export function bind({ state, authService, navigate }) {
 
   load();
 }
+import '../../css/admin.css';

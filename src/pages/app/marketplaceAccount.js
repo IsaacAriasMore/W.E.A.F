@@ -127,3 +127,5 @@ export function bind({ path, authService, navigate }) {
     else { showToast(t('marketplace.hidden')); navigate('/account/marketplace'); }
   });
 }
+import '../../css/app.css';
+import '../../css/marketplace.css';

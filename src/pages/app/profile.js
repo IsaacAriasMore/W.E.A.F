@@ -169,3 +169,4 @@ export function bind({ state, store, profileService, authService }) {
     passwordPolicy.destroy();
   };
 }
+import '../../css/app.css';

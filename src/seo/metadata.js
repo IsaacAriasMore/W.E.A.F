@@ -2,13 +2,18 @@ import { getLanguage, t } from '../i18n/index.js';
 
 const SITE_URL = 'https://weaf.vercel.app';
 const BRAND = 'W.E.A.F';
-const OG_IMAGE = `${SITE_URL}/assets/wild-evolution-emblem.png`;
+const OG_IMAGE = `${SITE_URL}/assets/weaf-og-1200x630.webp`;
 
 const publicMetadata = {
   '/': {
     es: ['W.E.A.F | Herramientas para tribus de ARK', 'Organiza breeding, mutaciones, bosses, INIs y servidores de ARK: Survival Evolved y Ascended con tu tribu.'],
     en: ['W.E.A.F | Tools for ARK tribes', 'Organize breeding, mutations, bosses, INIs, and ARK: Survival Evolved and Ascended servers with your tribe.'],
     schema: 'home',
+  },
+  '/ark-survival-ascended': {
+    es: ['Herramientas para ARK: Survival Ascended | W.E.A.F', 'Explora configuraciones INI, mapas, bosses, criaturas, servidores y recursos para coordinar tu tribu de ARK: Survival Ascended.'],
+    en: ['Tools for ARK: Survival Ascended | W.E.A.F', 'Explore INI settings, maps, bosses, creatures, servers, and resources for coordinating your ARK: Survival Ascended tribe.'],
+    schema: 'application',
   },
   '/inis': {
     es: ['INIs para ARK ASE y ASA | W.E.A.F', 'Explora configuraciones INI documentadas para ARK: Survival Evolved y Ascended, con notas de riesgo y reversión.'],
@@ -95,7 +100,19 @@ function structuredData(path, schema) {
         acceptedAnswer: { '@type': 'Answer', text: t(`home.faq.a${number}`) },
       })),
     });
-  } else if (path !== '/') {
+  } else if (schema === 'application') {
+    graph.push({
+      '@type': 'WebApplication',
+      name: BRAND,
+      url: `${SITE_URL}${path}`,
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Web',
+      description: document.querySelector('meta[name="description"]')?.content,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      image: OG_IMAGE,
+    });
+  }
+  if (path !== '/') {
     graph.push({
       '@type': 'BreadcrumbList',
       itemListElement: [
@@ -114,12 +131,12 @@ export function applyRouteMetadata(path, { notFound = false } = {}) {
     es: ['Anuncio de recursos ARK | W.E.A.F', 'Consulta un anuncio activo del marketplace comunitario de recursos ARK de W.E.A.F.'],
     en: ['ARK resource listing | W.E.A.F', 'View an active listing in the W.E.A.F community ARK resource marketplace.'],
   } : null);
-  const indexable = Boolean(metadata) && !notFound;
+  const indexable = Boolean(metadata) && !notFound && !marketplaceDetail;
   const [title, description] = metadata?.[language] || [
     notFound ? (language === 'es' ? 'Página no encontrada | W.E.A.F' : 'Page not found | W.E.A.F') : document.title,
     language === 'es' ? 'Espacio privado de W.E.A.F.' : 'Private W.E.A.F workspace.',
   ];
-  const canonical = `${SITE_URL}${metadata ? path : '/'}`;
+  const canonical = `${SITE_URL}${path || '/'}`;
   const robots = indexable ? 'index, follow, max-image-preview:large' : 'noindex, nofollow, noarchive';
 
   document.title = title;
@@ -130,6 +147,8 @@ export function applyRouteMetadata(path, { notFound = false } = {}) {
   upsertMeta('property', 'og:type', 'website');
   upsertMeta('property', 'og:url', canonical);
   upsertMeta('property', 'og:image', OG_IMAGE);
+  upsertMeta('property', 'og:image:width', '1200');
+  upsertMeta('property', 'og:image:height', '630');
   upsertMeta('property', 'og:site_name', BRAND);
   upsertMeta('property', 'og:locale', language === 'es' ? 'es_CR' : 'en_US');
   upsertMeta('name', 'twitter:card', 'summary_large_image');
@@ -139,11 +158,6 @@ export function applyRouteMetadata(path, { notFound = false } = {}) {
   upsertLink('canonical', canonical);
 
   document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((element) => element.remove());
-  if (indexable) {
-    upsertLink('alternate', `${canonical}?lang=es`, 'es');
-    upsertLink('alternate', `${canonical}?lang=en`, 'en');
-    upsertLink('alternate', canonical, 'x-default');
-  }
 
   document.head.querySelector('[data-route-schema]')?.remove();
   const schema = structuredData(path, metadata?.schema);
@@ -162,6 +176,7 @@ export function applyMarketplaceListingMetadata(path, title, description) {
   const pageDescription = String(description).replace(/\s+/g, ' ').slice(0, 155);
   document.title = pageTitle;
   upsertMeta('name', 'description', pageDescription);
+  upsertMeta('name', 'robots', 'noindex, follow, noarchive');
   upsertMeta('property', 'og:title', pageTitle);
   upsertMeta('property', 'og:description', pageDescription);
   upsertMeta('property', 'og:url', canonical);

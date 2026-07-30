@@ -43,3 +43,4 @@ export function bind({ authService }) {
 
   load();
 }
+import '../../css/servers.css';
