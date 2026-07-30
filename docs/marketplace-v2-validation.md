@@ -117,3 +117,18 @@ Encoded as `base64(payload).hex(HMAC-SHA-256(payload, secret))`.
 ## Cursor Security (25/25)
 
 All tests pass: valid roundtrip, manipulated payload, bad signature, truncated, one extra segment, two extra segments, empty segment, invalid base64, non-hex signature, wrong-length signature, invalid UUID, invalid score, expired bucket, different search, different category, different region, different platform, different type, different limit, first page, second page, last page, no duplicates, consistent ordering, null cursor at end.
+
+## Correct Rollback Procedure
+
+`supabase migration repair --status reverted` does **not** revert SQL. It only corrects the migration history table. Using it as a schema rollback leaves database objects in place while pretending the migration never applied — a dangerous inconsistency.
+
+### Safe rollback for featured expiration and QA gate changes
+
+1. **Immediate kill-switch:** Set `paypal_payments = false` in `feature_flags` and `payments_enabled = false` in `marketplace_settings`. This stops all featured payment flows within seconds, no code deploy needed.
+2. **Disable the cron job:** Run `select cron.unschedule('expire-marketplace-featured-benefits');`. This prevents expiration from running until the rollback is complete.
+3. **Create a compensatory migration** that replaces `public.prepare_marketplace_paypal_order()` with the previous version and removes the cron schedule. Follow the same idempotent pattern (unschedule before schedule).
+4. **Preserve all data:** Do not delete marketplace_payments, marketplace_audit_log, or any marketplace_listings columns. Historical featured records, events, and audit trails must remain readable.
+5. **Run `supabase db reset` locally** to verify the new migration applies cleanly on top of the full history.
+6. **Do not alter or repair remote history.** Apply the compensatory migration via `supabase db push` only after local validation passes. Never use `migration repair` in production.
+
+This approach stops new payments instantly, maintains data integrity for existing featured records, and preserves a clean migration chain. The only operation that requires a code deploy is step 1 (setting kill switches), which can be done through Supabase SQL or the Dashboard.
