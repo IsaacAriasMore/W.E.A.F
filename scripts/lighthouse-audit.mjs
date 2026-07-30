@@ -24,6 +24,31 @@ const ERROR_THRESHOLDS = {
   'categories:seo': 0.95,
 };
 
+export function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
+function pick(lhrs, key) {
+  const parts = key.split('.');
+  return lhrs.map(lhr => {
+    let val = lhr;
+    for (const part of parts) {
+      if (val == null) return 0;
+      val = val[part];
+    }
+    return val ?? 0;
+  });
+}
+
+const isMain = process.argv[1] === import.meta.filename;
+if (!isMain) {
+  // Exported only for unit tests; skip execution when imported
+} else {
+  await main();
+}
+
+async function main() {
 const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless', '--no-sandbox'] });
 const flags = { port: chrome.port, logLevel: 'error', output: 'json' };
 await mkdir(OUT, { recursive: true });
@@ -68,49 +93,56 @@ for (const route of ROUTES) {
     continue;
   }
 
-  validRuns.sort((a, b) => a.categories.performance.score - b.categories.performance.score);
-  const m = validRuns[1];
-  await writeFile(join(OUT, `${name}-median.json`), JSON.stringify(m));
-  allResults.push({ route, median: m });
+  const medianPerf = median(pick(validRuns, 'categories.performance.score'));
+  const medianA11y = median(pick(validRuns, 'categories.accessibility.score'));
+  const medianBp = median(pick(validRuns, 'categories.best-practices.score'));
+  const medianSeo = median(pick(validRuns, 'categories.seo.score'));
+  const medianLcp = median(pick(validRuns, 'audits.largest-contentful-paint.numericValue'));
+  const medianCls = median(pick(validRuns, 'audits.cumulative-layout-shift.numericValue'));
+  const medianTbt = median(pick(validRuns, 'audits.total-blocking-time.numericValue'));
 
-  const perf = Math.round((m.categories.performance?.score ?? 0) * 100);
-  const a11y = Math.round((m.categories.accessibility?.score ?? 0) * 100);
-  const bp = Math.round((m.categories['best-practices']?.score ?? 0) * 100);
-  const seo = Math.round((m.categories.seo?.score ?? 0) * 100);
-  const lcp = m.audits['largest-contentful-paint']?.numericValue ?? 0;
-  const cls = m.audits['cumulative-layout-shift']?.numericValue ?? 0;
-  const tbt = m.audits['total-blocking-time']?.numericValue ?? 0;
+  const row = {
+    route: route || '/',
+    performance: Math.round(medianPerf * 100),
+    accessibility: Math.round(medianA11y * 100),
+    'best-practices': Math.round(medianBp * 100),
+    seo: Math.round(medianSeo * 100),
+    lcp: Math.round(medianLcp),
+    cls: medianCls,
+    tbt: Math.round(medianTbt),
+  };
+  allResults.push(row);
 
-  console.log(`  → median: Perf=${perf}  A11y=${a11y}  BP=${bp}  SEO=${seo}  ` +
-    `LCP=${Math.round(lcp)}ms  CLS=${cls.toFixed(3)}  TBT=${Math.round(tbt)}ms`);
+  console.log(`  → median: Perf=${row.performance}  A11y=${row.accessibility}  BP=${row['best-practices']}  SEO=${row.seo}  ` +
+    `LCP=${row.lcp}ms  CLS=${row.cls.toFixed(3)}  TBT=${row.tbt}ms`);
 
-  if (perf / 100 < WARN_THRESHOLDS['categories:performance']) {
-    console.warn(`  ⚠ Performance ${perf} < ${WARN_THRESHOLDS['categories:performance'] * 100}`);
+  if (medianPerf < WARN_THRESHOLDS['categories:performance']) {
+    console.warn(`  ⚠ Performance ${row.performance} < ${WARN_THRESHOLDS['categories:performance'] * 100}`);
     warnings++;
   }
-  if (bp / 100 < WARN_THRESHOLDS['categories:best-practices']) {
-    console.warn(`  ⚠ Best Practices ${bp} < ${WARN_THRESHOLDS['categories:best-practices'] * 100}`);
+  if (medianBp < WARN_THRESHOLDS['categories:best-practices']) {
+    console.warn(`  ⚠ Best Practices ${row['best-practices']} < ${WARN_THRESHOLDS['categories:best-practices'] * 100}`);
     warnings++;
   }
-  if (lcp > WARN_THRESHOLDS.lcp) {
-    console.warn(`  ⚠ LCP ${Math.round(lcp)}ms > ${WARN_THRESHOLDS.lcp}ms`);
+  if (medianLcp > WARN_THRESHOLDS.lcp) {
+    console.warn(`  ⚠ LCP ${row.lcp}ms > ${WARN_THRESHOLDS.lcp}ms`);
     warnings++;
   }
-  if (cls > WARN_THRESHOLDS.cls) {
-    console.warn(`  ⚠ CLS ${cls.toFixed(3)} > ${WARN_THRESHOLDS.cls}`);
+  if (medianCls > WARN_THRESHOLDS.cls) {
+    console.warn(`  ⚠ CLS ${row.cls.toFixed(3)} > ${WARN_THRESHOLDS.cls}`);
     warnings++;
   }
-  if (tbt > WARN_THRESHOLDS.tbt) {
-    console.warn(`  ⚠ TBT ${Math.round(tbt)}ms > ${WARN_THRESHOLDS.tbt}ms`);
+  if (medianTbt > WARN_THRESHOLDS.tbt) {
+    console.warn(`  ⚠ TBT ${row.tbt}ms > ${WARN_THRESHOLDS.tbt}ms`);
     warnings++;
   }
 
-  if (a11y / 100 < ERROR_THRESHOLDS['categories:accessibility']) {
-    console.error(`  ✗ Accessibility ${a11y} < ${ERROR_THRESHOLDS['categories:accessibility'] * 100}`);
+  if (medianA11y < ERROR_THRESHOLDS['categories:accessibility']) {
+    console.error(`  ✗ Accessibility ${row.accessibility} < ${ERROR_THRESHOLDS['categories:accessibility'] * 100}`);
     errors++;
   }
-  if (seo / 100 < ERROR_THRESHOLDS['categories:seo']) {
-    console.error(`  ✗ SEO ${seo} < ${ERROR_THRESHOLDS['categories:seo'] * 100}`);
+  if (medianSeo < ERROR_THRESHOLDS['categories:seo']) {
+    console.error(`  ✗ SEO ${row.seo} < ${ERROR_THRESHOLDS['categories:seo'] * 100}`);
     errors++;
   }
 }
@@ -118,16 +150,7 @@ for (const route of ROUTES) {
 await chrome.kill();
 
 const summary = join(OUT, 'summary.json');
-await writeFile(summary, JSON.stringify(allResults.map(r => ({
-  route: r.route || '/',
-  performance: Math.round((r.median.categories.performance?.score ?? 0) * 100),
-  accessibility: Math.round((r.median.categories.accessibility?.score ?? 0) * 100),
-  'best-practices': Math.round((r.median.categories['best-practices']?.score ?? 0) * 100),
-  seo: Math.round((r.median.categories.seo?.score ?? 0) * 100),
-  lcp: Math.round(r.median.audits['largest-contentful-paint']?.numericValue ?? 0),
-  cls: r.median.audits['cumulative-layout-shift']?.numericValue ?? 0,
-  tbt: Math.round(r.median.audits['total-blocking-time']?.numericValue ?? 0),
-})), null, 2));
+await writeFile(summary, JSON.stringify(allResults, null, 2));
 
 if (warnings) console.log(`\n${warnings} warning(s).`);
 if (errors) {
@@ -135,3 +158,4 @@ if (errors) {
   process.exit(1);
 }
 console.log('\nAll thresholds met.');
+}
