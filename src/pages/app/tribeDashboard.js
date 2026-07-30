@@ -10,6 +10,7 @@ import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerS
 import { mountLottieMotion } from '../../components/visuals/LottieMotion.js';
 import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
 import { t } from '../../i18n/index.js';
+import '../../css/app.css';
 
 const roleLabels = { owner: 'Propietario', admin: 'Admin de tribu', member: 'Miembro' };
 const gameLabels = { evolved: 'ASE', ascended: 'ASA', both: 'ASE + ASA' };
@@ -411,4 +412,3 @@ export function bind({ state, authService, navigate }) {
     view.removeEventListener('click', onClick);
   };
 }
-import '../../css/app.css';

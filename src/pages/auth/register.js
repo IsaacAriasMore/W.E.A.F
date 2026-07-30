@@ -5,6 +5,7 @@ import { showToast } from '../../utils/feedback.js';
 import { getLanguage } from '../../i18n/index.js';
 import { authCaptchaSubmitAttributes, bindAuthCaptcha, renderAuthCaptcha } from '../../services/turnstileService.js';
 import { createSubmissionLock } from '../../utils/authCaptcha.js';
+import '../../css/auth.css';
 
 export function render({ state }) {
   const language = getLanguage();
@@ -144,4 +145,3 @@ export function bind({ authService, profileService, store, navigate }) {
     captchaController.destroy();
   };
 }
-import '../../css/auth.css';

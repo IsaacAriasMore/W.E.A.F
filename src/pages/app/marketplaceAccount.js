@@ -3,6 +3,8 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { getLanguage, t } from '../../i18n/index.js';
 import { hasUnsafeMarketplaceText, marketplacePayload, marketplaceTimeLeft } from '../../utils/marketplaceListing.js';
 import { showToast } from '../../utils/feedback.js';
+import '../../css/app.css';
+import '../../css/marketplace.css';
 
 const date = (value) => value ? new Intl.DateTimeFormat(getLanguage(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : t('marketplace.notAvailable');
 const option = (value, label, current) => `<option value="${value}" ${current === value ? 'selected' : ''}>${label}</option>`;
@@ -127,5 +129,3 @@ export function bind({ path, authService, navigate }) {
     else { showToast(t('marketplace.hidden')); navigate('/account/marketplace'); }
   });
 }
-import '../../css/app.css';
-import '../../css/marketplace.css';

@@ -2,6 +2,7 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { setFormStatus, setSubmitting } from './formUtils.js';
 import { destinationFromSearch } from '../../utils/navigation.js';
 import { needsUnverifiedEmailNotice } from '../../config/auth.js';
+import '../../css/auth.css';
 
 const modes = [
   { value: 'evolved', title: 'ARK: Survival Evolved', code: 'ASE', detail: 'Herramientas y datos clásicos.' },
@@ -108,4 +109,3 @@ export function bind({ state, store, profileService, navigate }) {
   form.addEventListener('submit', onSubmit);
   return () => form.removeEventListener('submit', onSubmit);
 }
-import '../../css/auth.css';

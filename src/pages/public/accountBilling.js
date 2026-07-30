@@ -3,6 +3,7 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import { formatBillingMoney } from '../../utils/billingPlans.js';
 import { getLanguage, t } from '../../i18n/index.js';
+import '../../css/servers.css';
 
 const date = (value) => value ? new Date(value).toLocaleDateString(getLanguage() === 'es' ? 'es-CR' : 'en-US') : t('servers.billingPage.notAvailable');
 
@@ -43,4 +44,3 @@ export function bind({ authService }) {
 
   load();
 }
-import '../../css/servers.css';
