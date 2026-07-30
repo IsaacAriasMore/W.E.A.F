@@ -4,6 +4,7 @@ import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerS
 import { hasMeasurementConsent } from '../../services/consentService.js';
 import { isPromotableServer } from '../../utils/serverPromotion.js';
 import { t } from '../../i18n/index.js';
+import '../../css/servers.css';
 
 const options = (label, values) => `<label><span>${label}</span><select data-server-filter><option value="">${t('common.all')}</option>${values.map(([value, text]) => `<option value="${value}">${text}</option>`).join('')}</select></label>`;
 
@@ -109,4 +110,3 @@ export function bind({ authService }) {
     impressionObserver?.disconnect();
   };
 }
-import '../../css/servers.css';

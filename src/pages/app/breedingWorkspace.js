@@ -6,6 +6,8 @@ import { formatDateTime, formatRelativeTime } from '../../utils/dates.js';
 import { showToast } from '../../utils/feedback.js';
 import { mountLottieMotion } from '../../components/visuals/LottieMotion.js';
 import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
+import '../../css/app.css';
+import '../../css/breeds.css';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { resolvePrivateWorkspace, tribePath } from './privateWorkspace.js';
 import { calculateMutationCount } from '../../utils/mutationCalculator.js';
@@ -429,5 +431,3 @@ export function bind({ path, state, authService, navigate }) {
     view.removeEventListener('click', onClick);
   };
 }
-import '../../css/app.css';
-import '../../css/breeds.css';

@@ -5,6 +5,7 @@ import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { bindPasswordRequirements, bindPasswordToggle, renderPasswordRequirements } from '../auth/formUtils.js';
 import { getAuthCopy } from '../../config/auth.js';
 import { getLanguage } from '../../i18n/index.js';
+import '../../css/app.css';
 
 const gameModes = [
   ['evolved', 'ARK: Survival Evolved'],
@@ -169,4 +170,3 @@ export function bind({ state, store, profileService, authService }) {
     passwordPolicy.destroy();
   };
 }
-import '../../css/app.css';

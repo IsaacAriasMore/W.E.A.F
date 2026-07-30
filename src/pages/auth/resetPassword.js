@@ -4,6 +4,7 @@ import {
 } from './formUtils.js';
 import { getAuthCopy } from '../../config/auth.js';
 import { getLanguage } from '../../i18n/index.js';
+import '../../css/auth.css';
 
 export function render({ state }) {
   const language = getLanguage();
@@ -76,4 +77,3 @@ export function bind({ authService }) {
     passwordPolicy.destroy();
   };
 }
-import '../../css/auth.css';

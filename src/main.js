@@ -1,9 +1,16 @@
+/* 1. Tokens & fonts */
 import './css/fonts.css';
+/* 2. Reset & base */
 import './css/base.css';
+/* 3. Global layout */
 import './css/layout.css';
-import './css/public.css';
+/* 4. Shared components */
 import './css/phase8.css';
+/* 5. Public pages */
+import './css/public.css';
+/* 6. Animations */
 import './css/motion.css';
+/* 7. Responsive overrides */
 import './css/responsive.css';
 import { startApp } from './App.js';
 import { initializePwa } from './services/pwaService.js';

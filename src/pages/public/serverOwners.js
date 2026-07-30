@@ -4,6 +4,7 @@ import { t } from '../../i18n/index.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 import { billingCadence, billingPrice, formatBillingMoney } from '../../utils/billingPlans.js';
 import { getLanguage } from '../../i18n/index.js';
+import '../../css/servers.css';
 
 function plansMarkup(plans, enabled) {
   return plans.map((plan) => {
@@ -49,4 +50,3 @@ export function bind({ authService }) {
     // Keep the server-rendered fallback plans visible if Supabase is unavailable.
   });
 }
-import '../../css/servers.css';

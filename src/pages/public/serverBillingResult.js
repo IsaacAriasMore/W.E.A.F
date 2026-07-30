@@ -2,6 +2,7 @@ import { createServerService } from '../../services/serverService.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { getLanguage, t } from '../../i18n/index.js';
 import { mountLottieMotion } from '../../components/visuals/LottieMotion.js';
+import '../../css/servers.css';
 
 export function render({ path }) {
   if (path === '/servers/cancel') {
@@ -49,4 +50,3 @@ export function bind({ path, authService }) {
     cleanupAnimation();
   };
 }
-import '../../css/servers.css';

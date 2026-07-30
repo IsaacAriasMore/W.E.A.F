@@ -13,6 +13,7 @@ import { showToast } from '../../utils/feedback.js';
 import { getLanguage, t } from '../../i18n/index.js';
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 import { billingCadence, billingPrice, formatBillingMoney } from '../../utils/billingPlans.js';
+import '../../css/servers.css';
 
 const value = (item, key, fallback = '') => escapeHtml(String(item?.[key] ?? fallback));
 const planLabel = (plan) => plan ? `${plan.offer_name || plan.name} · ${formatBillingMoney(billingPrice(plan), plan.currency, getLanguage() === 'es' ? 'es-CR' : 'en-US')} ${billingCadence(plan, getLanguage())}` : t('servers.form.planUnavailable');
@@ -203,4 +204,3 @@ export function bind({ authService, navigate }) {
 
   load();
 }
-import '../../css/servers.css';

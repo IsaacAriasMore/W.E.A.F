@@ -7,6 +7,7 @@ import { showToast } from '../../utils/feedback.js';
 import { setFormStatus, setSubmitting } from '../auth/formUtils.js';
 import { resolvePrivateWorkspace, tribePath } from './privateWorkspace.js';
 import { initCardHoverEffects, initScrollAnimations } from '../../utils/motion.js';
+import '../../css/app.css';
 
 function loadingView() {
   return '<div class="app-view-loading"><span class="skeleton skeleton-copy"></span><span class="skeleton skeleton-title"></span><div><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div></div>';
@@ -226,4 +227,3 @@ export function bind({ state, authService, navigate }) {
     view.removeEventListener('click', onClick);
   };
 }
-import '../../css/app.css';

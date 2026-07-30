@@ -17,6 +17,7 @@ import {
   completeMarketplaceLoad,
   createMarketplaceState,
 } from '../../utils/adminMarketplaceState.js';
+import '../../css/admin.css';
 
 const sectionNames = {
   overview: ['Pulso de plataforma', 'Señales operativas para decidir qué necesita atención.'],
@@ -1323,4 +1324,3 @@ export function bind({ state, authService, navigate }) {
 
   load();
 }
-import '../../css/admin.css';

@@ -3,6 +3,7 @@ import { destinationFromSearch, pathWithNext } from '../../utils/navigation.js';
 import { getAuthCopy } from '../../config/auth.js';
 import { getLanguage } from '../../i18n/index.js';
 import { authCaptchaSubmitAttributes, bindAuthCaptcha, renderAuthCaptcha } from '../../services/turnstileService.js';
+import '../../css/auth.css';
 import { createSubmissionLock } from '../../utils/authCaptcha.js';
 
 export function render({ state }) {
@@ -162,4 +163,3 @@ export function bind({ authService, navigate }) {
     recoveryCaptcha?.destroy();
   };
 }
-import '../../css/auth.css';

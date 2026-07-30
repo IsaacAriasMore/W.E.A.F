@@ -4,6 +4,7 @@ import { getLanguage, t } from '../../i18n/index.js';
 import { marketplaceTimeLeft } from '../../utils/marketplaceListing.js';
 import { applyMarketplaceListingMetadata } from '../../seo/metadata.js';
 import { showToast } from '../../utils/feedback.js';
+import '../../css/marketplace.css';
 
 const platformOptions = ['steam', 'epic', 'xbox', 'playstation', 'windows', 'crossplay', 'other'];
 
@@ -158,4 +159,3 @@ export function bind({ path, authService, navigate }) {
   load();
   return () => clearTimeout(debounce);
 }
-import '../../css/marketplace.css';
