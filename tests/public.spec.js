@@ -103,6 +103,34 @@ test('mobile navigation opens without horizontal overflow', async ({ page }) => 
   await page.screenshot({ path: 'artifacts/browser-qa/home-mobile.png', fullPage: true });
 });
 
+test('no public anchor lacks a valid href', async ({ page }) => {
+  const routes = ['/', '/inis', '/maps-bosses', '/creatures', '/servers', '/marketplace', '/ark-survival-ascended'];
+  for (const route of routes) {
+    await page.goto(route);
+    const invalid = await page.evaluate(() =>
+      [...document.querySelectorAll('a:not([hidden])')]
+        .filter(a => !a.hasAttribute('href') || a.getAttribute('href') === '' || a.getAttribute('href') === '#')
+        .map(a => a.outerHTML)
+    );
+    expect(invalid, `${route} has ${invalid.length} anchor(s) without valid href`).toEqual([]);
+  }
+});
+
+test('INI dialog source link is created only when source_url exists', async ({ page }) => {
+  await page.goto('/inis');
+  await page.getByRole('button', { name: 'ARK: Survival Ascended' }).click();
+  await page.locator('[data-advanced-category]').selectOption('fps');
+  const view = page.getByRole('button', { name: 'Ver INI' });
+  await view.click();
+  await expect(page.locator('[data-ini-dialog]')).toHaveJSProperty('open', true);
+  const sourceLink = page.locator('[data-dialog-source-container] a');
+  await expect(sourceLink).toBeVisible();
+  await expect(sourceLink).toHaveAttribute('href', /^https?:\/\//);
+  await expect(sourceLink).toHaveAttribute('target', '_blank');
+  await expect(sourceLink).toHaveAttribute('rel', 'noreferrer');
+  await expect(page.locator('[data-dialog-source-container] a[href="#"]')).toHaveCount(0);
+});
+
 test('ARK Survival Ascended hub loads and links to every public tool', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));

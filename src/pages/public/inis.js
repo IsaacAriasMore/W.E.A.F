@@ -72,7 +72,7 @@ export function render() {
       <dl class="ini-dialog-meta"><div><dt>${t('inis.fileTarget')}</dt><dd data-dialog-file></dd></div><div><dt>${t('inis.statusLabel')}</dt><dd data-dialog-status></dd></div></dl>
       <pre><code data-dialog-content></code></pre>
       <div class="ini-risk-grid"><section><h3>${t('inis.risk')}</h3><p data-dialog-risk></p></section><section><h3>${t('inis.rollback')}</h3><p data-dialog-rollback></p></section></div>
-      <a data-dialog-source hidden target="_blank" rel="noreferrer"></a>
+      <div data-dialog-source-container></div>
       <div class="dialog-actions"><button class="button button-primary" type="button" data-dialog-copy>${t('inis.copyDialog')}</button><button class="button button-secondary" type="button" data-dialog-download>${t('inis.download')}</button></div>
     </dialog>`;
 }
@@ -115,9 +115,16 @@ export function bind({ authService }) {
     dialog.querySelector('[data-dialog-content]').textContent = preset.content;
     dialog.querySelector('[data-dialog-risk]').textContent = preset.risk || copy(preset, 'risk') || t('inis.riskFallback');
     dialog.querySelector('[data-dialog-rollback]').textContent = preset.rollback || copy(preset, 'rollback') || t('inis.rollbackFallback');
-    const source = dialog.querySelector('[data-dialog-source]');
-    source.textContent = preset.source_name ? `${t('bosses.source')}: ${preset.source_name}` : '';
-    source.href = preset.source_url || '#'; source.hidden = !preset.source_url;
+    const container = dialog.querySelector('[data-dialog-source-container]');
+    container.innerHTML = '';
+    if (preset.source_url) {
+      const link = document.createElement('a');
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+      link.href = preset.source_url;
+      link.textContent = preset.source_name ? `${t('bosses.source')}: ${preset.source_name}` : '';
+      container.append(link);
+    }
     dialog.showModal();
   }
 

@@ -94,14 +94,14 @@ test('auth layouts remain contained on mobile', async ({ page }) => {
 });
 
 test('auth forms support English during the staged CAPTCHA rollout', async ({ page }) => {
-  await page.goto('/login?lang=en');
+  await page.goto('/login?lang=en', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: 'Enter the forge' })).toBeVisible();
   await expect(page.getByLabel('Email address')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeEnabled();
   await page.getByText('Forgot your password?').click();
   await expect(page.getByLabel('Recovery email')).toBeVisible();
 
-  await page.goto('/register?lang=en');
+  await page.goto('/register?lang=en', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign up' })).toBeEnabled();
 });

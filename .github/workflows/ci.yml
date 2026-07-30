@@ -37,5 +37,11 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      - name: Audit dependencies
+        run: npm audit --audit-level=low
+
       - name: Production build
         run: npm run build
+
+      - name: Check performance budget
+        run: npm run check:budget
