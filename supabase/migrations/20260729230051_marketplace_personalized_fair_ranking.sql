@@ -106,7 +106,7 @@ create table private.marketplace_ranking_secrets (
 );
 
 insert into private.marketplace_ranking_secrets(key, secret)
-values ('catalog_cursor', gen_random_bytes(32));
+values ('catalog_cursor', extensions.gen_random_bytes(32));
 
 revoke all on table private.marketplace_ranking_secrets from public, anon, authenticated;
 
