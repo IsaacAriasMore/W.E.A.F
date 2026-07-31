@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { corsHeaders } from "npm:@supabase/supabase-js@2.110.8/cors"
 import { withSupabase } from "@supabase/server"
-import { approvalUrl, PayPalError, paypalRequest } from "../_shared/paypal.ts"
+import { PayPalError, paypalRequest } from "../_shared/paypal.ts"
+import { resolveMarketplacePayPalOrder, type PayPalCreatedOrder } from "../_shared/paypalOrderFlow.ts"
 
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: corsHeaders })
 const isUuid = (value: unknown) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""))
@@ -40,15 +41,10 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
     console.error("marketplace_featured_configuration_invalid")
     return json({ error: "marketplace_payments_disabled" }, 503)
   }
-  try {
-    if (prepared.paypal_order_id) {
-      const existing = await paypalRequest<{ status?: string; links?: Array<{ rel?: string; href?: string }> }>(`/v2/checkout/orders/${encodeURIComponent(prepared.paypal_order_id)}`)
-      const url = approvalUrl(existing.links)
-      if (url) return json({ url, reused: true })
-      return json({ error: existing.status === "COMPLETED" ? "marketplace_order_completed" : "marketplace_order_not_approvable" }, 409)
-    }
-    const created = await paypalRequest<{ id?: string; links?: Array<{ rel?: string; href?: string }> }>("/v2/checkout/orders", {
-      method: "POST", requestId: String(prepared.idempotency_key), prefer: "return=representation",
+  const outcome = await resolveMarketplacePayPalOrder({
+    prepared,
+    createOrder: async (requestId) => paypalRequest<PayPalCreatedOrder>("/v2/checkout/orders", {
+      method: "POST", requestId, prefer: "return=representation",
       body: {
         intent: "CAPTURE",
         purchase_units: [{
@@ -62,16 +58,24 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
           cancel_url: `${publicSite}/marketplace/payment/cancel?listing_id=${encodeURIComponent(String(body.listing_id))}`,
         } } },
       },
-    })
-    const url = approvalUrl(created.links)
-    if (!created.id || !url) throw new PayPalError("paypal_approval_url_missing", 502)
-    const { error: attachError } = await ctx.supabaseAdmin.rpc("attach_marketplace_paypal_order", { p_payment_id: prepared.payment_id, p_user_id: userId, p_paypal_order_id: created.id })
-    if (attachError) throw new PayPalError("marketplace_order_reconciliation_failed", 500)
-    return json({ url })
-  } catch (error) {
-    console.error("create_marketplace_paypal_order_failed", error instanceof PayPalError ? error.code : "unknown")
-    return json({ error: error instanceof PayPalError ? error.code : "marketplace_order_failed" }, error instanceof PayPalError ? error.status : 502)
+    }),
+    getOrder: async (paypalOrderId) => paypalRequest<PayPalCreatedOrder>(`/v2/checkout/orders/${encodeURIComponent(paypalOrderId)}`),
+    attachOrder: async (paymentId, paypalOrderId) => {
+      const { error: attachError } = await ctx.supabaseAdmin.rpc("attach_marketplace_paypal_order", { p_payment_id: paymentId, p_user_id: userId, p_paypal_order_id: paypalOrderId })
+      if (attachError) throw new PayPalError("marketplace_order_reconciliation_failed", 500)
+    },
+    closeCreation: async (paymentId, reason) => {
+      const { data: closed, error } = await ctx.supabaseAdmin.rpc("fail_marketplace_paypal_order_creation", { p_payment_id: paymentId, p_user_id: userId, p_reason: reason })
+      return !error && closed === true
+    },
+  })
+  if (outcome.ok) return json({ url: outcome.url, reused: outcome.reused })
+  if (outcome.sanitized !== undefined) {
+    console.error("create_marketplace_paypal_order_failed", outcome.code, outcome.status, outcome.sanitized)
+  } else {
+    console.error("create_marketplace_paypal_order_failed", outcome.code, outcome.status)
   }
+  return json({ error: outcome.code }, outcome.status)
 })
 
 export default { fetch: (req: Request) => req.method === "OPTIONS" ? new Response("ok", { headers: corsHeaders }) : handler(req) }

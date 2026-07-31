@@ -156,4 +156,9 @@ export async function verifyPayPalWebhook(req: Request, event: unknown) {
   return result.verification_status === "SUCCESS"
 }
 
-export const approvalUrl = (links: Array<{ rel?: string; href?: string }> = []) => links.find((link) => link.rel === "approve")?.href || ""
+export const approvalUrl = (
+  links: Array<{ rel?: string; href?: string }> = [],
+) =>
+  links.find((link) => link.rel === "payer-action" && link.href)?.href ||
+  links.find((link) => link.rel === "approve" && link.href)?.href ||
+  ""
