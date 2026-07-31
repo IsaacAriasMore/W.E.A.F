@@ -17,7 +17,7 @@ Las filas históricas ASE/Both se conservan sin modificación para auditoría y 
 
 ## Destacado
 
-Destacado es una exposición adicional, no una garantía de venta. Su precio fijo es USD 3 por siete días y solo está preparado para PayPal Sandbox. `published_at` se conserva; el webhook firmado establece `featured_started_at` y `featured_expires_at`, y extiende `expires_at` solo si hace falta.
+Destacado es una exposición adicional, no una garantía de venta. Su precio fijo es USD 3 por siete días y solo está preparado para PayPal Sandbox. `published_at` se conserva; el webhook firmado o la reconciliación por API (`confirm_marketplace_paypal_capture_from_api`) establecen `featured_started_at` y `featured_expires_at`, y extienden `expires_at` solo si hace falta. La reconciliación por API se usa cuando una captura ya está `COMPLETED` en PayPal y su webhook no llegó (ver [marketplace-paypal-capture-reconciliation.md](./marketplace-paypal-capture-reconciliation.md)); el webhook tardío duplicado no vuelve a activar el beneficio.
 
 Refund, reversal, denegación, fallo o vencimiento retiran `is_featured` sin eliminar el anuncio, el pago ni los eventos. La captura de retorno del navegador nunca concede el beneficio.
 

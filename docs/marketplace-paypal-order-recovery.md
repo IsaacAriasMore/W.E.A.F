@@ -116,7 +116,8 @@ segundos sin deploy. Nunca usar `migration repair` como rollback de esquema.
 - Unitarias: `tests/marketplace-paypal-recovery.test.js` (`approvalUrl` con 10
   casos de URL estricta y flujo de creación con mocks, incluyendo
   `closeCreation` true/false/throw y `marketplace_order_reconciliation_failed`;
-  216 totales con la suite; sin llamadas reales a PayPal).
+  216 de la suite en el momento del merge; hoy 232 con la suite de reconciliación
+  de captura — sin llamadas reales a PayPal).
 - `supabase db reset`, `supabase db lint --local --level warning` (solo el warning
   preexistente de Stripe), `npm run check`, `npm run test:unit`, `npm run test:e2e:ci`,
   `npm run build`, `npm run check:budget`, `npm audit`.
