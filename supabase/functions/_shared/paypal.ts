@@ -156,9 +156,28 @@ export async function verifyPayPalWebhook(req: Request, event: unknown) {
   return result.verification_status === "SUCCESS"
 }
 
+const APPROVAL_HOSTS = new Set([
+  "www.sandbox.paypal.com",
+  "sandbox.paypal.com",
+])
+
+export const isSafePayPalApprovalUrl = (value: string): boolean => {
+  if (typeof value !== "string" || value.length > 2048) return false
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    return false
+  }
+  return url.protocol === "https:"
+    && APPROVAL_HOSTS.has(url.hostname)
+    && url.username === ""
+    && url.password === ""
+}
+
 export const approvalUrl = (
   links: Array<{ rel?: string; href?: string }> = [],
 ) =>
-  links.find((link) => link.rel === "payer-action" && link.href)?.href ||
-  links.find((link) => link.rel === "approve" && link.href)?.href ||
+  links.find((link) => link.rel === "payer-action" && isSafePayPalApprovalUrl(link.href ?? ""))?.href ||
+  links.find((link) => link.rel === "approve" && isSafePayPalApprovalUrl(link.href ?? ""))?.href ||
   ""

@@ -67,21 +67,31 @@ export async function resolveMarketplacePayPalOrder(
     }
     return { ok: true, url, reused: false }
   } catch (error) {
-    if (error instanceof PayPalError) {
-      if (remotePayPalOrderId === null && !deps.prepared.paypal_order_id) {
-        try {
-          await deps.closeCreation(String(deps.prepared.payment_id), error.code)
-        } catch {
-          // best effort: the original failure is what reaches the client
+    const original = error instanceof PayPalError ? error : null
+    if (original && remotePayPalOrderId === null && !deps.prepared.paypal_order_id) {
+      let closed = false
+      try {
+        closed = await deps.closeCreation(String(deps.prepared.payment_id), original.code)
+      } catch {
+        closed = false
+      }
+      if (!closed) {
+        return {
+          ok: false,
+          code: "marketplace_order_reconciliation_failed",
+          status: 500,
+          sanitized: { original_error_code: original.code, recovery_failed: true, status: 500 },
         }
       }
-      const sanitized = error.code === "paypal_approval_url_missing" && error.details
-        ? error.details
+    }
+    if (original) {
+      const sanitized = original.code === "paypal_approval_url_missing" && original.details
+        ? original.details
         : undefined
       return {
         ok: false,
-        code: error.code,
-        status: error.status,
+        code: original.code,
+        status: original.status,
         ...(sanitized !== undefined ? { sanitized } : {}),
       }
     }

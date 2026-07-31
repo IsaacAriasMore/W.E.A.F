@@ -66,7 +66,8 @@ const handler = withSupabase({ auth: "user" }, async (req, ctx) => {
     },
     closeCreation: async (paymentId, reason) => {
       const { data: closed, error } = await ctx.supabaseAdmin.rpc("fail_marketplace_paypal_order_creation", { p_payment_id: paymentId, p_user_id: userId, p_reason: reason })
-      return !error && closed === true
+      if (error) throw new PayPalError("marketplace_order_reconciliation_failed", 500)
+      return closed === true
     },
   })
   if (outcome.ok) return json({ url: outcome.url, reused: outcome.reused })

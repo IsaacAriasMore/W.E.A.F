@@ -41,6 +41,61 @@ test('approvalUrl returns empty string without an allowed link', () => {
   assert.equal(approvalUrl([{ rel: 'self' }]), '');
 });
 
+test('approvalUrl accepts https://www.sandbox.paypal.com', () => {
+  const href = 'https://www.sandbox.paypal.com/checkoutnow?token=abc';
+  assert.equal(approvalUrl([{ rel: 'payer-action', href }]), href);
+});
+
+test('approvalUrl accepts https://sandbox.paypal.com', () => {
+  const href = 'https://sandbox.paypal.com/checkoutnow?token=abc';
+  assert.equal(approvalUrl([{ rel: 'payer-action', href }]), href);
+});
+
+test('approvalUrl rejects http://www.sandbox.paypal.com', () => {
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'http://www.sandbox.paypal.com/checkoutnow' }]), '');
+});
+
+test('approvalUrl rejects non-sandbox PayPal domains', () => {
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://www.paypal.com/checkoutnow' }]), '');
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://paypal.com/checkoutnow' }]), '');
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://api-m.sandbox.paypal.com/v2/checkout/orders/x' }]), '');
+});
+
+test('approvalUrl rejects external domains', () => {
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://evil.example/checkoutnow' }]), '');
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://sandbox-paypal.com/checkoutnow' }]), '');
+});
+
+test('approvalUrl rejects deceptive subdomains', () => {
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://www.sandbox.paypal.com.evil.example/checkoutnow' }]), '');
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://sandbox.paypal.com.attacker.test/checkoutnow' }]), '');
+});
+
+test('approvalUrl rejects invalid URLs', () => {
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'not a url' }]), '');
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://' }]), '');
+});
+
+test('approvalUrl rejects URLs with embedded credentials', () => {
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://user:pass@www.sandbox.paypal.com/checkoutnow' }]), '');
+  assert.equal(approvalUrl([{ rel: 'payer-action', href: 'https://attacker@www.sandbox.paypal.com/checkoutnow' }]), '');
+});
+
+test('approvalUrl uses approve when payer-action is invalid', () => {
+  const outcome = approvalUrl([
+    { rel: 'payer-action', href: 'https://evil.example/checkoutnow' },
+    approve,
+  ]);
+  assert.equal(outcome, approve.href);
+});
+
+test('approvalUrl returns empty string when both links are invalid', () => {
+  assert.equal(approvalUrl([
+    { rel: 'payer-action', href: 'http://www.sandbox.paypal.com/checkoutnow' },
+    { rel: 'approve', href: 'https://evil.example/approve' },
+  ]), '');
+});
+
 const makeDeps = (overrides = {}) => ({
   prepared: {
     payment_id: 'p1',
@@ -163,6 +218,93 @@ test('sanitized approval-missing details expose no ids, hrefs or secrets', async
   assert.ok(sanitized.link_rels.every((rel) => typeof rel === 'string' && !rel.includes('http')));
 });
 
+test('closeCreation true keeps the original PayPal error', async () => {
+  const outcome = await resolveMarketplacePayPalOrder(
+    makeDeps({
+      createOrder: async () => { throw new PayPalError('paypal_oauth_failed', 502); },
+      closeCreation: async () => true,
+    }),
+  );
+  assert.ok(!outcome.ok);
+  assert.equal(outcome.code, 'paypal_oauth_failed');
+  assert.equal(outcome.status, 502);
+  assert.equal(outcome.sanitized, undefined);
+});
+
+test('closeCreation false returns marketplace_order_reconciliation_failed', async () => {
+  const outcome = await resolveMarketplacePayPalOrder(
+    makeDeps({
+      createOrder: async () => { throw new PayPalError('paypal_network_error', 502); },
+      closeCreation: async () => false,
+    }),
+  );
+  assert.ok(!outcome.ok);
+  assert.equal(outcome.code, 'marketplace_order_reconciliation_failed');
+  assert.equal(outcome.status, 500);
+});
+
+test('closeCreation throwing returns marketplace_order_reconciliation_failed', async () => {
+  const outcome = await resolveMarketplacePayPalOrder(
+    makeDeps({
+      createOrder: async () => { throw new PayPalError('paypal_approval_url_missing', 502); },
+      closeCreation: async () => { throw new Error('rpc unavailable'); },
+    }),
+  );
+  assert.ok(!outcome.ok);
+  assert.equal(outcome.code, 'marketplace_order_reconciliation_failed');
+  assert.equal(outcome.status, 500);
+});
+
+test('sanitized recovery failure keeps original_error_code', async () => {
+  const outcome = await resolveMarketplacePayPalOrder(
+    makeDeps({
+      createOrder: async () => { throw new PayPalError('paypal_network_error', 502); },
+      closeCreation: async () => false,
+    }),
+  );
+  assert.deepEqual(outcome.sanitized, { original_error_code: 'paypal_network_error', recovery_failed: true, status: 500 });
+});
+
+test('sanitized recovery failure exposes no ids, urls or secrets', async () => {
+  const outcome = await resolveMarketplacePayPalOrder(
+    makeDeps({
+      createOrder: async () => { throw new PayPalError('paypal_approval_url_missing', 502); },
+      closeCreation: async () => false,
+    }),
+  );
+  const sanitized = outcome.sanitized;
+  assert.deepEqual(Object.keys(sanitized).sort(), ['original_error_code', 'recovery_failed', 'status']);
+  for (const key of ['payment_id', 'user_id', 'idempotency_key', 'url', 'href', 'id', 'reason']) {
+    assert.ok(!(key in sanitized), `sanitized must not expose ${key}`);
+  }
+  const dumped = JSON.stringify(sanitized);
+  assert.ok(!dumped.includes('p1'));
+  assert.ok(!dumped.includes('ik1'));
+  assert.ok(!dumped.includes('http'));
+});
+
+test('when a remote order id exists, closeCreation is never called', async () => {
+  const closeCalls = [];
+  const okOutcome = await resolveMarketplacePayPalOrder(
+    makeDeps({
+      createOrder: async () => ({ id: 'ORDER123', links: [payerAction] }),
+      closeCreation: async (paymentId, reason) => { closeCalls.push([paymentId, reason]); return true; },
+    }),
+  );
+  assert.ok(okOutcome.ok);
+  assert.equal(closeCalls.length, 0);
+  const failOutcome = await resolveMarketplacePayPalOrder(
+    makeDeps({
+      createOrder: async () => ({ id: 'ORDER123', links: [payerAction] }),
+      attachOrder: async () => { throw new PayPalError('marketplace_order_reconciliation_failed', 500); },
+      closeCreation: async (paymentId, reason) => { closeCalls.push([paymentId, reason]); return true; },
+    }),
+  );
+  assert.ok(!failOutcome.ok);
+  assert.equal(failOutcome.code, 'marketplace_order_reconciliation_failed');
+  assert.equal(closeCalls.length, 0);
+});
+
 test('prepared payment keeps the 300/USD server price', () => {
   assert.match(edge, /Number\(prepared\.amount_minor\) !== 300/);
   assert.match(edge, /prepared\.currency !== "USD"/);
@@ -187,9 +329,16 @@ test('edge function wires the recovery RPC, the flow and sanitized logging', () 
   assert.match(edge, /create_marketplace_paypal_order_failed/);
   assert.match(paypalShared, /payer-action/);
   assert.match(paypalShared, /approve/);
+  assert.match(paypalShared, /isSafePayPalApprovalUrl/);
+  assert.match(paypalShared, /APPROVAL_HOSTS/);
   assert.match(flow, /remotePayPalOrderId/);
   assert.match(flow, /attachOrder/);
   assert.match(flow, /closeCreation/);
+  assert.match(flow, /recovery_failed/);
+  assert.match(flow, /original_error_code/);
+  assert.match(flow, /marketplace_order_reconciliation_failed/);
+  assert.match(edge, /if \(error\) throw new PayPalError/);
+  assert.match(edge, /return closed === true/);
   assert.match(migration, /create or replace function public\.fail_marketplace_paypal_order_creation\(\s*p_payment_id uuid,\s*p_user_id uuid,\s*p_reason text\s*\)/);
   assert.match(migration, /set search_path = ''/);
   assert.match(migration, /revoke all on function public\.fail_marketplace_paypal_order_creation\(uuid, uuid, text\)\s+from public, anon, authenticated/);
