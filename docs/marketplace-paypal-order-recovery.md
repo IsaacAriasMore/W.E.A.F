@@ -29,7 +29,12 @@ porque la función no logueaba el cuerpo; el fix estructural no depende de ello.
 2. Cae a `rel = 'approve'` como respaldo.
 3. Exige que el enlace tenga `href` (ignora `self`, `capture`, `authorize` y
    enlaces sin `href`).
-4. Devuelve `''` si no hay ningún enlace permitido.
+4. Valida la URL con `isSafePayPalApprovalUrl` antes de usarla: `new URL()` debe
+   parsear, protocolo `https:`, hostname exactamente `www.sandbox.paypal.com` o
+   `sandbox.paypal.com` (whitelist `APPROVAL_HOSTS`, sin `endsWith`), sin
+   credenciales embebidas y longitud ≤ 2048.
+5. Si `payer-action` existe pero no es seguro, cae a `approve` (si es seguro).
+6. Devuelve `''` si no hay ningún enlace seguro.
 
 La validación Sandbox existente (`PAYPAL_MODE !== "sandbox"`, base
 `https://api-m.sandbox.paypal.com`) permanece intacta.
@@ -57,7 +62,11 @@ Nuevo flujo `create → attach → URL` (orquestado en
 
 - **Sin `order_id`** (fallo OAuth/red/API o respuesta sin `id`): el `catch`
   llama `fail_marketplace_paypal_order_creation` → la preparación local pasa a
-  `failed` y el anuncio puede reintentarse con otra idempotency key.
+  `failed` y el anuncio puede reintentarse con otra idempotency key. Si el cierre
+  falla (RPC con error o devuelve `false`), se devuelve
+  `marketplace_order_reconciliation_failed` (HTTP 500) con log sanitizado
+  `{ original_error_code, recovery_failed: true, status: 500 }`; el error nunca
+  se oculta al cliente.
 - **Con `order_id` y fallo de `attach`** (incertidumbre de reconciliación): no se
   marca `failed`; se conserva el registro y se devuelve
   `marketplace_order_reconciliation_failed`.
@@ -104,8 +113,10 @@ segundos sin deploy. Nunca usar `migration repair` como rollback de esquema.
   cierre de `created` sin orden, protecciones approved/captured/order/capture/paid_at,
   ownership, grants anon/authenticated/service_role, auditoría sin secretos,
   idempotencia, reintento tras `failed`).
-- Unitarias: `tests/marketplace-paypal-recovery.test.js` (`approvalUrl` y flujo de
-  creación con mocks; sin llamadas reales a PayPal).
+- Unitarias: `tests/marketplace-paypal-recovery.test.js` (`approvalUrl` con 10
+  casos de URL estricta y flujo de creación con mocks, incluyendo
+  `closeCreation` true/false/throw y `marketplace_order_reconciliation_failed`;
+  216 totales con la suite; sin llamadas reales a PayPal).
 - `supabase db reset`, `supabase db lint --local --level warning` (solo el warning
   preexistente de Stripe), `npm run check`, `npm run test:unit`, `npm run test:e2e:ci`,
   `npm run build`, `npm run check:budget`, `npm audit`.
