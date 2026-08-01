@@ -62,10 +62,27 @@ leyéndola de vuelta desde PayPal (orquestado en `_shared/paypalCaptureFlow.ts`)
 - Webhook `PAYMENT.CAPTURE.COMPLETED` tardío con **el mismo** capture id sobre un
   pago ya confirmado vía API: se registra el billing event como procesado, se
   devuelve `true` y **no se re-activa** el beneficio ni se duplica auditoría.
-- Capture id distinto sobre pago `captured`:
-  `processing_error = 'marketplace_capture_reconciliation_failed'` en
-  `private.billing_events` y la excepción se propaga.
+- Capture id distinto sobre pago `captured`: la función **no concede beneficio**,
+  lanza `marketplace_capture_reconciliation_failed` y la excepción se propaga. El
+  handler de excepción anterior marcaba `processing_error` con un `UPDATE` dentro
+  de la misma transacción que abortaba con `raise`, por lo que **nunca persistía**
+  (el test 19 pasaba falsamente porque `processing_error <> 'x'` sobre una fila
+  inexistente devuelve `NULL`). Ese `UPDATE` se eliminó.
 - `refunded`/`reversed` siguen retirando el destacado igual que antes.
+
+### RPC `public.record_marketplace_paypal_event_failure(...)`
+
+- `SECURITY DEFINER`, `search_path = ''`, revocada de `public`/`anon`/`authenticated`,
+  concedida solo a `service_role`.
+- Persiste el fallo en **su propia transacción** desde `paypal-webhook` antes de
+  devolver HTTP 500: inserta/actualiza `private.billing_events` con el payload
+  real, `processed_at` y `processing_error`, idempotente por `event_id`
+  (`on conflict (provider, environment, event_id) do update`).
+- Valida `event_id`, `event_type`, payload y `processing_error`; no toca pagos ni
+  listados, no fabrica eventos y no expone secretos.
+- `paypal-webhook` resuelve el código de error concreto a partir del mensaje de la
+  RPC (`marketplace_capture_reconciliation_failed`, etc.) y registra
+  `marketplace_processing_failed` como código genérico si no lo reconoce.
 
 ## Procedimiento para el pago remoto actual (post-merge/deploy)
 
@@ -88,20 +105,23 @@ permanente, fabricar event IDs o `migration repair`.
 
 Migración compensatoria que restaure la versión anterior de
 `prepare_marketplace_paypal_capture`, `process_marketplace_paypal_event` y elimine
-`confirm_marketplace_paypal_capture_from_api` (con grants revertidos), manteniendo
+`confirm_marketplace_paypal_capture_from_api` y
+`record_marketplace_paypal_event_failure` (con grants revertidos), manteniendo
 datos. Kill switches (`paypal_payments = false`, `payments_enabled = false`)
 detienen el flujo en segundos sin deploy.
 
 ## Validación
 
-- SQL: `supabase/tests/marketplace-capture-api-reconciliation.sql` (19 casos:
+- SQL: `supabase/tests/marketplace-capture-api-reconciliation.sql` (20 casos:
   preparación ampliada, confirmación feliz con activación del beneficio, replay
   idempotente, orden/capture/ownership/estado/monto/currency/ASA/listing/featured
-  fallidos, grants, webhook tardío duplicado y mismatch).
-- Unitarias: `tests/marketplace-paypal-capture-reconciliation.test.js` (16 tests:
-  flujos A/B/C con mocks; GET cuando hay capture id, POST una sola vez, confirm
-  inmediato, PENDING, errores de monto/order, errores de RPC y propagación de
-  errores; 232 totales con la suite; sin llamadas reales a PayPal).
+  fallidos, grants, webhook tardío duplicado, mismatch con persistencia real del
+  fallo vía `record_marketplace_paypal_event_failure` y test negativo sin fila).
+- Unitarias: `tests/marketplace-paypal-capture-reconciliation.test.js` (flujos
+  A/B/C con mocks; GET cuando hay capture id, POST una sola vez, confirm
+  inmediato, PENDING, errores de monto/order, errores de RPC, guardas de
+  `confirmed === true`, fallback de `create_time`/`update_time`, y wiring del
+  webhook a la RPC de persistencia; sin llamadas reales a PayPal).
 - `supabase db reset`, `supabase db lint --local --level warning` (solo el warning
   preexistente de Stripe), `npm run check`, `npm run test:unit`,
   `npm run test:e2e:ci`, `npm run build`, `npm run check:budget`,

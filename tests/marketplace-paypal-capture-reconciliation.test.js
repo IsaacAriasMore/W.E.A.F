@@ -7,7 +7,9 @@ import { resolveMarketplacePayPalCapture } from '../supabase/functions/_shared/p
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const edge = read('../supabase/functions/capture-marketplace-paypal-order/index.ts');
 const flow = read('../supabase/functions/_shared/paypalCaptureFlow.ts');
+const webhook = read('../supabase/functions/paypal-webhook/index.ts');
 const migration = read('../supabase/migrations/20260731233000_marketplace_capture_api_reconciliation.sql');
+const failureMigration = read('../supabase/migrations/20260731235900_marketplace_capture_reconciliation_failure_audit.sql');
 
 const completedCapture = {
   id: 'CAPTURE1', status: 'COMPLETED',
@@ -167,6 +169,58 @@ test('a confirm RPC that reports reused=true returns reused to the caller', asyn
   assert.deepEqual(outcome, { ok: true, status: 'confirmed', listing_id: 'l1', reused: true });
 });
 
+test('a confirm RPC with data=null does not confirm', async () => {
+  const outcome = await resolveMarketplacePayPalCapture(
+    makeDeps({ confirm: async () => ({ data: null }) }),
+  );
+  assert.deepEqual(outcome, { ok: false, code: 'marketplace_capture_reconciliation_failed', status: 500 });
+});
+
+test('a confirm RPC with data=undefined does not confirm', async () => {
+  const outcome = await resolveMarketplacePayPalCapture(
+    makeDeps({ confirm: async () => ({ data: undefined }) }),
+  );
+  assert.deepEqual(outcome, { ok: false, code: 'marketplace_capture_reconciliation_failed', status: 500 });
+});
+
+test('a confirm RPC with confirmed=false does not confirm', async () => {
+  const outcome = await resolveMarketplacePayPalCapture(
+    makeDeps({ confirm: async () => ({ data: { confirmed: false, reused: false } }) }),
+  );
+  assert.deepEqual(outcome, { ok: false, code: 'marketplace_capture_reconciliation_failed', status: 500 });
+});
+
+test('a confirm RPC with confirmed=true reused=false confirms', async () => {
+  const outcome = await resolveMarketplacePayPalCapture(
+    makeDeps({ confirm: async () => ({ data: { confirmed: true, reused: false } }) }),
+  );
+  assert.deepEqual(outcome, { ok: true, status: 'confirmed', listing_id: 'l1', reused: false });
+});
+
+test('captured_at falls back to update_time when create_time is absent', async () => {
+  const confirmCalls = [];
+  await resolveMarketplacePayPalCapture(
+    makeDeps({
+      prepared: { ...makeDeps().prepared, paypal_capture_id: 'CAPTURE1' },
+      getCapture: async () => ({ ...completedCapture, create_time: undefined, update_time: '2026-07-31T12:00:05Z' }),
+      confirm: async (args) => { confirmCalls.push(args); return { data: { confirmed: true, reused: false } }; },
+    }),
+  );
+  assert.equal(confirmCalls[0].p_captured_at, '2026-07-31T12:00:05Z');
+});
+
+test('captured_at uses create_time when both timestamps exist', async () => {
+  const confirmCalls = [];
+  await resolveMarketplacePayPalCapture(
+    makeDeps({
+      prepared: { ...makeDeps().prepared, paypal_capture_id: 'CAPTURE1' },
+      getCapture: async () => ({ ...completedCapture, update_time: '2026-07-31T12:00:05Z' }),
+      confirm: async (args) => { confirmCalls.push(args); return { data: { confirmed: true, reused: false } }; },
+    }),
+  );
+  assert.equal(confirmCalls[0].p_captured_at, '2026-07-31T12:00:00Z');
+});
+
 test('a recordResponse error maps to marketplace_capture_reconciliation_failed 500', async () => {
   const outcome = await resolveMarketplacePayPalCapture(
     makeDeps({
@@ -219,4 +273,31 @@ test('edge function wires GET-for-known-capture and POST-only-once and never exp
   assert.match(migration, /confirmation_source','paypal_api/);
   assert.match(migration, /reused/);
   assert.doesNotMatch(migration, /password|authorization/i);
+});
+
+test('webhook persists the reconciliation failure via the audit RPC before returning 500', () => {
+  assert.match(failureMigration, /create or replace function public\.record_marketplace_paypal_event_failure/);
+  assert.match(failureMigration, /set search_path = ''/);
+  assert.match(failureMigration, /security definer/);
+  assert.match(failureMigration, /on conflict\(provider, environment, event_id\)/);
+  assert.match(failureMigration, /insert into private\.billing_events\(/);
+  assert.match(failureMigration, /processing_error/);
+  assert.match(failureMigration, /revoke all on function public\.record_marketplace_paypal_event_failure/);
+  assert.match(failureMigration, /grant execute on function public\.record_marketplace_paypal_event_failure/);
+  assert.match(failureMigration, /to service_role/);
+  assert.match(failureMigration, /raise exception 'marketplace_capture_reconciliation_failed'/);
+  assert.doesNotMatch(failureMigration, /processing_error = coalesce\(specific_error/);
+  assert.doesNotMatch(failureMigration, /password|authorization/i);
+});
+
+test('process_marketplace_paypal_event no longer hides failures with a non-persistent update', () => {
+  assert.doesNotMatch(failureMigration, /exception when others then[\s\S]*update private\.billing_events[\s\S]*processing_error/);
+  assert.doesNotMatch(failureMigration, /specific_error/);
+});
+
+test('paypal-webhook calls record_marketplace_paypal_event_failure before HTTP 500', () => {
+  assert.match(webhook, /record_marketplace_paypal_event_failure/);
+  assert.match(webhook, /marketplace_processing_failed/);
+  assert.match(webhook, /paypal_marketplace_event_failed/);
+  assert.doesNotMatch(webhook, /feature_flags[\s\S]*paypal_payments/);
 });

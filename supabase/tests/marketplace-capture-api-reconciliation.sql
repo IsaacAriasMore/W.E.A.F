@@ -438,30 +438,152 @@ end;
 $$;
 
 -- =============================================================================
--- 19. Late webhook with a different capture id fails reconciliation
+-- 19. Late webhook with a different capture id fails reconciliation and the
+--     failure is persisted by record_marketplace_paypal_event_failure (the
+--     webhook's second transaction before HTTP 500). Payment and benefit stay
+--     untouched.
 -- =============================================================================
 do $$
 declare
   event_key text := 'WEBH-19-MISMATCH-CAPTURE-API';
+  real_payload jsonb;
+  row_count integer;
+  audited_processed_at timestamptz;
+  audited_error text;
+  audited_payload jsonb;
+  pay_status text;
+  pay_capture text;
+  pay_paid timestamptz;
+  feat boolean;
+  feat_start timestamptz;
+  feat_end timestamptz;
+  expires_at_before timestamptz;
+  expires_at_after timestamptz;
+  audit_fa integer;
+begin
+  real_payload := jsonb_build_object(
+    'id', event_key,
+    'event_type', 'PAYMENT.CAPTURE.COMPLETED',
+    'resource', jsonb_build_object(
+      'supplementary_data', jsonb_build_object(
+        'related_ids', jsonb_build_object('order_id', 'PAYIDAPI0016')
+      )
+    )
+  );
+
+  select status, paypal_capture_id, paid_at
+  into pay_status, pay_capture, pay_paid
+  from public.marketplace_payments
+  where id = 'f0000000-0000-0000-0000-00000000c016';
+  select is_featured, featured_started_at, featured_expires_at, expires_at
+  into feat, feat_start, feat_end, expires_at_before
+  from public.marketplace_listings
+  where id = 'f0000000-0000-0000-0000-000000000006';
+
+  -- The webhook's first operation: the reconciliation RPC raises (HTTP 500 path).
+  begin
+    perform public.process_marketplace_paypal_event(
+      event_key, 'PAYMENT.CAPTURE.COMPLETED',
+      jsonb_build_object('order_id','PAYIDAPI0016','capture_id','CAPIDAPI9999','amount_minor',300,'currency','USD','event_time',now()::text),
+      real_payload
+    );
+    raise exception 'FAIL: expected mismatch error';
+  exception when others then
+    if sqlerrm not like '%marketplace_capture_reconciliation_failed%' then raise exception 'UNEXPECTED: %', sqlerrm; end if;
+  end;
+
+  -- The raised transaction rolled back: no row must exist before the audit RPC.
+  select count(*) into row_count from private.billing_events where event_id = event_key;
+  if row_count <> 0 then raise exception 'FAIL: aborted reconciliation must not leave a billing_events row'; end if;
+
+  -- The webhook's second operation: persist the failure in its own transaction.
+  perform public.record_marketplace_paypal_event_failure(
+    event_key, 'PAYMENT.CAPTURE.COMPLETED', 'PAYIDAPI0016',
+    real_payload, now(), 'marketplace_capture_reconciliation_failed'
+  );
+
+  select count(*) into row_count from private.billing_events where event_id = event_key;
+  if row_count <> 1 then raise exception 'FAIL: expected exactly one billing_events row'; end if;
+
+  select processed_at, processing_error, payload
+  into audited_processed_at, audited_error, audited_payload
+  from private.billing_events where event_id = event_key;
+  if audited_processed_at is null then raise exception 'FAIL: processed_at must be set on the failure row'; end if;
+  if audited_error is distinct from 'marketplace_capture_reconciliation_failed' then
+    raise exception 'FAIL: processing_error not persisted as marketplace_capture_reconciliation_failed';
+  end if;
+  if audited_payload is distinct from real_payload then raise exception 'FAIL: real payload not preserved'; end if;
+
+  -- The payment is still captured with its original capture id and paid_at.
+  select status, paypal_capture_id, paid_at
+  into pay_status, pay_capture, pay_paid
+  from public.marketplace_payments
+  where id = 'f0000000-0000-0000-0000-00000000c016';
+  if pay_status <> 'captured' then raise exception 'FAIL: payment status changed'; end if;
+  if pay_capture <> 'CAPIDAPI0016' then raise exception 'FAIL: paypal_capture_id changed'; end if;
+  if pay_paid is null then raise exception 'FAIL: paid_at must remain set'; end if;
+
+  -- The listing keeps its featured state and dates, and expires_at is untouched.
+  select is_featured, featured_started_at, featured_expires_at, expires_at
+  into feat, feat_start, feat_end, expires_at_after
+  from public.marketplace_listings
+  where id = 'f0000000-0000-0000-0000-000000000006';
+  if feat is distinct from false then raise exception 'FAIL: listing must not become featured'; end if;
+  if feat_start is not null or feat_end is not null then raise exception 'FAIL: featured dates changed'; end if;
+  if expires_at_after is distinct from expires_at_before then raise exception 'FAIL: expires_at changed'; end if;
+
+  -- No benefit was granted.
+  select count(*) into audit_fa from public.marketplace_audit_log
+  where payment_id = 'f0000000-0000-0000-0000-00000000c016' and action = 'featured_activated';
+  if audit_fa <> 0 then raise exception 'FAIL: failed reconciliation granted the benefit'; end if;
+
+  raise notice 'PASS: failure persisted via audit RPC; payment and benefit untouched';
+end;
+$$;
+
+-- =============================================================================
+-- 20. Negative: without record_marketplace_paypal_event_failure no row exists
+--     and the strict audit assertion fails (the old `processing_error <> 'x'`
+--     returned NULL on a missing row and passed falsely).
+-- =============================================================================
+do $$
+declare
+  event_key text := 'WEBH-20-NOT-RECORDED';
 begin
   begin
     perform public.process_marketplace_paypal_event(
       event_key, 'PAYMENT.CAPTURE.COMPLETED',
       jsonb_build_object('order_id','PAYIDAPI0016','capture_id','CAPIDAPI9999','amount_minor',300,'currency','USD','event_time',now()::text),
-    jsonb_build_object('id',event_key,'event_type','PAYMENT.CAPTURE.COMPLETED','resource',jsonb_build_object('supplementary_data',jsonb_build_object('related_ids',jsonb_build_object('order_id','PAYIDAPI0016'))))
-  );
+      jsonb_build_object('id',event_key,'event_type','PAYMENT.CAPTURE.COMPLETED','resource',jsonb_build_object('supplementary_data',jsonb_build_object('related_ids',jsonb_build_object('order_id','PAYIDAPI0016'))))
+    );
     raise exception 'FAIL: expected mismatch error';
   exception when others then
     if sqlerrm not like '%marketplace_capture_reconciliation_failed%' then raise exception 'UNEXPECTED: %', sqlerrm; end if;
   end;
-  if (select processing_error from private.billing_events where event_id = event_key) <> 'marketplace_capture_reconciliation_failed' then
-    raise exception 'FAIL: billing event did not record the reconciliation error';
+
+  -- The failure RPC was never called: billing_events must have no row.
+  if exists (select 1 from private.billing_events where event_id = event_key) then
+    raise exception 'FAIL: a billing_events row must not exist without the failure RPC';
   end if;
-  raise notice 'PASS: different capture id marks the event failed with reconciliation error';
+
+  -- The strict audit assertion must fail when billing_events has no row.
+  begin
+    if not exists (
+      select 1 from private.billing_events
+      where event_id = event_key
+        and processed_at is not null
+        and processing_error is not distinct from 'marketplace_capture_reconciliation_failed'
+    ) then
+      raise exception 'AUDIT-FAIL: no audit row for %', event_key;
+    end if;
+  exception when others then
+    if sqlerrm not like '%AUDIT-FAIL%' then raise exception 'UNEXPECTED: %', sqlerrm; end if;
+    raise notice 'PASS: audit assertion fails when billing_events has no row';
+  end;
 end;
 $$;
 
 \echo ''
-\echo '=== CAPTURE API RECONCILIATION VALIDATION COMPLETE (19 cases) ==='
+\echo '=== CAPTURE API RECONCILIATION VALIDATION COMPLETE (20 cases) ==='
 
 rollback;

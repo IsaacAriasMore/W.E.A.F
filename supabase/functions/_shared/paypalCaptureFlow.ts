@@ -75,10 +75,12 @@ export async function resolveMarketplacePayPalCapture(
         p_capture_id: capture.id,
         p_amount_minor: deps.prepared.amount_minor,
         p_currency: deps.prepared.currency,
-        p_captured_at: capture.create_time || new Date().toISOString(),
+        p_captured_at: capture.create_time || capture.update_time || new Date().toISOString(),
       })
       if (result.error) throw new PayPalError("marketplace_capture_reconciliation_failed", 500)
-      return { ok: true, status: "confirmed", listing_id: deps.prepared.listing_id, reused: result.data?.reused === true }
+      if (result.data === null || result.data === undefined) throw new PayPalError("marketplace_capture_reconciliation_failed", 500)
+      if (result.data.confirmed !== true) throw new PayPalError("marketplace_capture_reconciliation_failed", 500)
+      return { ok: true, status: "confirmed", listing_id: deps.prepared.listing_id, reused: result.data.reused === true }
     }
 
     if (capture.status === "PENDING") {

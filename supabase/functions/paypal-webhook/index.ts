@@ -72,6 +72,26 @@ const minor = (value: unknown) => {
     : 0
 }
 
+const knownMarketplaceErrors = new Set([
+  "marketplace_capture_reconciliation_failed",
+  "marketplace_listing_not_eligible",
+  "invalid_marketplace_payment_configuration",
+  "invalid_event_id",
+  "invalid_event_type",
+  "invalid_event_payload",
+  "resource_not_found",
+])
+
+const marketplaceFailureCode = (
+  message?: string,
+) => {
+  if (message && knownMarketplaceErrors.has(message)) {
+    return message
+  }
+
+  return "marketplace_processing_failed"
+}
+
 const handler = withSupabase(
   { auth: "none" },
 
@@ -195,6 +215,17 @@ const handler = withSupabase(
       })
       if (error) {
         console.error("paypal_marketplace_event_failed", event.id, eventType, error.code || "database_error")
+        const { error: auditError } = await ctx.supabaseAdmin.rpc("record_marketplace_paypal_event_failure", {
+          p_event_id: event.id,
+          p_event_type: eventType,
+          p_resource_id: marketplaceData.order_id || marketplaceData.capture_id || marketplaceData.custom_id,
+          p_payload: event,
+          p_event_time: marketplaceData.event_time,
+          p_processing_error: marketplaceFailureCode(error.message),
+        })
+        if (auditError) {
+          console.error("paypal_marketplace_event_failure_audit_failed", event.id, eventType, auditError.code || "database_error")
+        }
         return json({ error: "paypal_marketplace_event_failed" }, 500)
       }
       return json({ received: true, processed: Boolean(processed) })
