@@ -282,7 +282,15 @@ begin
   perform tests.set_jwt_claims('00000000-0000-0000-0000-0000000000a5');
   begin
     perform public.reset_marketplace_recommendations();
-    pass := pass + 1; raise notice '  PASS: viewer-a can reset recommendations';
+    if exists (select 1 from public.marketplace_recommendation_events where user_id = '00000000-0000-0000-0000-0000000000a5')
+      or exists (select 1 from public.marketplace_user_interest_profiles where user_id = '00000000-0000-0000-0000-0000000000a5')
+      or exists (select 1 from public.marketplace_listing_impressions where user_id = '00000000-0000-0000-0000-0000000000a5')
+      or coalesce((select personalization_enabled from public.marketplace_recommendation_preferences where user_id = '00000000-0000-0000-0000-0000000000a5'), true)
+    then
+      fail := fail + 1; raise notice '  FAIL: reset left personalized ranking data behind';
+    else
+      pass := pass + 1; raise notice '  PASS: viewer-a reset removes events, interests and impressions';
+    end if;
   exception when others then fail := fail + 1; raise notice '  FAIL: viewer-a error: %', SQLERRM; end;
 
   -- 5. record_marketplace_recommendation_event

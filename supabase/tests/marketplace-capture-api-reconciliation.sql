@@ -583,7 +583,145 @@ begin
 end;
 $$;
 
+-- =============================================================================
+-- 21. Mixed identifiers from two payments are rejected atomically
+-- =============================================================================
+do $$
+begin
+  begin
+    perform public.process_marketplace_paypal_event(
+      'WEBH-21-MIXED-IDENTIFIERS', 'PAYMENT.CAPTURE.COMPLETED',
+      jsonb_build_object(
+        'order_id', 'PAYIDAPI0002', 'capture_id', 'CAPIDAPI0016',
+        'custom_id', 'weaf_marketplace:f0000000-0000-0000-0000-00000000c002',
+        'amount_minor', 300, 'currency', 'USD', 'event_time', now()::text
+      ),
+      jsonb_build_object('id', 'WEBH-21-MIXED-IDENTIFIERS')
+    );
+    raise exception 'FAIL: expected mixed-identifier reconciliation error';
+  exception when others then
+    if sqlerrm not like '%marketplace_capture_reconciliation_failed%' then
+      raise exception 'UNEXPECTED: %', sqlerrm;
+    end if;
+  end;
+  if (select status from public.marketplace_payments where id = 'f0000000-0000-0000-0000-00000000c002') <> 'captured' then
+    raise exception 'FAIL: mixed identifiers mutated payment';
+  end if;
+  raise notice 'PASS: mixed identifiers are rejected without mutation';
+end;
+$$;
+
+-- =============================================================================
+-- 22. Late DENIED cannot downgrade captured payment or revoke its benefit
+-- =============================================================================
+do $$
+declare
+  featured_end timestamptz;
+begin
+  select featured_expires_at into featured_end
+  from public.marketplace_listings where id = 'f0000000-0000-0000-0000-000000000005';
+
+  perform public.process_marketplace_paypal_event(
+    'WEBH-22-LATE-DENIED', 'PAYMENT.CAPTURE.DENIED',
+    jsonb_build_object('order_id', 'PAYIDAPI0002', 'capture_id', 'CAPIDAPI0002', 'event_time', now()::text),
+    jsonb_build_object('id', 'WEBH-22-LATE-DENIED')
+  );
+
+  if (select status from public.marketplace_payments where id = 'f0000000-0000-0000-0000-00000000c002') <> 'captured' then
+    raise exception 'FAIL: late denial downgraded captured payment';
+  end if;
+  if (select is_featured from public.marketplace_listings where id = 'f0000000-0000-0000-0000-000000000005') is distinct from true then
+    raise exception 'FAIL: late denial revoked captured benefit';
+  end if;
+  if (select featured_expires_at from public.marketplace_listings where id = 'f0000000-0000-0000-0000-000000000005') is distinct from featured_end then
+    raise exception 'FAIL: late denial changed benefit expiry';
+  end if;
+  raise notice 'PASS: late denial preserves captured payment and benefit';
+end;
+$$;
+
+-- =============================================================================
+-- 23. A denied new attempt does not revoke a benefit from an older payment
+-- =============================================================================
+do $$
+begin
+  perform public.process_marketplace_paypal_event(
+    'WEBH-23-NEW-DENIED', 'PAYMENT.CAPTURE.DENIED',
+    jsonb_build_object('order_id', 'PAYIDAPI0015', 'capture_id', 'CAPIDAPI0015', 'event_time', now()::text),
+    jsonb_build_object('id', 'WEBH-23-NEW-DENIED')
+  );
+  if (select status from public.marketplace_payments where id = 'f0000000-0000-0000-0000-00000000c015') <> 'failed' then
+    raise exception 'FAIL: denied attempt was not failed';
+  end if;
+  if (select is_featured from public.marketplace_listings where id = 'f0000000-0000-0000-0000-000000000005') is distinct from true then
+    raise exception 'FAIL: denied new attempt revoked an older benefit';
+  end if;
+  raise notice 'PASS: denied new attempt fails only its payment';
+end;
+$$;
+
+-- =============================================================================
+-- 24. A failed payment cannot be resurrected by COMPLETED
+-- =============================================================================
+do $$
+begin
+  begin
+    perform public.process_marketplace_paypal_event(
+      'WEBH-24-FAILED-COMPLETED', 'PAYMENT.CAPTURE.COMPLETED',
+      jsonb_build_object('order_id', 'PAYIDAPI0004', 'capture_id', 'CAPIDAPI0004', 'amount_minor', 300, 'currency', 'USD', 'event_time', now()::text),
+      jsonb_build_object('id', 'WEBH-24-FAILED-COMPLETED')
+    );
+    raise exception 'FAIL: expected failed-payment reconciliation error';
+  exception when others then
+    if sqlerrm not like '%marketplace_capture_reconciliation_failed%' then
+      raise exception 'UNEXPECTED: %', sqlerrm;
+    end if;
+  end;
+  if (select status from public.marketplace_payments where id = 'f0000000-0000-0000-0000-00000000c004') <> 'failed' then
+    raise exception 'FAIL: failed payment changed state';
+  end if;
+  raise notice 'PASS: completed cannot resurrect a failed payment';
+end;
+$$;
+
+-- =============================================================================
+-- 25. Refund must match the captured payment and revokes exactly once
+-- =============================================================================
+do $$
+begin
+  perform public.process_marketplace_paypal_event(
+    'WEBH-25-REFUND', 'PAYMENT.CAPTURE.REFUNDED',
+    jsonb_build_object('order_id', 'PAYIDAPI0002', 'capture_id', 'CAPIDAPI0002', 'event_time', now()::text),
+    jsonb_build_object('id', 'WEBH-25-REFUND')
+  );
+  if (select status from public.marketplace_payments where id = 'f0000000-0000-0000-0000-00000000c002') <> 'refunded' then
+    raise exception 'FAIL: captured payment was not refunded';
+  end if;
+  if (select is_featured from public.marketplace_listings where id = 'f0000000-0000-0000-0000-000000000005') is distinct from false then
+    raise exception 'FAIL: refund did not revoke benefit';
+  end if;
+  raise notice 'PASS: matching refund transitions payment and revokes benefit';
+end;
+$$;
+
+-- =============================================================================
+-- 26. Same terminal event with a new provider event id remains monotonic
+-- =============================================================================
+do $$
+begin
+  perform public.process_marketplace_paypal_event(
+    'WEBH-26-REFUND-REPLAY', 'PAYMENT.CAPTURE.REFUNDED',
+    jsonb_build_object('order_id', 'PAYIDAPI0002', 'capture_id', 'CAPIDAPI0002', 'event_time', now()::text),
+    jsonb_build_object('id', 'WEBH-26-REFUND-REPLAY')
+  );
+  if (select status from public.marketplace_payments where id = 'f0000000-0000-0000-0000-00000000c002') <> 'refunded' then
+    raise exception 'FAIL: terminal replay changed payment status';
+  end if;
+  raise notice 'PASS: terminal replay is monotonic';
+end;
+$$;
+
 \echo ''
-\echo '=== CAPTURE API RECONCILIATION VALIDATION COMPLETE (20 cases) ==='
+\echo '=== CAPTURE API RECONCILIATION VALIDATION COMPLETE (26 cases) ==='
 
 rollback;

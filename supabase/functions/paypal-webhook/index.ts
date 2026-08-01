@@ -214,7 +214,7 @@ const handler = withSupabase(
         p_event_id: event.id, p_event_type: eventType, p_data: marketplaceData, p_payload: event,
       })
       if (error) {
-        console.error("paypal_marketplace_event_failed", event.id, eventType, error.code || "database_error")
+        console.error("paypal_marketplace_event_failed", eventType, error.code || "database_error")
         const { error: auditError } = await ctx.supabaseAdmin.rpc("record_marketplace_paypal_event_failure", {
           p_event_id: event.id,
           p_event_type: eventType,
@@ -224,7 +224,7 @@ const handler = withSupabase(
           p_processing_error: marketplaceFailureCode(error.message),
         })
         if (auditError) {
-          console.error("paypal_marketplace_event_failure_audit_failed", event.id, eventType, auditError.code || "database_error")
+          console.error("paypal_marketplace_event_failure_audit_failed", eventType, auditError.code || "database_error")
         }
         return json({ error: "paypal_marketplace_event_failed" }, 500)
       }
