@@ -12,6 +12,16 @@ No deployment was performed by this roadmap branch. These are manual gates for a
 
 ## Database and API (future manual action)
 
+Current read-only reconciliation: 41 remote migrations, 48 local migrations and no divergence. The seven pending local migrations are, in order:
+
+1. `20260731233000_marketplace_capture_api_reconciliation.sql`
+2. `20260731235900_marketplace_capture_reconciliation_failure_audit.sql`
+3. `20260801173359_marketplace_catalog_cursor_snapshot.sql`
+4. `20260801174140_marketplace_webhook_state_integrity.sql`
+5. `20260801174910_marketplace_recommendation_reset_privacy.sql`
+6. `20260801184631_marketplace_community_safety.sql`
+7. `20260801193419_marketplace_recommendation_community_hardening.sql`
+
 1. Apply approved migrations in timestamp order only.
 2. Re-run migration list and validate every new table, constraint, index, policy and function grant.
 3. Verify user RPCs reject anonymous or cross-user access; verify admin RPCs enforce `private.is_global_admin()` server-side.

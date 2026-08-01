@@ -27,13 +27,13 @@ This ledger is deliberately conservative. `Realizado` means repository evidence 
 | 19 | Featured fairness | Realizado | deterministic seller diversity | ranking tests |
 | 20 | Organic ranking and exploration | Realizado | signed snapshot cursor and ranking | cursor/ranking tests |
 | 21 | Recommendation consent | Realizado | opt-in controls and account reset | personalization tests |
-| 22 | Recommendation event abuse limits | En progreso | hourly allowlist/dedupe already present | daily/per-action cap remains a documented follow-up |
+| 22 | Recommendation event abuse limits | Realizado | hourly + UTC daily total/per-action caps, actor advisory lock, dedupe and self-listing rejection | unit, SQL and real two-request local concurrency regression |
 | 23 | Recommendation privacy reset | Realizado | local pending reset migration | events/interests/impressions removed only for actor |
 | 24 | Stable pagination cursor | Realizado | local pending cursor migration | 25 SQL cursor cases |
 | 25 | Real PayPal Sandbox order | Requiere acción manual externa | deliberately not executed | separate QA window and deployed prerequisites |
 | 26 | Real Sandbox refund/reversal/cancel | Requiere acción manual externa | deliberately not executed | separate QA window; payments remain off |
 | 27 | Performance indexes and load validation | En progreso | indexes/budgets/Lighthouse complete | production-cardinality load test remains manual |
-| 28 | Apply remote migrations | Requiere acción manual externa | dry-run only; six local migrations pending | backup and separate authorization required |
+| 28 | Apply remote migrations | Requiere acción manual externa | dry-run only; seven local migrations pending | backup and separate authorization required |
 | 29 | Deploy Edge Functions | Requiere acción manual externa | no function changed/deployed here | after approved remote migrations |
 | 30 | Production release gate | En progreso | technical local gates documented | remote deploy and manual QA deliberately excluded |
 | 31 | Admin moderation panel | Realizado | search, filters, pagination, retry and metrics in existing Admin route | admin server-side RPC |
@@ -46,20 +46,20 @@ This ledger is deliberately conservative. `Realizado` means repository evidence 
 | 38 | Public seller profile | Realizado | sanitized profile and approximate tenure | no email/UUID/admin data |
 | 39 | Seller listings pagination | Realizado | seller-profile RPC and load-more UI | server-side visibility/block rules |
 | 40 | Favorites | Realizado | table, RLS, idempotent RPC, account state | actor derived from `auth.uid()` |
-| 41 | User blocks | En progreso | opaque block ID, safe slug-based block and own-list unblock | profile/contact blocked; catalog/recommendation exclusion remains follow-up |
+| 41 | User blocks | Realizado | opaque directional blocks applied before featured/organic ranking and in legacy fallback | anonymous unchanged; cursor binds block snapshot; SQL pagination regression |
 | 42 | Marketplace account | Realizado | listings, favorites, reports, blocks and notifications | loading/error/empty account states |
 | 43 | Recommendation controls/reset | Realizado | existing opt-in/reset preserved | reset excludes listings/payments/favorites |
-| 44 | Internal notifications | Realizado | owned, deduped, paginated read/unread notifications | no email/external provider |
+| 44 | Internal notifications | Realizado | owned, deduped, paginated plain-text notifications; RPC-only read mutation | bounded 90-day read / 180-day absolute cleanup; no email provider |
 | 45 | Marketplace Admin integration | Realizado | existing panel extended, not duplicated | global-admin server check |
 | 46 | Private aggregate analytics | Realizado | server-computed Admin metrics | no client-authoritative or sensitive metrics |
 | 47 | URL security | Realizado | exact allowlists, HTTPS, no credentials/private hosts/control chars | deceptive-domain unit tests |
-| 48 | Content/XSS hardening | En progreso | escaping, CSP, URL sanitizer and closed metadata | legacy escaped `innerHTML` render paths remain for later DOM-only refactor |
+| 48 | Content/XSS hardening | Realizado | dynamic HTML inventory, contextual escaping, closed schema values and validated DOM URL assignment | no C/D Marketplace/community/admin/legal sink remains; malicious ES/EN regression |
 | 49 | Technical legal drafts | Realizado | Marketplace, moderation, reporting, retention, reset and Sandbox copy | explicitly requires professional review |
 | 50 | Professional legal review | Requiere intervención humana | technical drafts only | qualified counsel |
 | 51 | Buy a domain | No aplica - fase actual | no purchase made | future product decision |
 | 52 | Configure owned domain | No aplica - fase actual | current Vercel URL retained | depends on ID 51 |
 | 53 | Definitive-domain canonical | No aplica - fase actual | current canonical remains valid | depends on IDs 51-52 |
-| 54 | Separate ES/EN URLs | En progreso | equivalent in-app dictionaries and `lang` preference work | URL split deferred to avoid incomplete duplicate/legal routes |
+| 54 | Separate ES/EN URLs | En progreso | equivalent in-app dictionaries plus `docs/I18N_ROUTE_DESIGN.md` | separate PR required for redirects, canonical, hreflang and full route parity |
 | 55 | Real-user Core Web Vitals | Requiere acción manual externa | lab Lighthouse exists | field traffic and Search Console/analytics |
 | 56 | Privacy-safe frontend errors | Realizado | sampled/deduped monitor, controlled RPC/table and bounded 30-day purge | redaction/rate-limit/retention tests |
 | 57 | Free failure alerts | Realizado | `.github/workflows/health-alerts.yml` | deduplicated GitHub issues; no secrets |
@@ -71,6 +71,8 @@ This ledger is deliberately conservative. `Realizado` means repository evidence 
 
 Migration `20260801184631_marketplace_community_safety.sql` adds favorites, user blocks, internal notifications and privacy-minimized frontend errors; suspension timestamps/reason; report reason codes; audit transition fields; indexes, RLS, minimal grants and controlled RPCs. It has been applied only to a disposable local Supabase stack.
 
+Migration `20260801193419_marketplace_recommendation_community_hardening.sql` completes server-authoritative recommendation quotas, directional discovery blocks, notification retention and concurrent frontend-error quotas. It is also local-only and does not alter remote state.
+
 ## Residual gates
 
-The Draft PR must remain unmerged while IDs 22, 27, 30, 41, 48, 54 and 60 are in progress. External/manual IDs remain honest dependencies. Any future remote rollout requires off-repository backups, exact migration reconciliation, a dry-run review, payments off and an independently authorized Sandbox window.
+The Draft PR must remain unmerged while IDs 27, 30, 54 and 60 are in progress. External/manual IDs remain honest dependencies. Any future remote rollout requires off-repository backups, exact migration reconciliation, a dry-run review, payments off and an independently authorized Sandbox window.
