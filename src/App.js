@@ -144,6 +144,9 @@ export function startApp(root) {
         if (event === 'INITIAL_SESSION') return;
         window.setTimeout(() => syncSession(session), 0);
       });
+      import('./services/frontendErrorMonitor.js')
+        .then(({ initializeFrontendErrorMonitor }) => initializeFrontendErrorMonitor(authService.getClient()))
+        .catch(() => {});
     } catch {
       store.setState({ configured: false, ready: true, session: null, profile: null });
       updateHeaderAuth(null, null, window.location.pathname);

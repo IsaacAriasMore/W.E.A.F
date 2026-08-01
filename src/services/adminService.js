@@ -66,6 +66,17 @@ export function createAdminService(client) {
     getServerWorkspace: () => rpc('get_admin_server_workspace', {}, 'No pudimos cargar la operación de servidores.'),
     getBillingWorkspace: () => rpc('get_admin_billing_workspace', {}, 'No pudimos cargar planes y ofertas.'),
     getMarketplaceWorkspace: () => rpc('get_admin_marketplace_workspace', {}, 'No pudimos cargar el marketplace.'),
+    getMarketplaceModeration: ({ search = null, listingStatus = null, reportStatus = null, limit = 25, offset = 0 } = {}) => rpc(
+      'get_admin_marketplace_moderation',
+      {
+        p_search: search || null,
+        p_listing_status: listingStatus || null,
+        p_report_status: reportStatus || null,
+        p_limit: limit,
+        p_offset: offset,
+      },
+      'No pudimos cargar la cola de moderación.',
+    ),
     setUserSuspension: (userId, suspended, reason) => rpc('admin_set_user_suspension', {
       p_user_id: userId, p_suspended: suspended, p_reason: reason || null,
     }),
@@ -113,6 +124,16 @@ export function createAdminService(client) {
     moderateMarketplaceListing: (listingId, status, reason) => rpc('admin_moderate_marketplace_listing', {
       p_listing_id: listingId, p_status: status, p_reason: reason || null,
     }),
+    setMarketplaceUserSuspension: ({ userId, action, suspendedUntil = null, reason }) => rpc(
+      'admin_set_marketplace_user_suspension',
+      {
+        p_user_id: userId,
+        p_action: action,
+        p_suspended_until: suspendedUntil,
+        p_reason: reason,
+      },
+      'No pudimos actualizar la suspensión del vendedor.',
+    ),
     updateMarketplaceReportStatus: (reportId, status) => rpc('admin_update_marketplace_report_status', {
       p_report_id: reportId, p_status: status,
     }, 'No pudimos actualizar el reporte del marketplace.'),

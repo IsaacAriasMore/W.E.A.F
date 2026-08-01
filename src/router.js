@@ -83,6 +83,7 @@ const protectedRoutes = new Set([
 
 function resolveLoader(path) {
   if (routeLoaders[path]) return routeLoaders[path];
+  if (/^\/marketplace\/seller\/[^/]+$/.test(path)) return () => import('./pages/public/marketplaceSeller.js');
   if (/^\/marketplace\/[^/]+\/edit$/.test(path)) return () => import('./pages/app/marketplaceAccount.js');
   if (/^\/marketplace\/[^/]+$/.test(path)) return () => import('./pages/public/marketplace.js');
   return null;
@@ -181,7 +182,7 @@ export function createRouter({ outlet, onRouteChange, getContext, waitForAuth = 
       const page = await loader();
       if (currentNavigation !== navigationId) return;
       outlet.innerHTML = page.render({ path, ...context });
-      document.title = titles[path];
+      if (titles[path]) document.title = titles[path];
       applyRouteMetadata(path);
       onRouteChange(path);
       outlet.focus({ preventScroll: true });
@@ -192,6 +193,9 @@ export function createRouter({ outlet, onRouteChange, getContext, waitForAuth = 
         cleanup = page.bind({ path, navigate, ...getContext() }) || null;
       }
     } catch (error) {
+      window.dispatchEvent(new CustomEvent('weaf:frontend-error', {
+        detail: { kind: 'route', error, source: path },
+      }));
       applyRouteMetadata(path, { notFound: !resolveLoader(path) });
       outlet.innerHTML = `
         <section class="empty-page container">

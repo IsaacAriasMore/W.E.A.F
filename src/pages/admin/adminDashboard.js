@@ -907,9 +907,28 @@ function marketplace(data) {
     : state.status === 'error'
       ? `<div class="admin-marketplace-notice is-error" role="alert"><span>${escapeHtml(state.error)}</span><button class="admin-action" type="button" data-marketplace-retry>Reintentar</button></div>`
       : '';
+  const filters = workspace.filters || { search: '', listingStatus: '', reportStatus: '', offset: 0, limit: 25 };
+  const metrics = workspace.metrics || {};
+  const hasPrevious = filters.offset > 0;
+  const hasNext = filters.offset + filters.limit < Math.max(metrics.matching_listings || 0, metrics.matching_reports || 0);
+  const listingRows = (workspace.listings || []).map((item) => {
+    const actions = [
+      item.status !== 'hidden' && ['hidden', 'Ocultar'],
+      item.status !== 'rejected' && ['rejected', 'Rechazar'],
+      item.status !== 'active' && ['active', 'Restaurar'],
+    ].filter(Boolean).map(([next, label]) => `<button class="admin-action" type="button" data-market-moderate="${item.id}" data-next="${next}"${disabled}>${label}</button>`).join('');
+    const suspension = item.is_suspended
+      ? `<button class="admin-action" type="button" data-market-suspend="${item.seller_id}" data-next="reactivate"${disabled}>Reactivar</button>`
+      : `<button class="admin-action" type="button" data-market-suspend="${item.seller_id}" data-next="suspend"${disabled}>Suspender</button>`;
+    return `<tr><td><strong>${escapeHtml(item.title)}</strong><small>${formatRelativeTime(item.created_at)}</small></td><td>${escapeHtml(item.seller_name || 'Sin nombre')}<small>${item.is_suspended ? 'Suspendido' : 'Activo'}</small></td><td>${status(item.status)}<small>${item.open_reports || 0} reportes abiertos</small></td><td>${item.expires_at ? formatRelativeTime(item.expires_at) : 'Sin fecha'}</td><td><div class="admin-market-actions">${actions}${suspension}</div></td></tr>`;
+  });
+  const suspensionRows = (workspace.suspended_users || []).map((item) => `<tr><td><strong>${escapeHtml(item.display_name || 'Sin nombre')}</strong><small>${item.listing_count || 0} anuncios</small></td><td>${escapeHtml(item.suspension_reason || 'Sin motivo')}</td><td>${item.suspended_until ? formatRelativeTime(item.suspended_until) : 'Indefinida'}</td><td><button class="admin-action" type="button" data-market-suspend="${item.id}" data-next="reactivate"${disabled}>Reactivar</button></td></tr>`);
+  const auditRows = (workspace.audit || []).map((item) => `<tr><td>${formatRelativeTime(item.created_at)}</td><td><strong>${escapeHtml(item.action)}</strong><small>${escapeHtml(item.target_type || 'marketplace')}</small></td><td>${escapeHtml(item.reason || 'Sin motivo')}</td><td>${escapeHtml(item.previous_status || '-')} → ${escapeHtml(item.new_status || '-')}</td></tr>`);
   return `<div class="admin-governance">${notice}<section><div class="admin-block-heading"><span>Configuración</span><h2>Publicaciones destacadas</h2></div><form class="admin-inline-form" data-marketplace-settings><label><span>Precio destacado (USD)</span><input name="price" type="number" value="3.00" readonly aria-readonly="true"${disabled}></label><label><span>Moneda</span><select name="currency"${disabled}><option value="USD">USD</option></select></label><label><input name="marketplace_enabled" type="checkbox" ${setting.marketplace_enabled ? 'checked' : ''}${disabled}> Marketplace activo</label><label><input name="payments_enabled" type="checkbox" ${setting.payments_enabled ? 'checked' : ''}${disabled}> Destacados PayPal Sandbox</label><button class="admin-action" type="submit"${disabled}>Guardar configuración</button></form><p class="admin-muted">Precio fijo: USD 3 por 7 días. Mantén PayPal en Sandbox y ambos kill switches apagados fuera de una prueba QA autorizada.</p></section>
-  <section><div class="admin-block-heading"><span>Moderación</span><h2>Anuncios</h2></div>${table(['Anuncio','Propietario','Estado','Expira','Acción'],(workspace.listings || []).map((item)=>`<tr><td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.listing_type)} · ${escapeHtml(item.resource_name)}</small></td><td>${escapeHtml(item.owner_user_id)}</td><td>${status(item.status)}</td><td>${item.expires_at ? formatRelativeTime(item.expires_at) : 'Sin fecha'}</td><td><div class="admin-market-actions"><button class="admin-action" data-market-moderate="${item.id}" data-next="hidden"${disabled}>Ocultar</button><button class="admin-action" data-market-moderate="${item.id}" data-next="rejected"${disabled}>Rechazar</button></div></td></tr>`),'No hay anuncios.')}</section>
+  <section><div class="admin-block-heading"><span>Moderación</span><h2>Cola del Marketplace</h2></div><form class="admin-marketplace-filters" data-marketplace-filters role="search"><label><span>Buscar anuncio o vendedor</span><input name="search" value="${escapeHtml(filters.search)}" maxlength="80"></label><label><span>Estado del anuncio</span><select name="listing_status"><option value="">Todos</option>${['active','hidden','rejected','expired'].map((value) => `<option value="${value}" ${filters.listingStatus === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label><label><span>Estado del reporte</span><select name="report_status"><option value="">Todos</option>${['open','reviewing','resolved','dismissed'].map((value) => `<option value="${value}" ${filters.reportStatus === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label><button class="admin-action" type="submit"${disabled}>Filtrar</button></form><div class="admin-marketplace-metrics" aria-label="Métricas privadas"><span>Activos <strong>${metrics.active_listings || 0}</strong></span><span>Reportes <strong>${metrics.open_reports || 0}</strong></span><span>Favoritos <strong>${metrics.favorites || 0}</strong></span><span>Bloqueos <strong>${metrics.blocks || 0}</strong></span><span>Errores 24h <strong>${metrics.frontend_errors_24h || 0}</strong></span></div>${table(['Anuncio','Vendedor','Estado','Expira','Acciones'],listingRows,'No hay anuncios para estos filtros.')}<nav class="admin-pagination" aria-label="Paginación de moderación"><button class="admin-action" type="button" data-market-page="previous" ${hasPrevious ? '' : 'disabled'}>Anterior</button><span>Página ${Math.floor(filters.offset / filters.limit) + 1}</span><button class="admin-action" type="button" data-market-page="next" ${hasNext ? '' : 'disabled'}>Siguiente</button></nav></section>
   <section><div class="admin-block-heading"><span>Reportes</span><h2>Seguridad comunitaria</h2></div>${table(['Anuncio','Motivo','Estado','Actualización','Acción'],(workspace.reports || []).map((item) => marketplaceReportRow(item, locked)),'No hay reportes del marketplace.')}</section>
+  <section><div class="admin-block-heading"><span>Usuarios</span><h2>Suspensiones activas</h2></div>${table(['Vendedor','Motivo','Finaliza','Acción'],suspensionRows,'No hay vendedores suspendidos.')}</section>
+  <section><div class="admin-block-heading"><span>Auditoría</span><h2>Decisiones recientes</h2></div>${table(['Momento','Acción','Motivo','Transición'],auditRows,'No hay decisiones de moderación.')}</section>
   <section><div class="admin-block-heading"><span>PayPal Sandbox</span><h2>Pagos destacados</h2></div>${table(['Anuncio','Monto','Estado','Fecha'],(workspace.payments || []).map((item)=>`<tr><td>${escapeHtml(item.listing_id)}</td><td>${(item.amount_minor/100).toFixed(2)} ${escapeHtml(item.currency)}</td><td>${status(item.status)}</td><td>${formatRelativeTime(item.created_at)}</td></tr>`),'Todavía no hay pagos destacados.')}</section></div>`;
 }
 
@@ -928,6 +947,16 @@ export function bind({ state, authService, navigate }) {
   const main = document.querySelector('[data-admin-main]');
   let data;
   let marketplaceState = createMarketplaceState();
+  let marketplaceFilters = { search: '', listingStatus: '', reportStatus: '', limit: 25, offset: 0 };
+
+  async function getMarketplaceData() {
+    const [workspace, moderation] = await Promise.all([
+      service.getMarketplaceWorkspace(),
+      service.getMarketplaceModeration(marketplaceFilters),
+    ]);
+    if (workspace.error || moderation.error) return { data: null, error: workspace.error || moderation.error };
+    return { data: { ...workspace.data, ...moderation.data, filters: { ...marketplaceFilters } }, error: null };
+  }
 
   function renderSection(section = currentSection()) {
     const view = main.querySelector('[data-admin-view]');
@@ -941,7 +970,7 @@ export function bind({ state, authService, navigate }) {
     renderSection(section);
     let result;
     try {
-      result = await service.getMarketplaceWorkspace();
+      result = await getMarketplaceData();
     } catch (error) {
       result = { data: null, error: error?.message || 'No pudimos cargar el marketplace.' };
     }
@@ -990,7 +1019,7 @@ export function bind({ state, authService, navigate }) {
   async function load(section = currentSection()) {
     main.setAttribute('aria-busy', 'true');
     marketplaceState = beginMarketplaceLoad(marketplaceState);
-    const marketplaceRequest = service.getMarketplaceWorkspace().catch((error) => ({
+    const marketplaceRequest = getMarketplaceData().catch((error) => ({
       data: null,
       error: error?.message || 'No pudimos cargar el marketplace.',
     }));
@@ -1090,6 +1119,43 @@ export function bind({ state, authService, navigate }) {
     if (marketplaceRetry) {
       marketplaceRetry.disabled = true;
       await loadMarketplace();
+      return;
+    }
+    const pageButton = event.target.closest('[data-market-page]');
+    if (pageButton && !pageButton.disabled) {
+      const step = pageButton.dataset.marketPage === 'next' ? marketplaceFilters.limit : -marketplaceFilters.limit;
+      marketplaceFilters.offset = Math.max(0, marketplaceFilters.offset + step);
+      await loadMarketplace();
+      return;
+    }
+    const marketplaceSuspension = event.target.closest('[data-market-suspend]');
+    if (marketplaceSuspension) {
+      if (!canSaveMarketplace(marketplaceState)) {
+        showToast('No se puede cambiar la suspensión hasta recuperar los datos reales.', 'error');
+        return;
+      }
+      const actionName = marketplaceSuspension.dataset.next;
+      const reason = window.prompt(actionName === 'suspend' ? 'Motivo de la suspensión (obligatorio):' : 'Motivo de la reactivación (obligatorio):');
+      if (!reason?.trim()) return;
+      let suspendedUntil = null;
+      if (actionName === 'suspend') {
+        const duration = window.prompt('Días de suspensión. Déjalo vacío para suspensión indefinida:');
+        if (duration?.trim()) {
+          const days = Number(duration);
+          if (!Number.isInteger(days) || days < 1 || days > 365) {
+            showToast('La duración debe estar entre 1 y 365 días.', 'error');
+            return;
+          }
+          suspendedUntil = new Date(Date.now() + days * 86_400_000).toISOString();
+        }
+      }
+      if (!window.confirm(`¿Confirmas ${actionName === 'suspend' ? 'suspender' : 'reactivar'} este vendedor?`)) return;
+      await runButtonAction(marketplaceSuspension, 'Actualizando…', () => service.setMarketplaceUserSuspension({
+        userId: marketplaceSuspension.dataset.marketSuspend,
+        action: actionName,
+        suspendedUntil,
+        reason: reason.trim(),
+      }), 'Estado del vendedor actualizado.');
       return;
     }
     const user = event.target.closest('[data-user-suspension]');
@@ -1202,8 +1268,10 @@ export function bind({ state, authService, navigate }) {
       showToast('No se puede moderar hasta recuperar los datos reales del marketplace.', 'error');
       return;
     }
-    if (moderation && window.confirm(`¿Cambiar este anuncio a ${moderation.dataset.next}?`)) {
-      await runButtonAction(moderation, 'Actualizando…', () => service.moderateMarketplaceListing(moderation.dataset.marketModerate, moderation.dataset.next, 'Moderación desde centro de comando'), 'Anuncio moderado.');
+    if (moderation) {
+      const reason = window.prompt('Motivo de moderación (obligatorio):');
+      if (!reason?.trim() || !window.confirm(`¿Cambiar este anuncio a ${moderation.dataset.next}?`)) return;
+      await runButtonAction(moderation, 'Actualizando…', () => service.moderateMarketplaceListing(moderation.dataset.marketModerate, moderation.dataset.next, reason.trim()), 'Anuncio moderado.');
     }
   });
 
@@ -1211,6 +1279,17 @@ export function bind({ state, authService, navigate }) {
     event.preventDefault();
     const values = new FormData(event.target);
     const value = (name) => String(values.get(name) || '').trim();
+    if (event.target.matches('[data-marketplace-filters]')) {
+      marketplaceFilters = {
+        ...marketplaceFilters,
+        search: value('search'),
+        listingStatus: value('listing_status'),
+        reportStatus: value('report_status'),
+        offset: 0,
+      };
+      await loadMarketplace();
+      return;
+    }
     if (event.target.matches('[data-marketplace-settings]')) {
       if (!canSaveMarketplace(marketplaceState)) {
         showToast('No se puede guardar hasta recuperar la configuración real del marketplace.', 'error');

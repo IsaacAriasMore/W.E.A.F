@@ -9,6 +9,9 @@ const pages = {
       ['Uso permitido', 'Puedes usar las herramientas públicas para fines personales y comunitarios. No puedes intentar vulnerar cuentas, automatizar abuso, distribuir malware ni interferir con otros usuarios.'],
       ['Cuentas y tribus', 'Cada persona es responsable de su cuenta y de las acciones realizadas con ella. Los roles de tribu no conceden privilegios globales sobre la plataforma.'],
       ['Contenido', 'Quien publique información conservará responsabilidad sobre su exactitud y derechos de uso. W.E.A.F podrá retirar contenido que incumpla las políticas de comunidad.'],
+      ['Marketplace entre usuarios', 'W.E.A.F facilita anuncios y contacto directo, pero no participa en la compraventa o intercambio entre usuarios, no custodia bienes y no garantiza que una operación se complete.'],
+      ['Destacados y moderación', 'Un destacado compra exposición temporal y no garantiza una venta. Todo anuncio, incluso uno destacado o pagado en Sandbox, puede ocultarse, rechazarse o restaurarse con una decisión de moderación registrada.'],
+      ['Reportes y bloqueos', 'Las personas con cuenta pueden reportar anuncios por motivos cerrados y bloquear vendedores. Los límites antiabuso, la revisión humana y el historial administrativo protegen a la comunidad sin borrar pagos o auditoría.'],
       ['Disponibilidad', 'El servicio puede cambiar durante su desarrollo. Se procurará avisar cuando una modificación afecte funciones o datos importantes.'],
     ],
   },
@@ -21,6 +24,8 @@ const pages = {
       ['Recomendaciones del Marketplace', 'La personalización es opcional. Cuando la activas, usamos únicamente filtros, búsquedas, vistas y acciones dentro del Marketplace para ordenar anuncios ASA. Las señales decaen con el tiempo y se eliminan como máximo a los 90 días. Puedes desactivarla o reiniciar eventos e intereses desde Mis anuncios.'],
       ['Datos que no usamos para recomendar', 'No usamos seguimiento externo, dirección IP, huella del navegador, contraseñas, credenciales, JWT, cookies de autenticación ni tokens CAPTCHA. Los visitantes sin sesión reciben solo resultados contextuales según sus filtros actuales.'],
       ['Conservación y control', 'Las ventanas de conservación y el procedimiento formal de acceso o eliminación requieren revisión legal antes del lanzamiento comercial. Mientras tanto, las solicitudes se reciben por el canal de contacto.'],
+      ['Actividad comunitaria', 'Favoritos, reportes, bloqueos y notificaciones internas se guardan para ofrecer esas funciones y aplicar seguridad. El reinicio de recomendaciones elimina eventos, intereses e impresiones, pero no elimina anuncios, pagos ni favoritos.'],
+      ['Errores técnicos', 'Los errores autenticados pueden agregarse de forma muestreada y deduplicada durante 30 días. Se limita la metadata y se redactan credenciales, tokens y rutas sensibles antes de guardar.'],
       ['Seguridad', 'La arquitectura usa Row Level Security, privilegios mínimos, logs de auditoría y Edge Functions para operaciones con secretos.'],
       ['Revisión legal pendiente', 'Esta descripción de personalización y retención es preliminar y debe recibir revisión humana profesional antes del lanzamiento comercial.'],
     ],
@@ -62,6 +67,7 @@ const pages = {
       ['Información verificable', 'El propietario deberá mantener enlaces, rates, modalidad, región y estado de wipe razonablemente actualizados.'],
       ['Moderación', 'W.E.A.F podrá pausar, rechazar o eliminar una publicación y solicitar evidencia de propiedad o administración.'],
       ['Promoción', 'Un plan destacado mejora colocación, pero nunca exime de moderación ni garantiza jugadores o tráfico.'],
+      ['Marketplace', 'Los anuncios de recursos son acuerdos directos entre usuarios. Un destacado compra exposición durante su vigencia, no una venta, reputación ni aprobación de W.E.A.F.'],
     ],
   },
   '/report-content': {
@@ -116,6 +122,7 @@ export function render({ path }) {
           <aside class="legal-notice">
             <strong>${t('legal.noticeTitle')}</strong>
             <p>${t('legal.noticeBody')}</p>
+            <p>Este documento es un borrador técnico y requiere revisión profesional antes de activar pagos reales.</p>
           </aside>
         </div>
         <nav class="legal-nav" aria-label="${t('legal.aria')}">

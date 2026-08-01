@@ -4,6 +4,7 @@ import { getLanguage, t } from '../../i18n/index.js';
 import { marketplaceTimeLeft } from '../../utils/marketplaceListing.js';
 import { applyMarketplaceListingMetadata } from '../../seo/metadata.js';
 import { showToast } from '../../utils/feedback.js';
+import { safeDiscordInviteUrl, safeImageUrl } from '../../utils/safeUrl.js';
 import '../../css/marketplace.css';
 
 const platformOptions = ['steam', 'epic', 'xbox', 'playstation', 'windows', 'crossplay', 'other'];
@@ -14,9 +15,10 @@ function reasonLabel(reason) {
 
 function card(listing) {
   const days = marketplaceTimeLeft(listing.expires_at);
+  const image = safeImageUrl(listing.image_url);
   return `<article class="market-card ${listing.is_featured ? 'is-featured' : ''}" data-listing-card="${listing.id}">
     <a href="/marketplace/${escapeHtml(listing.slug)}" data-link aria-label="${t('marketplace.view', { title: listing.title })}">
-      <div class="market-card-media">${listing.image_url ? `<img src="${escapeHtml(listing.image_url)}" alt="" loading="lazy" />` : '<span aria-hidden="true">W.E.A.F / ASA</span>'}${listing.is_featured ? `<b>${t('marketplace.featured')}</b>` : ''}</div>
+      <div class="market-card-media">${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy" width="640" height="340" />` : '<span aria-hidden="true">W.E.A.F / ASA</span>'}${listing.is_featured ? `<b>${t('marketplace.featured')}</b>` : ''}</div>
       <div class="market-card-body">
         <div><span>${t(`marketplace.types.${listing.listing_type}`)}</span><small>${days} ${t(days === 1 ? 'marketplace.day' : 'marketplace.days')}</small></div>
         <h3>${escapeHtml(listing.title)}</h3><p>${escapeHtml(listing.description)}</p>
@@ -29,6 +31,44 @@ function card(listing) {
 
 function emptyState(title, body) {
   return `<div class="market-empty"><h3>${title}</h3><p>${body}</p></div>`;
+}
+
+function hydrateDetailControls(root, listing) {
+  const detail = root.querySelector('[data-listing-id]');
+  if (!detail) return;
+  detail.dataset.listingSlug = listing.slug;
+  const discordLink = detail.querySelector('[data-market-discord]');
+  const discordUrl = safeDiscordInviteUrl(listing.discord_invite_url);
+  if (discordLink && discordUrl) discordLink.href = discordUrl;
+  else discordLink?.remove();
+
+  const actions = detail.querySelector('.market-detail-actions');
+  const sellerLink = document.createElement('a');
+  sellerLink.className = 'button button-secondary';
+  sellerLink.href = `/marketplace/seller/${encodeURIComponent(listing.slug)}`;
+  sellerLink.dataset.link = '';
+  sellerLink.textContent = t('marketplace.sellerProfile');
+  const blockButton = document.createElement('button');
+  blockButton.className = 'button button-quiet';
+  blockButton.type = 'button';
+  blockButton.dataset.marketBlock = '';
+  blockButton.textContent = t('marketplace.blockSeller');
+  actions?.append(sellerLink, blockButton);
+  const saveButton = actions?.querySelector('[data-market-save]');
+  if (saveButton) saveButton.textContent = t('marketplace.saveListing');
+
+  const reasons = [
+    ['fraud', 'fraud'], ['duplicate', 'duplicate'], ['prohibited_content', 'prohibited'],
+    ['false_information', 'falseInformation'], ['dangerous_link', 'dangerous'],
+    ['harassment', 'harassment'], ['other', 'other'],
+  ];
+  const reasonSelect = detail.querySelector('[data-market-report] select[name="reason"]');
+  reasonSelect?.replaceChildren(...reasons.map(([value, key]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = t(`marketplace.reportReasons.${key}`);
+    return option;
+  }));
 }
 
 export function render({ path }) {
@@ -62,6 +102,7 @@ async function bindDetail(service, root, path) {
   }
   applyMarketplaceListingMetadata(path, listing.title, listing.description);
   root.innerHTML = `<a class="text-link" href="/marketplace" data-link>← ${t('marketplace.back')}</a><article class="market-detail" data-listing-id="${listing.id}"><div class="market-detail-copy"><span>${listing.is_featured ? t('marketplace.featured') : t(`marketplace.types.${listing.listing_type}`)} · ASA</span><h1>${escapeHtml(listing.title)}</h1><p>${escapeHtml(listing.description)}</p><small class="market-reason">${reasonLabel(listing.recommendation_reason)}</small><dl><div><dt>${t('marketplace.resource')}</dt><dd>${escapeHtml(listing.resource_name)}${listing.quantity ? ` · ${listing.quantity}` : ''}</dd></div><div><dt>${t('marketplace.terms')}</dt><dd>${escapeHtml(listing.trade_terms)}</dd></div><div><dt>${t('marketplace.server')}</dt><dd>${escapeHtml(listing.server_name || t('marketplace.unspecified'))}</dd></div><div><dt>${t('marketplace.region')}</dt><dd>${escapeHtml(listing.region)} · ${escapeHtml(listing.platform)}</dd></div></dl><div class="market-detail-actions"><a class="button button-primary" href="${escapeHtml(listing.discord_invite_url)}" target="_blank" rel="noopener noreferrer" data-market-discord>${t('marketplace.contactDiscord')}</a><button class="button button-secondary" type="button" data-market-save>${t('marketplace.recommendations.save')}</button><button class="button button-quiet" type="button" data-market-dismiss>${t('marketplace.recommendations.hide')}</button></div><details class="market-report"><summary>${t('marketplace.reportFraud')}</summary><form data-market-report data-listing-id="${listing.id}"><label><span>${t('marketplace.reportReason')}</span><select name="reason"><option value="fraud">${t('marketplace.reportReasons.fraud')}</option><option value="prohibited">${t('marketplace.reportReasons.prohibited')}</option><option value="malicious_link">${t('marketplace.reportReasons.malicious')}</option><option value="personal_data">${t('marketplace.reportReasons.personal')}</option><option value="spam">Spam</option><option value="other">${t('marketplace.reportReasons.other')}</option></select></label><label><span>${t('marketplace.reportDetails')}</span><textarea name="details" minlength="10" maxlength="1000" required></textarea></label><button class="button button-secondary" type="submit">${t('marketplace.sendReport')}</button><p class="form-message" data-report-result role="status" aria-live="polite"></p></form></details></div><aside><strong>${marketplaceTimeLeft(listing.expires_at)}</strong><span>${t('marketplace.daysRemaining')}</span><p>${t('marketplace.transactionNotice')}</p></aside></article>`;
+  hydrateDetailControls(root, listing);
   if (data.personalization_enabled) service.recordRecommendation('detail', { listingId: listing.id });
 }
 
@@ -73,17 +114,39 @@ export function bind({ path, authService, navigate }) {
     bindDetail(service, root, path).catch(() => {
       if (root?.isConnected) root.innerHTML = emptyState(t('marketplace.notFound'), t('marketplace.errors.load'));
     });
-    root?.addEventListener('click', (event) => {
-      const listingId = root.querySelector('[data-listing-id]')?.dataset.listingId;
+    root?.addEventListener('click', async (event) => {
+      const detail = root.querySelector('[data-listing-id]');
+      const listingId = detail?.dataset.listingId;
+      const listingSlug = detail?.dataset.listingSlug;
       if (!listingId) return;
       if (event.target.closest('[data-market-discord]')) service.recordRecommendation('discord', { listingId });
       if (event.target.closest('[data-market-save]')) {
-        service.recordRecommendation('save', { listingId });
-        showToast(t('marketplace.recommendations.saved'));
+        const button = event.target.closest('[data-market-save]');
+        button.disabled = true;
+        const result = await service.setFavorite(listingId, true);
+        if (result.error) showToast(result.error, 'error');
+        else {
+          service.recordRecommendation('save', { listingId });
+          showToast(t('marketplace.listingSaved'));
+        }
+        button.disabled = false;
       }
       if (event.target.closest('[data-market-dismiss]')) {
         service.recordRecommendation('hide', { listingId });
         navigate('/marketplace');
+      }
+      if (event.target.closest('[data-market-block]') && listingSlug
+        && window.confirm(t('marketplace.blockConfirm'))) {
+        const button = event.target.closest('[data-market-block]');
+        button.disabled = true;
+        const result = await service.blockSeller(listingSlug);
+        if (result.error) {
+          showToast(result.error, 'error');
+          button.disabled = false;
+        } else {
+          showToast(t('marketplace.sellerBlocked'));
+          navigate('/marketplace');
+        }
       }
     });
     root?.addEventListener('submit', async (event) => {

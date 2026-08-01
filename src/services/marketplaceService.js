@@ -18,6 +18,11 @@ const errorKeys = {
   marketplace_asa_only: 'asaOnly', invalid_marketplace_cursor: 'cursor',
   marketplace_cursor_expired: 'cursorExpired', marketplace_personalization_disabled: 'personalizationDisabled',
   marketplace_recommendation_rate_limit: 'recommendationRateLimit', marketplace_qa_access_required: 'qaRequired',
+  account_suspended: 'accountSuspended', marketplace_report_duplicate: 'reportDuplicate',
+  marketplace_report_hourly_limit: 'reportRateLimit', marketplace_report_daily_limit: 'reportRateLimit',
+  marketplace_listing_report_limit: 'reportRateLimit', invalid_report_reason: 'report',
+  invalid_report_details: 'report', seller_blocked: 'sellerBlocked', seller_not_found: 'sellerNotFound',
+  notification_not_found: 'notification', block_not_found: 'block',
 };
 
 function friendly(error, fallbackKey) {
@@ -76,6 +81,40 @@ export function createMarketplaceService(client) {
       if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
       const { data, error } = await client.rpc('report_marketplace_listing', { p_listing_id: listingId, p_reason: reason, p_details: details });
       return { data, error: friendly(error, 'report') };
+    },
+    async setFavorite(listingId, saved = true) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.rpc('set_marketplace_favorite', {
+        p_listing_id: listingId, p_saved: Boolean(saved),
+      });
+      return { data, error: friendly(error, 'favorite') };
+    },
+    async getSellerProfile(listingSlug, limit = 12, offset = 0) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.rpc('get_marketplace_seller_profile', {
+        p_listing_slug: listingSlug, p_limit: limit, p_offset: offset,
+      });
+      return { data, error: friendly(error, 'seller') };
+    },
+    async blockSeller(listingSlug) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.rpc('block_marketplace_seller', { p_listing_slug: listingSlug });
+      return { data, error: friendly(error, 'block') };
+    },
+    async unblockSeller(blockId) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.rpc('unblock_marketplace_seller', { p_block_id: blockId });
+      return { data, error: friendly(error, 'block') };
+    },
+    async getCommunity(limit = 25, offset = 0) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.rpc('get_my_marketplace_community', { p_limit: limit, p_offset: offset });
+      return { data, error: friendly(error, 'loadAccount') };
+    },
+    async markNotificationRead(notificationId) {
+      if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
+      const { data, error } = await client.rpc('mark_marketplace_notification_read', { p_notification_id: notificationId });
+      return { data, error: friendly(error, 'notification') };
     },
     async startFeaturedOrder(listingId, idempotencyKey) {
       if (!client) return { data: null, error: t('marketplace.errors.disconnected') };
