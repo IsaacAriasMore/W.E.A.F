@@ -1,10 +1,11 @@
 const SENSITIVE = /(authorization|bearer|password|passwd|token|secret|service[_-]?role|captcha|paypal)[^\s]*/gi;
+const JWT_LIKE = /[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/g;
 const MAX_MESSAGE = 500;
 const sent = new Set();
 
 export function sanitizeFrontendErrorMessage(value) {
   const text = value instanceof Error ? value.message : String(value || 'Unexpected error');
-  return text.replace(SENSITIVE, '[redacted]').replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, MAX_MESSAGE);
+  return text.replace(SENSITIVE, '[redacted]').replace(JWT_LIKE, '[redacted]').replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, MAX_MESSAGE);
 }
 
 async function fingerprint(value) {

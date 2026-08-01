@@ -8,7 +8,7 @@ import '../../css/app.css';
 import '../../css/marketplace.css';
 
 const date = (value) => value ? new Intl.DateTimeFormat(getLanguage(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : t('marketplace.notAvailable');
-const option = (value, label, current) => `<option value="${value}" ${current === value ? 'selected' : ''}>${label}</option>`;
+const option = (value, label, current) => `<option value="${escapeHtml(value)}" ${current === value ? 'selected' : ''}>${escapeHtml(label)}</option>`;
 
 function listingForm(categories, listing = {}, settings = {}) {
   const planChoice = settings.featured_enabled && settings.qa_eligible
