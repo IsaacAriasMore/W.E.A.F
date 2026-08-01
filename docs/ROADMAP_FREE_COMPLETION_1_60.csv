@@ -1,0 +1,61 @@
+ID,Area,Tarea,Estado,Evidencia,Pruebas,Commit,Dependencia,Notas
+1,Repository,Git hygiene and traceability,Realizado,repository hygiene suite,unit,PR14,None,No secrets or temp artifacts
+2,Auth,Auth flows and password policy,Realizado,shared validator and Turnstile,unit and E2E,PR14,None,Remote Auth unchanged
+3,Architecture,Trust boundaries,Realizado,AGENTS and security docs,security tests,PR14,None,service_role server only
+4,Marketplace,Listing lifecycle,Realizado,Marketplace migrations,unit and SQL,PR14,None,History preserved
+5,SEO,Search Console registration,Requiere acción manual externa,search-console runbook,None,none,Google account,Not executed
+6,SEO,Sitemap submission,Requiere acción manual externa,physical sitemap,SEO tests,none,Search consoles,Not submitted
+7,SEO,Indexing requests,Requiere acción manual externa,crawlable routes,SEO tests,none,Search engines,Not requested
+8,Payments,Safe PayPal approval URL,Realizado,safeUrl.js,unit,current branch,None,Sandbox exact hosts
+9,Payments,Capture reconciliation,Realizado,pending local migration,unit and SQL,PR14,Remote migration pending,No PayPal call
+10,Payments,Webhook verification and audit,Realizado,signature-first webhook,unit and SQL,PR14,None,Sanitized logs
+11,Security,Idempotency and concurrency,Realizado,locks and unique keys,unit and SQL,PR14,None,Double submit guarded
+12,Payments,Monotonic terminal states,Realizado,webhook integrity migration,SQL,PR14,Remote migration pending,Late denied safe
+13,Performance,Creature mobile LCP,Realizado,168KB sprite and explicit ratio,Lighthouse and budget,PR14,Field data ID55,No unjustified preload
+14,CSS,Import order and duplication,Realizado,CSS audit,check build E2E,PR14,None,No massive refactor
+15,Security,Secrets CORS and logs,Realizado,hygiene and headers,security tests,PR14,None,No credentials
+16,Database,RPC hardening,Realizado,fixed search_path and grants,lint and ACL tests,PR14,None,Minimal execute grants
+17,Database,RLS ownership BOLA,Realizado,RLS matrices,SQL and REST,PR14,None,No RLS disabled
+18,Privacy,Audit minimization,Realizado,audit transition schema,unit and SQL,current branch,None,No sensitive payload
+19,Ranking,Featured fairness,Realizado,seller diversity,unit and SQL,PR14,None,Deterministic
+20,Ranking,Organic exploration,Realizado,signed snapshot cursor,unit and SQL,PR14,None,Stable pagination
+21,Privacy,Recommendation consent,Realizado,opt-in controls,unit and E2E,PR14,None,Anonymous not persisted
+22,Abuse,Recommendation event limits,Realizado,hourly UTC-daily and per-action caps,unit SQL concurrency,current branch,None,Actor lock dedupe and self-listing rejection
+23,Privacy,Recommendation reset,Realizado,reset migration,SQL,PR14,Remote migration pending,Actor-scoped
+24,Pagination,Stable cursor,Realizado,cursor migration,25 SQL tests,PR14,Remote migration pending,No duplicate pages
+25,Payments,Real PayPal Sandbox order,Requiere acción manual externa,not executed,None,none,Authorized QA window,Payments off
+26,Payments,Real refund reversal cancel,Requiere acción manual externa,not executed,None,none,Authorized QA window,No mutation
+27,Performance,Indexes and load,En progreso,index and lab budgets,lint Lighthouse,PR14,Load environment,Production cardinality pending
+28,Database,Apply remote migrations,Requiere acción manual externa,dry-run only,migration list,none,Backup and approval,No db push
+29,Functions,Deploy Edge Functions,Requiere acción manual externa,no deploy,None,none,Approved migration window,No function changed
+30,Release,Production release gate,En progreso,runbooks and local gates,automated matrix,follow-up,Remote QA,No deploy
+31,Admin,Moderation panel,Realizado,existing Admin extended,unit and E2E,current branch,None,Server authorized
+32,Admin,Hide reject restore,Realizado,strict admin RPC,unit and SQL,current branch,None,Reason required
+33,Admin,Administrative history,Realizado,private audit fields,SQL,current branch,None,Limited metadata
+34,Safety,Marketplace reports,Realizado,closed reasons,unit and SQL,current branch,None,Visible listing only
+35,Safety,Report dedupe ownership,Realizado,actor and unique handling,unit and SQL,current branch,None,No user_id client
+36,Safety,Report anti-spam,Realizado,layered limits and lock,unit and SQL,current branch,None,Concurrent safe
+37,Safety,Temporal suspension,Realizado,profile fields RPC Admin,unit and SQL,current branch,None,No real user changed
+38,Profile,Public seller profile,Realizado,sanitized seller page,unit and E2E,current branch,None,No UUID or email
+39,Profile,Seller pagination,Realizado,profile RPC and load more,unit,current branch,None,Visibility enforced
+40,Community,Favorites,Realizado,RLS table and RPC,unit and SQL,current branch,None,Idempotent
+41,Community,User blocks,Realizado,directional pre-ranking filters,unit and SQL,current branch,None,Anonymous and reverse direction unchanged
+42,Account,Marketplace account,Realizado,community panel,unit and E2E,current branch,None,Owned data only
+43,Privacy,Recommendation controls,Realizado,opt-in and reset,unit,PR14,None,Favorites preserved
+44,Community,Internal notifications,Realizado,RLS RPC plain text retention,unit and SQL,current branch,None,90-day read and 180-day absolute cleanup
+45,Admin,Marketplace integration,Realizado,one extended panel,unit and E2E,current branch,None,No duplicate panel
+46,Analytics,Private aggregate metrics,Realizado,server metrics RPC,unit and SQL,current branch,None,No PII
+47,Security,URL validation,Realizado,exact allowlists,unit,current branch,None,HTTPS only
+48,Security,Content and XSS hardening,Realizado,dynamic sink inventory escape and validated DOM URLs,security tests,current branch,None,No C or D target sink remains
+49,Legal,Technical legal drafts,Realizado,legal.js,unit and build,current branch,Professional review,Not legal approval
+50,Legal,Professional review,Requiere intervención humana,technical drafts,None,none,Qualified counsel,Not completed
+51,Domain,Purchase domain,No aplica - fase actual,no purchase,None,none,Product decision,Zero cost
+52,Domain,Configure domain,No aplica - fase actual,current URL,None,none,ID51,No DNS change
+53,SEO,Definitive canonical,No aplica - fase actual,current canonical,SEO tests,none,IDs51-52,No change
+54,i18n,Separate ES EN URLs,En progreso,in-app dictionaries and route design,i18n tests,follow-up,Separate PR,Canonical hreflang redirects and parity designed
+55,Performance,Field Core Web Vitals,Requiere acción manual externa,lab Lighthouse,Lighthouse,none,Real traffic,No field claim
+56,Observability,Frontend error monitoring,Realizado,sampled sanitized monitor and bounded purge,unit and SQL,current branch,Remote migration pending,30-day retention
+57,CI,Free failure alerts,Realizado,health-alerts workflow,workflow syntax,current branch,GitHub Actions,Deduped issues
+58,Operations,Backup and rollback,Realizado,script and runbook,local reset and SQL,current branch,Remote backup manual,Outside Git
+59,Operations,Deployment documentation,Realizado,deployment checklist,documentation review,current branch,Manual release,No deploy
+60,QA,Final validation,En progreso,local automation,full matrix,current branch,PR CI and manual gates,Draft remains
