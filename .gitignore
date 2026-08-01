@@ -8,6 +8,7 @@ dist/
 artifacts/
 test-results/
 playwright-report/
+lighthouse-reports/
 backups/
 dumps/
 database-backups/

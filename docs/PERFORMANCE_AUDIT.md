@@ -25,3 +25,10 @@ Fecha: 29 de julio de 2026. Entorno medido: build local de producción con Vite 
 - Ningún chunk minificado por encima de 500 kB.
 - CLS menor a 0.1; INP menor a 200 ms; LCP menor a 2.5 s en percentil 75.
 - Mantener el hero funcional y legible aunque fallen WebGL, GSAP o Lottie.
+
+## Medición local de cierre - 1 de agosto de 2026
+
+- La ruta `/creatures` usa como elemento LCP el `h1` de texto, no la hoja de criaturas. Lighthouse identificó un `elementRenderDelay` de aproximadamente 140 ms y TTFB de aproximadamente 4 ms; por tanto no existe evidencia para añadir un preload o volver eager las ocho tarjetas.
+- La hoja `creature-sheet.webp` pesa 164 KB, queda bajo el presupuesto de 200 KB y mantiene relación de aspecto explícita. El presupuesto inicial terminó en 34.3/40 KB JS gzip y 12.6/15 KB CSS gzip.
+- Una repetición local de Lighthouse 13 sobre un servidor Vite ya activo reportó un valor absoluto anómalo de 12.7 s en todas las rutas, aunque el desglose del mismo LHR suma cerca de 145 ms, TBT es 0 y los checks remotos anteriores permanecen aprobados. La ejecución además terminó con `EPERM` al limpiar el perfil temporal de Chrome en Windows. Se conserva el elemento y desglose como diagnóstico, pero no se usa ese valor absoluto contradictorio como regresión del código.
+- Accesibilidad, best practices y SEO dieron 100 en las tres corridas de criaturas; CLS fue 0.019. La decisión técnica es no modificar carga de imágenes sin evidencia específica y mantener ID 55 para datos de campo reales.
