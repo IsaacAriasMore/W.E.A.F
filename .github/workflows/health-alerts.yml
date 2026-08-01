@@ -18,14 +18,21 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      ALERT_TITLE: "[health-alert] ${{ github.event.workflow_run.name }} failed on ${{ github.event.workflow_run.head_branch }}"
+      ALERT_WORKFLOW: ${{ github.event.workflow_run.name }}
+      ALERT_RUN_URL: ${{ github.event.workflow_run.html_url }}
     steps:
       - name: Open one deduplicated issue
         shell: bash
         run: |
+          case "$ALERT_WORKFLOW" in
+            CI|E2E|Lighthouse) ;;
+            *) echo "Ignoring an unexpected workflow name"; exit 0 ;;
+          esac
+          ALERT_TITLE="[health-alert] ${ALERT_WORKFLOW} failed"
+          export ALERT_TITLE
           existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$ALERT_TITLE in:title" --json title --jq '.[] | select(.title == env.ALERT_TITLE) | .title')"
           if [ -z "$existing" ]; then
-            gh issue create --repo "$GITHUB_REPOSITORY" --title "$ALERT_TITLE" --body "A required free check failed. Inspect the linked Actions run; no credentials or request payloads are copied into this issue. Run: ${{ github.event.workflow_run.html_url }}"
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$ALERT_TITLE" --body "A required free check failed. Inspect the linked Actions run; no credentials or request payloads are copied into this issue. Run: ${ALERT_RUN_URL}"
           fi
 
   production-health:
