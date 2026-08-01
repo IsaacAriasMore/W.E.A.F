@@ -10,6 +10,7 @@ const flow = read('../supabase/functions/_shared/paypalCaptureFlow.ts');
 const webhook = read('../supabase/functions/paypal-webhook/index.ts');
 const migration = read('../supabase/migrations/20260731233000_marketplace_capture_api_reconciliation.sql');
 const failureMigration = read('../supabase/migrations/20260731235900_marketplace_capture_reconciliation_failure_audit.sql');
+const integrityMigration = read('../supabase/migrations/20260801174140_marketplace_webhook_state_integrity.sql');
 
 const completedCapture = {
   id: 'CAPTURE1', status: 'COMPLETED',
@@ -300,4 +301,30 @@ test('paypal-webhook calls record_marketplace_paypal_event_failure before HTTP 5
   assert.match(webhook, /marketplace_processing_failed/);
   assert.match(webhook, /paypal_marketplace_event_failed/);
   assert.doesNotMatch(webhook, /feature_flags[\s\S]*paypal_payments/);
+});
+
+test('webhook state machine reconciles every supplied provider identifier', () => {
+  assert.match(integrityMigration, /payment\.paypal_order_id is distinct from order_id/);
+  assert.match(integrityMigration, /custom_id <> 'weaf_marketplace:' \|\| payment\.id::text/);
+  assert.match(integrityMigration, /payment\.paypal_capture_id <> capture_id/);
+  assert.match(integrityMigration, /raise exception 'marketplace_capture_reconciliation_failed'/);
+  assert.match(integrityMigration, /security definer/);
+  assert.match(integrityMigration, /set search_path = ''/);
+  assert.match(integrityMigration, /revoke all on function public\.process_marketplace_paypal_event/);
+  assert.match(integrityMigration, /to service_role/);
+});
+
+test('webhook terminal transitions are monotonic and DENIED never mutates a listing', () => {
+  assert.match(integrityMigration, /payment\.status in \('captured', 'refunded', 'reversed'\)/);
+  assert.match(integrityMigration, /stale_denial_ignored/);
+  assert.match(integrityMigration, /where id = payment\.id and status in \('created', 'approved'\)/);
+  const deniedBranch = integrityMigration.match(/elsif p_event_type = 'PAYMENT\.CAPTURE\.DENIED'[\s\S]*?elsif p_event_type in \('PAYMENT\.CAPTURE\.REFUNDED'/)?.[0] || '';
+  assert.doesNotMatch(deniedBranch, /update public\.marketplace_listings/);
+  assert.match(integrityMigration, /payment\.paypal_capture_id is null or payment\.paypal_capture_id <> capture_id/);
+  assert.match(integrityMigration, /payment\.status = 'captured'/);
+});
+
+test('marketplace webhook error logs do not include provider event identifiers', () => {
+  assert.doesNotMatch(webhook, /console\.error\("paypal_marketplace_event_failed",\s*event\.id/);
+  assert.doesNotMatch(webhook, /console\.error\("paypal_marketplace_event_failure_audit_failed",\s*event\.id/);
 });
