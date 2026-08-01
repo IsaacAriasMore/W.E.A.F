@@ -6,6 +6,9 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const lifecycle = read('../supabase/migrations/20260729230048_marketplace_asa_featured_lifecycle.sql');
 const ranking = read('../supabase/migrations/20260729230051_marketplace_personalized_fair_ranking.sql');
 const qa = read('../supabase/migrations/20260729230053_marketplace_sandbox_qa_allowlist.sql');
+const cursorSnapshot = read('../supabase/migrations/20260801173359_marketplace_catalog_cursor_snapshot.sql');
+const webhookIntegrity = read('../supabase/migrations/20260801174140_marketplace_webhook_state_integrity.sql');
+const privacyReset = read('../supabase/migrations/20260801174910_marketplace_recommendation_reset_privacy.sql');
 const publicPage = read('../src/pages/public/marketplace.js');
 const accountPage = read('../src/pages/app/marketplaceAccount.js');
 const service = read('../src/services/marketplaceService.js');
@@ -27,13 +30,15 @@ test('featured lifecycle is independent and preserves published_at', () => {
   assert.doesNotMatch(activation, /published_at\s*=/);
 });
 
-test('refunds, reversals, denials, and expiry revoke benefit without deleting listings', () => {
+test('refunds, reversals, and expiry revoke benefit while denial only fails its attempt', () => {
   for (const event of ['PAYMENT.CAPTURE.DENIED', 'PAYMENT.CAPTURE.REFUNDED', 'PAYMENT.CAPTURE.REVERSED']) {
-    assert.match(lifecycle, new RegExp(event.replaceAll('.', '\\.')));
+    assert.match(webhookIntegrity, new RegExp(event.replaceAll('.', '\\.')));
   }
+  const deniedBranch = webhookIntegrity.match(/elsif p_event_type = 'PAYMENT\.CAPTURE\.DENIED'[\s\S]*?elsif p_event_type in \('PAYMENT\.CAPTURE\.REFUNDED'/)?.[0] || '';
+  assert.doesNotMatch(deniedBranch, /update public\.marketplace_listings/);
+  assert.match(webhookIntegrity, /PAYMENT\.CAPTURE\.REFUNDED'[\s\S]*update public\.marketplace_listings/);
   assert.match(lifecycle, /expire_marketplace_featured_benefits/);
-  assert.match(lifecycle, /set is_featured = false/);
-  assert.doesNotMatch(lifecycle, /delete from public\.marketplace_(listings|payments|audit_log)/i);
+  assert.doesNotMatch(webhookIntegrity, /delete from public\.marketplace_(listings|payments|audit_log)/i);
 });
 
 test('recommendation storage is opt-in, owner-readable, and not directly writable', () => {
@@ -82,10 +87,13 @@ test('seller diversity and featured separation are enforced before response', ()
 test('keyset cursor is signed, bucket-bound, opaque, and limit-capped', () => {
   assert.match(ranking, /marketplace_ranking_secrets/);
   assert.match(ranking, /extensions\.hmac\(/);
-  assert.match(ranking, /marketplace_decode_cursor/);
-  assert.match(ranking, /cursor_payload->>'b'/);
-  assert.match(ranking, /p_limit is null or p_limit not between 1 and 24/);
-  assert.match(ranking, /rank_score < cursor_score/);
+  assert.match(cursorSnapshot, /marketplace_decode_cursor/);
+  assert.match(cursorSnapshot, /cursor_payload->>'b'/);
+  assert.match(cursorSnapshot, /p_limit is null or p_limit not between 1 and 24/);
+  assert.match(cursorSnapshot, /rank_score < cursor_score/);
+  assert.match(cursorSnapshot, /'v', 2, 'b', organic_bucket, 't', snapshot_time/);
+  assert.match(cursorSnapshot, /imp\.created_at < snapshot_time/);
+  assert.match(cursorSnapshot, /coalesce\(actor_id::text, 'anonymous'\)/);
 });
 
 test('impressions are server-computed and deduplicated per bucket and placement', () => {
@@ -100,10 +108,15 @@ test('anonymous ranking persists no IP, fingerprint, or anonymous Supabase user'
   assert.match(ranking, /actor_id is not null and personalization_enabled/);
 });
 
-test('reset removes interests and events and records only a minimal audit', () => {
-  assert.match(ranking, /delete from public\.marketplace_recommendation_events where user_id = actor_id/);
-  assert.match(ranking, /delete from public\.marketplace_user_interest_profiles where user_id = actor_id/);
-  assert.match(ranking, /'recommendations_reset'[\s\S]*'events_and_interests'/);
+test('reset removes all personalized ranking inputs and records only a minimal audit', () => {
+  assert.match(privacyReset, /delete from public\.marketplace_recommendation_events/);
+  assert.match(privacyReset, /delete from public\.marketplace_user_interest_profiles/);
+  assert.match(privacyReset, /delete from public\.marketplace_listing_impressions/);
+  assert.match(privacyReset, /where user_id = actor_id/);
+  assert.match(privacyReset, /'recommendations_reset'[\s\S]*'events_interests_and_impressions'/);
+  assert.doesNotMatch(privacyReset, /delete from public\.marketplace_(listings|payments|reports)/i);
+  assert.match(privacyReset, /revoke all on function public\.reset_marketplace_recommendations/);
+  assert.match(privacyReset, /grant execute on function public\.reset_marketplace_recommendations\(\)[\s\S]*to authenticated/);
 });
 
 test('USD 3 Sandbox price is authoritative on SQL and Edge boundaries', () => {
