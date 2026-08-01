@@ -9,6 +9,7 @@ const qa = read('../supabase/migrations/20260729230053_marketplace_sandbox_qa_al
 const cursorSnapshot = read('../supabase/migrations/20260801173359_marketplace_catalog_cursor_snapshot.sql');
 const webhookIntegrity = read('../supabase/migrations/20260801174140_marketplace_webhook_state_integrity.sql');
 const privacyReset = read('../supabase/migrations/20260801174910_marketplace_recommendation_reset_privacy.sql');
+const legacyModerationHotfix = read('../supabase/migrations/20260801215014_fix_marketplace_legacy_moderation.sql');
 const publicPage = read('../src/pages/public/marketplace.js');
 const accountPage = read('../src/pages/app/marketplaceAccount.js');
 const service = read('../src/services/marketplaceService.js');
@@ -19,6 +20,15 @@ test('compensating migrations preserve legacy rows while enforcing ASA on new wr
   assert.match(lifecycle, /clean->>'game' <> 'ascended'[\s\S]*marketplace_asa_only/);
   assert.match(lifecycle, /l\.game = 'ascended'/);
   assert.doesNotMatch(lifecycle, /delete from public\.marketplace_listings|drop table public\.marketplace_listings/i);
+});
+
+test('legacy Marketplace rows remain moderatable without weakening ASA-only writes', () => {
+  assert.match(legacyModerationHotfix, /create or replace function private\.enforce_marketplace_asa_game\(\)/);
+  assert.match(legacyModerationHotfix, /tg_op = 'UPDATE'[\s\S]*new\.game is not distinct from old\.game/);
+  assert.match(legacyModerationHotfix, /before insert or update of game on public\.marketplace_listings/);
+  assert.match(legacyModerationHotfix, /drop constraint if exists marketplace_new_writes_asa_only/);
+  assert.match(legacyModerationHotfix, /errcode = '23514'[\s\S]*message = 'marketplace_asa_only'/);
+  assert.doesNotMatch(legacyModerationHotfix, /update\s+public\.marketplace_listings\s+set\s+game/i);
 });
 
 test('featured lifecycle is independent and preserves published_at', () => {
