@@ -1,6 +1,48 @@
-$API = "http://127.0.0.1:54321"
-$ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
-$SVC = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+function Get-LocalSupabaseTestEnvironment {
+    $npx = Get-Command npx.cmd -ErrorAction SilentlyContinue
+    if (-not $npx) { $npx = Get-Command npx -ErrorAction SilentlyContinue }
+    if (-not $npx) { throw "Supabase local test setup failed: npx is unavailable." }
+
+    $statusOutput = @(& $npx.Source supabase status -o env 2>$null)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Supabase local test setup failed: the local stack is not running."
+    }
+
+    $values = @{}
+    foreach ($line in $statusOutput) {
+        if ($line -match '^([A-Z0-9_]+)=(.*)$') {
+            $values[$matches[1]] = $matches[2].Trim().Trim('"')
+        }
+    }
+
+    foreach ($name in @('API_URL', 'ANON_KEY', 'SERVICE_ROLE_KEY')) {
+        if ([string]::IsNullOrWhiteSpace($values[$name])) {
+            throw "Supabase local test setup failed: required local value '$name' is unavailable."
+        }
+    }
+
+    $apiUri = $null
+    if (-not [Uri]::TryCreate($values['API_URL'], [UriKind]::Absolute, [ref]$apiUri) -or
+        $apiUri.Scheme -notin @('http', 'https') -or
+        -not $apiUri.IsLoopback) {
+        throw "Supabase local test setup failed: API_URL must use a loopback host."
+    }
+
+    return @{
+        ApiUrl = $apiUri.AbsoluteUri.TrimEnd('/')
+        AnonKey = $values['ANON_KEY']
+        ServiceRoleKey = $values['SERVICE_ROLE_KEY']
+    }
+}
+
+$localSupabase = Get-LocalSupabaseTestEnvironment
+$API = $localSupabase.ApiUrl
+$ANON = $localSupabase.AnonKey
+$SVC = $localSupabase.ServiceRoleKey
+
+try {
+
+$script:Failures = 0
 
 function C($method, $url, $token, $body) {
     $h = @{ apikey = $token; Authorization = "Bearer $token" }
@@ -10,11 +52,12 @@ function C($method, $url, $token, $body) {
         return @{ ok=$true; st=200; data=$r }
     } catch {
         $s = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
-        return @{ ok=$false; st=$s; err=$_|Out-String }
+        return @{ ok=$false; st=$s }
     }
 }
 function T($l, $expOK, $expSt, $r) {
     $p = ($r.ok -eq $expOK) -and ($expSt -eq "any" -or $r.st -in @($expSt))
+    if (-not $p) { $script:Failures += 1 }
     Write-Host ("  $(if($p){'PASS'}else{'FAIL'}): $l (st=$($r.st))") -ForegroundColor $(if($p){'Green'}else{'Red'})
 }
 
@@ -28,12 +71,18 @@ $TA = if ($tok["viewer-a@test.local"]) { $tok["viewer-a@test.local"] } else { if
 
 Write-Host "`n=== RLS MATRIX (via REST API) ===" -ForegroundColor Cyan
 $tbls = @("marketplace_recommendation_preferences","marketplace_recommendation_events","marketplace_user_interest_profiles","marketplace_listing_impressions")
+$updateBodies = @{
+    marketplace_recommendation_preferences = @{ personalization_enabled = $true }
+    marketplace_recommendation_events = @{ weight = 2 }
+    marketplace_user_interest_profiles = @{ affinities = @{} }
+    marketplace_listing_impressions = @{ position = 2 }
+}
 foreach ($t in $tbls) {
     Write-Host "--- $t ---" -ForegroundColor Yellow
-    $r = C GET "$API/rest/v1/$t?select=count" $ANON; T "anon SELECT" $true "any" $r
-    $r = C GET "$API/rest/v1/$t?select=user_id&limit=1" $TA; T "auth SELECT" $true "any" $r
-    $r = C POST "$API/rest/v1/$t" $TA @{user_id="00000000-0000-0000-0000-0000000000b1"}; T "auth INSERT (no policy)" $false @(401,403,404,405) $r
-    $r = C PATCH "$API/rest/v1/$t?user_id=eq.00000000-0000-0000-0000-0000000000b1" $TA @{personalization_enabled=$true}; T "auth UPDATE (no policy)" $false @(401,403,404,405) $r
+    $r = C GET "$API/rest/v1/${t}?select=user_id&limit=1" $ANON; T "anon SELECT denied" $false @(401,403,404) $r
+    $r = C GET "$API/rest/v1/${t}?select=user_id&limit=1" $TA; T "auth SELECT own rows" $true "any" $r
+    $r = C POST "$API/rest/v1/${t}" $TA @{user_id="00000000-0000-0000-0000-0000000000b1"}; T "auth INSERT (no policy)" $false @(401,403,404,405) $r
+    $r = C PATCH "$API/rest/v1/${t}?user_id=eq.00000000-0000-0000-0000-0000000000b1" $TA $updateBodies[$t]; T "auth UPDATE (no policy)" $false @(401,403,404,405) $r
 }
 
 Write-Host "--- private.tables (no REST endpoint) ---" -ForegroundColor Yellow
@@ -45,7 +94,7 @@ Write-Host "`n=== RPC MATRIX ===" -ForegroundColor Cyan
 Write-Host "--- get_marketplace_catalog_v2 ---" -ForegroundColor Yellow
 $r = C POST "$API/rest/v1/rpc/get_marketplace_catalog_v2" $ANON @{}; T "anon" $true "any" $r
 $r = C POST "$API/rest/v1/rpc/get_marketplace_catalog_v2" $TA @{p_limit=24}; T "auth" $true "any" $r
-$r = C POST "$API/rest/v1/rpc/get_marketplace_catalog_v2" $SVC @{p_limit=12}; T "service" $true "any" $r
+$r = C POST "$API/rest/v1/rpc/get_marketplace_catalog_v2" $SVC @{p_limit=12}; T "service role is not granted public catalog" $false 403 $r
 
 Write-Host "--- get_marketplace_recommendation_settings ---" -ForegroundColor Yellow
 $r = C POST "$API/rest/v1/rpc/get_marketplace_recommendation_settings" $ANON @{}; T "anon" $true "any" $r
@@ -80,6 +129,16 @@ $viewerId = (docker exec -i supabase_db_W.E.A.F psql -U postgres -t -A -c "SELEC
 $r = C POST "$API/rest/v1/rpc/prepare_marketplace_paypal_order" $ANON @{p_user_id=$viewerId;p_listing_id="a0000000-0000-0000-0000-000000000001";p_idempotency_key=([guid]::NewGuid().ToString())}
 T "anon" $false @(401,403) $r
 $r = C POST "$API/rest/v1/rpc/prepare_marketplace_paypal_order" $SVC @{p_user_id=$viewerId;p_listing_id="a0000000-0000-0000-0000-000000000001";p_idempotency_key=([guid]::NewGuid().ToString())}
-T "service" $true "any" $r
+T "service reaches RPC but disabled payments fail closed" $false 400 $r
 
-Write-Host "`n=== API TESTS COMPLETE ===" -ForegroundColor Green
+if ($script:Failures -gt 0) {
+    throw "Marketplace API RLS/RPC validation failed with $script:Failures assertion(s)."
+}
+Write-Host "`n=== API TESTS COMPLETE: PASS ===" -ForegroundColor Green
+} finally {
+    if ($tok) { $tok.Clear() }
+    $TA = $null
+    $ANON = $null
+    $SVC = $null
+    $localSupabase = $null
+}

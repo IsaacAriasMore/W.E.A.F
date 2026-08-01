@@ -1,11 +1,57 @@
 # Marketplace v2 - RLS Matrix & RPC Matrix Tests
-# Run against local Supabase API with different JWT roles
+# Run against local Supabase API with credentials discovered at runtime.
 
-$API = "http://127.0.0.1:54321"
-$ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
-$SVC = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+function Get-LocalSupabaseTestEnvironment {
+    $npx = Get-Command npx.cmd -ErrorAction SilentlyContinue
+    if (-not $npx) { $npx = Get-Command npx -ErrorAction SilentlyContinue }
+    if (-not $npx) { throw "Supabase local test setup failed: npx is unavailable." }
+
+    $statusOutput = @(& $npx.Source supabase status -o env 2>$null)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Supabase local test setup failed: the local stack is not running."
+    }
+
+    $values = @{}
+    foreach ($line in $statusOutput) {
+        if ($line -match '^([A-Z0-9_]+)=(.*)$') {
+            $values[$matches[1]] = $matches[2].Trim().Trim('"')
+        }
+    }
+
+    foreach ($name in @('API_URL', 'ANON_KEY', 'SERVICE_ROLE_KEY')) {
+        if ([string]::IsNullOrWhiteSpace($values[$name])) {
+            throw "Supabase local test setup failed: required local value '$name' is unavailable."
+        }
+    }
+
+    $apiUri = $null
+    if (-not [Uri]::TryCreate($values['API_URL'], [UriKind]::Absolute, [ref]$apiUri) -or
+        $apiUri.Scheme -notin @('http', 'https') -or
+        -not $apiUri.IsLoopback) {
+        throw "Supabase local test setup failed: API_URL must use a loopback host."
+    }
+
+    return @{
+        ApiUrl = $apiUri.AbsoluteUri.TrimEnd('/')
+        AnonKey = $values['ANON_KEY']
+        ServiceRoleKey = $values['SERVICE_ROLE_KEY']
+    }
+}
+
+$localSupabase = Get-LocalSupabaseTestEnvironment
+$API = $localSupabase.ApiUrl
+$ANON = $localSupabase.AnonKey
+$SVC = $localSupabase.ServiceRoleKey
+
+try {
 
 $PASS = "Test1234!"
+$script:Failures = 0
+
+function Write-TestFailure($message) {
+    $script:Failures += 1
+    Write-Host "  FAIL: $message" -ForegroundColor Red
+}
 
 function Invoke-Api($method, $url, $key, $body, $desc) {
     $headers = @{ "apikey" = $key; "Authorization" = "Bearer $key" }
@@ -19,14 +65,14 @@ function Invoke-Api($method, $url, $key, $body, $desc) {
         }
     } catch {
         $code = $_.Exception.Response.StatusCode.value__
-        return @{ ok = $false; code = $code; error = $_ | Out-String }
+        return @{ ok = $false; code = $code }
     }
 }
 
 function Assert-Status($result, $expected, $desc) {
     if ($result.ok -and $expected -eq 200) { Write-Host "  PASS: $desc" -ForegroundColor Green }
     elseif (-not $result.ok -and $result.code -eq $expected) { Write-Host "  PASS: $desc (got $($result.code))" -ForegroundColor Green }
-    else { Write-Host "  FAIL: $desc - expected $expected got $($result.code)" -ForegroundColor Red }
+    else { Write-TestFailure "$desc - expected $expected got $($result.code)" }
 }
 
 # --- Create test users via auth signup ---
@@ -40,18 +86,17 @@ $tokens = @{}
 foreach ($u in $users) {
     $body = @{ email = $u.email; password = $PASS; data = @{ display_name = $u.email.Split("@")[0] } }
     $r = Invoke-Api POST "$API/auth/v1/signup" $ANON $body
-    if ($r.ok) {
-        # Try to sign in to get token
-        $login = @{ email = $u.email; password = $PASS; gotrue_meta_security = @{} }
-        $lr = Invoke-Api POST "$API/auth/v1/token?grant_type=password" $ANON $login
-        if ($lr.ok -and $lr.data.access_token) {
-            $tokens[$u.email] = $lr.data.access_token
-            Write-Host "  User $($u.email) signed in OK" -ForegroundColor Green
-        } else {
-            Write-Host "  User $($u.email) signin failed: $($lr.error)" -ForegroundColor Yellow
-        }
+    if (-not $r.ok -and $r.code -ne 422) {
+        Write-Host "  User $($u.email) signup was not created (status=$($r.code))" -ForegroundColor Yellow
+    }
+    # Login is required even when the local fixture already exists (signup 422).
+    $login = @{ email = $u.email; password = $PASS; gotrue_meta_security = @{} }
+    $lr = Invoke-Api POST "$API/auth/v1/token?grant_type=password" $ANON $login
+    if ($lr.ok -and $lr.data.access_token) {
+        $tokens[$u.email] = $lr.data.access_token
+        Write-Host "  User $($u.email) signed in OK" -ForegroundColor Green
     } else {
-        Write-Host "  User $($u.email) signup: $($r.error)" -ForegroundColor Yellow
+        Write-TestFailure "local test user $($u.email) could not sign in (status=$($lr.code))"
     }
 }
 
@@ -67,8 +112,11 @@ foreach ($email in $seedUsers) {
 }
 
 # Use direct user_id-based approach for comparison
-$TOKEN_A = if ($tokens["rls-a@test.local"]) { $tokens["rls-a@test.local"] } else { $ANON }
-$TOKEN_B = if ($tokens["rls-b@test.local"]) { $tokens["rls-b@test.local"] } else { $ANON }
+$TOKEN_A = $tokens["rls-a@test.local"]
+$TOKEN_B = $tokens["rls-b@test.local"]
+if (-not $TOKEN_A -or -not $TOKEN_B) {
+    Write-TestFailure "authenticated RLS tokens are unavailable"
+}
 
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "RLS MATRIX - Table Access by Role" -ForegroundColor Cyan
@@ -77,9 +125,11 @@ Write-Host "========================================" -ForegroundColor Cyan
 # 1. marketplace_recommendation_preferences (anon should get 401/406, auth A sees own, auth B sees own)
 Write-Host "`n--- marketplace_recommendation_preferences ---" -ForegroundColor Yellow
 $r = Invoke-Api GET "$API/rest/v1/marketplace_recommendation_preferences?select=user_id" $ANON
-Assert-Status $r 200 "anon: select preferences (no Prefer header)" # might return empty array
-if ($r.ok -and $r.data.Count -eq 0) { Write-Host "  PASS: anon sees 0 rows (RLS blocks)" -ForegroundColor Green }
-else { Write-Host "  WARN: anon saw $($r.data.Count) rows" -ForegroundColor Yellow }
+if (-not $r.ok -and $r.code -in @(401, 403, 404)) {
+    Write-Host "  PASS: anon cannot select private recommendation preferences" -ForegroundColor Green
+} else {
+    Write-TestFailure "anon unexpectedly accessed recommendation preferences"
+}
 
 $r = Invoke-Api GET "$API/rest/v1/marketplace_recommendation_preferences?select=user_id" $TOKEN_A $null
 if ($r.ok) {
@@ -87,7 +137,7 @@ if ($r.ok) {
     Write-Host "  PASS: auth A sees rows: $($ids.Count)" -ForegroundColor Green
     # Verify only own data
     if ($ids | Where-Object { $_ -ne "00000000-0000-0000-0000-0000000000a5" -and $_ -ne "00000000-0000-0000-0000-0000000000b1" }) {
-        Write-Host "  FAIL: auth A saw someone else's data" -ForegroundColor Red
+        Write-TestFailure "auth A saw someone else's data"
     } else {
         Write-Host "  PASS: auth A only sees own data" -ForegroundColor Green
     }
@@ -127,7 +177,7 @@ if ($r.ok) { Write-Host "  PASS: anon GET impressions: $($r.data.Count)" -Foregr
 Write-Host "`n--- private.marketplace_ranking_secrets ---" -ForegroundColor Yellow
 $r = Invoke-Api GET "$API/rest/v1/marketplace_ranking_secrets" $ANON
 if (-not $r.ok -and $r.code -eq 404) { Write-Host "  PASS: private schema not exposed via REST" -ForegroundColor Green }
-else { Write-Host "  FAIL: secrets accessible via REST! code=$($r.code)" -ForegroundColor Red }
+else { Write-TestFailure "private ranking secrets accessible via REST (status=$($r.code))" }
 
 # 6. private.marketplace_payment_qa_settings 
 Write-Host "`n--- private.marketplace_payment_qa_settings ---" -ForegroundColor Yellow
@@ -190,7 +240,7 @@ if (-not $r.ok) { Write-Host "  PASS: auth A rejected (code=$($r.code))" -Foregr
 
 $r = Invoke-Api POST "$API/rest/v1/rpc/maintain_marketplace_recommendation_data" $SVC @{}
 if ($r.ok) { Write-Host "  PASS: service_role allowed (code=200)" -ForegroundColor Green }
-else { Write-Host "  FAIL: service_role rejected code=$($r.code)" -ForegroundColor Red }
+else { Write-TestFailure "service_role rejected by maintenance RPC (status=$($r.code))" }
 
 # RPC: get_marketplace_checkout_settings
 Write-Host "`n--- get_marketplace_checkout_settings ---" -ForegroundColor Yellow
@@ -211,15 +261,18 @@ $r = Invoke-Api POST "$API/rest/v1/rpc/prepare_marketplace_paypal_order" $SVC @{
     p_listing_id = "a0000000-0000-0000-0000-000000000001"
     p_idempotency_key = [guid]::NewGuid().ToString()
 }
-if ($r.ok) { Write-Host "  PASS: service_role can prepare (code=200)" -ForegroundColor Green }
-else { Write-Host "  INFO: service_role prepare: $($r.error | Out-String)" -ForegroundColor Yellow }
+if (-not $r.ok -and $r.code -eq 400) {
+    Write-Host "  PASS: service_role reaches the RPC and closed kill switches reject preparation" -ForegroundColor Green
+} else {
+    Write-TestFailure "prepare order did not fail closed with disabled payments (status=$($r.code))"
+}
 
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "PERSONALIZATION TESTS" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
-$VTOKEN = $tokens["viewer-a@test.local"]
-if (-not $VTOKEN) { Write-Host "SKIP: viewer-a not logged in" -ForegroundColor Yellow; return }
+$VTOKEN = if ($tokens["viewer-a@test.local"]) { $tokens["viewer-a@test.local"] } else { $TOKEN_A }
+if (-not $VTOKEN) { Write-TestFailure "no authenticated local user token is available" }
 
 # Event with personalization disabled
 $r = Invoke-Api POST "$API/rest/v1/rpc/set_marketplace_personalization" $VTOKEN @{ p_enabled = $false }
@@ -269,7 +322,7 @@ if ($r.ok) {
     $d = $r.data
     $checks = @("categories", "featured", "listings", "next_cursor", "personalization_enabled", "bucket")
     $ok = $true
-    foreach ($c in $checks) { if (-not ($d.PSObject.Properties.Name -contains $c)) { Write-Host "  FAIL: missing key '$c'" -ForegroundColor Red; $ok = $false } }
+    foreach ($c in $checks) { if (-not ($d.PSObject.Properties.Name -contains $c)) { Write-TestFailure "missing catalog key '$c'"; $ok = $false } }
     if ($ok) { Write-Host "  PASS: all 6 structure keys present" -ForegroundColor Green }
     Write-Host "  featured=$($d.featured.Length) organic=$($d.listings.Length) cursor=$($d.next_cursor)"
 }
@@ -305,15 +358,15 @@ else { Write-Host "  INFO: slug query returned $($r.data.listings.Length) listin
 # No ASE listings
 $r = Invoke-Api POST "$API/rest/v1/rpc/get_marketplace_catalog_v2" $ANON @{ p_limit = 24 }
 if ($r.ok) {
-    $game = $r.data.listings | ForEach-Object { $_.game } | Select-Object -Unique
-    if ($game.Count -eq 1 -and $game[0] -eq "ascended") { Write-Host "  PASS: no ASE/Both listings returned" -ForegroundColor Green }
-    else { Write-Host "  WARN: listings contain game=$($game -join ',')" -ForegroundColor Yellow }
+    $games = @($r.data.listings | ForEach-Object { $_.game } | Select-Object -Unique)
+    if ($games.Count -eq 1 -and $games[0] -eq "ascended") { Write-Host "  PASS: no ASE/Both listings returned" -ForegroundColor Green }
+    else { Write-TestFailure "catalog returned unexpected game values" }
 }
 
 # No expired listings
 $exp = $r.data.listings | Where-Object { $_.title -like "*Expired*" }
 if ($exp.Count -eq 0) { Write-Host "  PASS: no expired listings returned" -ForegroundColor Green }
-else { Write-Host "  FAIL: expired listing returned!" -ForegroundColor Red }
+else { Write-TestFailure "expired listing returned" }
 
 # No hidden listings
 $hdn = $r.data.listings | Where-Object { $_.title -like "*Hidden*" }
@@ -348,7 +401,7 @@ if ($r.ok) {
             $ids2 = $listings2 | ForEach-Object { $_.id }
             $dup = $ids1 | Where-Object { $_ -in $ids2 }
             if ($dup.Count -eq 0) { Write-Host "  PASS: no duplicates between pages" -ForegroundColor Green }
-            else { Write-Host "  FAIL: $($dup.Count) duplicates between pages!" -ForegroundColor Red }
+            else { Write-TestFailure "$($dup.Count) duplicates between pages" }
         }
     }
     
@@ -366,16 +419,21 @@ $r = Invoke-Api POST "$API/rest/v1/rpc/get_marketplace_catalog_v2" $ANON @{ p_li
 if ($r.ok) {
     $featuredInOrganic = $r.data.listings | Where-Object { $_.is_featured -eq $true }
     if ($featuredInOrganic.Count -eq 0) { Write-Host "  PASS: no featured listings in organic section" -ForegroundColor Green }
-    else { Write-Host "  FAIL: $($featuredInOrganic.Count) featured in organic!" -ForegroundColor Red }
+    else { Write-TestFailure "$($featuredInOrganic.Count) featured listings appeared in organic results" }
 }
 
-# Featured section - verify at most 1 per seller
+# Featured section - verify at most 1 per seller using authoritative local rows,
+# not a slug heuristic that collapses seller-a and seller-b to the same prefix.
 if ($r.data.featured.Count -gt 0) {
-    $featuredSellers = $r.data.featured | ForEach-Object { $_.slug.Split("-")[0] }
-    $sellerCounts = $featuredSellers | Group-Object | ForEach-Object { $_.Count }
-    $overLimit = $sellerCounts | Where-Object { $_ -gt 1 }
-    if ($overLimit.Count -eq 0) { Write-Host "  PASS: at most 1 featured per seller" -ForegroundColor Green }
-    else { Write-Host "  FAIL: seller has $($overLimit[0]) featured listings!" -ForegroundColor Red }
+    $featuredIdFilter = ($r.data.featured | ForEach-Object { $_.id }) -join ','
+    $owners = Invoke-Api GET "$API/rest/v1/marketplace_listings?select=id,owner_user_id&id=in.($featuredIdFilter)" $SVC $null
+    if (-not $owners.ok) {
+        Write-TestFailure "could not validate featured seller diversity (status=$($owners.code))"
+    } else {
+        $overLimit = @($owners.data | Group-Object owner_user_id | Where-Object { $_.Count -gt 1 })
+        if ($overLimit.Count -eq 0) { Write-Host "  PASS: at most 1 featured per seller" -ForegroundColor Green }
+        else { Write-TestFailure "a seller has multiple listings in the initial featured set" }
+    }
 }
 
 Write-Host "`n========================================" -ForegroundColor Cyan
@@ -392,6 +450,18 @@ if ($r.ok) {
     if ($r.data.categories.Count -ge 6) { Write-Host "  PASS: v1 fallback returns categories" -ForegroundColor Green }
     $asaListings = $r.data.listings | Where-Object { $_.game -eq "ascended" }
     if ($asaListings.Count -ge 0) { Write-Host "  PASS: v1 contains ASA listings" -ForegroundColor Green }
-} else { Write-Host "  FAIL: v1 not available or error: $($r.error)" -ForegroundColor Red }
+} else { Write-TestFailure "v1 fallback unavailable (status=$($r.code))" }
 
-Write-Host "`n=== ALL API TESTS COMPLETED ===" -ForegroundColor Green
+if ($script:Failures -gt 0) {
+    throw "Marketplace RLS/RPC validation failed with $script:Failures assertion(s)."
+}
+Write-Host "`n=== ALL API TESTS COMPLETED: PASS ===" -ForegroundColor Green
+} finally {
+    if ($tokens) { $tokens.Clear() }
+    $TOKEN_A = $null
+    $TOKEN_B = $null
+    $VTOKEN = $null
+    $ANON = $null
+    $SVC = $null
+    $localSupabase = $null
+}
