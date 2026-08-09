@@ -3,7 +3,7 @@ import { escapeHtml } from '../../utils/sanitize.js';
 import { getLanguage, t } from '../../i18n/index.js';
 import { hasUnsafeMarketplaceText, marketplacePayload, marketplaceTimeLeft } from '../../utils/marketplaceListing.js';
 import { showToast } from '../../utils/feedback.js';
-import { trustedPayPalSandboxApprovalUrl } from '../../utils/safeUrl.js';
+import { getFeaturedCheckoutAction, startFeaturedCheckout } from '../../utils/marketplaceFeaturedCheckout.js';
 import '../../css/app.css';
 import '../../css/marketplace.css';
 
@@ -36,9 +36,11 @@ function recommendationControls(preference = {}) {
   return `<section class="market-preferences" aria-labelledby="market-preferences-title"><div><p>${t('marketplace.recommendations.eyebrow')}</p><h2 id="market-preferences-title">${t('marketplace.recommendations.title')}</h2><span>${t('marketplace.recommendations.body')}</span><a href="/privacy" data-link>${t('marketplace.recommendations.privacy')}</a></div><div class="market-preference-actions"><label class="market-toggle"><input type="checkbox" data-market-personalization ${preference.personalization_enabled ? 'checked' : ''}><span>${t('marketplace.recommendations.toggle')}</span></label><button class="button button-quiet" type="button" data-market-reset>${t('marketplace.recommendations.reset')}</button><p class="form-message" data-market-preference-status role="status" aria-live="polite"></p></div></section>`;
 }
 
-function accountListing(item, payments) {
+function accountListing(item, payments, settings) {
   const payment = payments.find((candidate) => candidate.listing_id === item.id);
-  return `<article><div><span>${t(`marketplace.status.${item.status}`)} · ASA</span><h2>${escapeHtml(item.title)}</h2><dl class="market-lifecycle"><div><dt>${t('marketplace.lifecycle.published')}</dt><dd>${date(item.published_at)}</dd></div><div><dt>${t('marketplace.lifecycle.expires')}</dt><dd>${date(item.expires_at)}</dd></div>${item.featured_started_at ? `<div><dt>${t('marketplace.lifecycle.featuredStarted')}</dt><dd>${date(item.featured_started_at)}</dd></div><div><dt>${t('marketplace.lifecycle.featuredExpires')}</dt><dd>${date(item.featured_expires_at)}</dd></div>` : ''}${payment ? `<div><dt>${t('marketplace.lifecycle.payment')}</dt><dd>${escapeHtml(payment.status)} · PayPal Sandbox</dd></div>` : ''}</dl><p>${marketplaceTimeLeft(item.expires_at)} ${t('marketplace.daysRemaining')}</p></div><div>${['active', 'draft'].includes(item.status) ? `<a class="button button-secondary" href="/marketplace/${item.id}/edit" data-link>${t('common.edit')}</a><button class="button button-quiet" type="button" data-hide-market="${item.id}">${t('marketplace.hide')}</button>` : ''}</div></article>`;
+  const featuredAction = getFeaturedCheckoutAction(item, payments, settings);
+  const checkout = featuredAction ? `<button class="button button-primary" type="button" data-featured-checkout="${escapeHtml(item.id)}">${t(featuredAction === 'retry' ? 'marketplace.retryFeaturedPayment' : 'marketplace.featureListing')}</button>` : '';
+  return `<article><div><span>${t(`marketplace.status.${item.status}`)} · ASA</span><h2>${escapeHtml(item.title)}</h2><dl class="market-lifecycle"><div><dt>${t('marketplace.lifecycle.published')}</dt><dd>${date(item.published_at)}</dd></div><div><dt>${t('marketplace.lifecycle.expires')}</dt><dd>${date(item.expires_at)}</dd></div>${item.featured_started_at ? `<div><dt>${t('marketplace.lifecycle.featuredStarted')}</dt><dd>${date(item.featured_started_at)}</dd></div><div><dt>${t('marketplace.lifecycle.featuredExpires')}</dt><dd>${date(item.featured_expires_at)}</dd></div>` : ''}${payment ? `<div><dt>${t('marketplace.lifecycle.payment')}</dt><dd>${escapeHtml(payment.status)} · PayPal Sandbox</dd></div>` : ''}</dl><p>${marketplaceTimeLeft(item.expires_at)} ${t('marketplace.daysRemaining')}</p></div><div>${['active', 'draft'].includes(item.status) ? `<a class="button button-secondary" href="/marketplace/${item.id}/edit" data-link>${t('common.edit')}</a>${checkout}<button class="button button-quiet" type="button" data-hide-market="${escapeHtml(item.id)}">${t('marketplace.hide')}</button>` : ''}</div></article>`;
 }
 
 function communityPanel(data = {}) {
@@ -66,7 +68,7 @@ export function bind({ path, authService, navigate }) {
     const listings = workspace.data?.listings || [];
     const payments = workspace.data?.payments || [];
     if (path === '/account/marketplace') {
-      root.querySelector('.route-loading').outerHTML = `${recommendationControls(preferences.data)}${communityPanel(community.data)}<div class="market-account-actions"><a class="button button-primary" href="/marketplace/new" data-link>${t('marketplace.publish')}</a></div><div class="market-account-list">${listings.length ? listings.map((item) => accountListing(item, payments)).join('') : `<div class="market-empty"><h2>${t('marketplace.accountEmpty')}</h2><p>${t('marketplace.accountEmptyBody')}</p></div>`}</div>`;
+      root.querySelector('.route-loading').outerHTML = `${recommendationControls(preferences.data)}${communityPanel(community.data)}<div class="market-account-actions"><a class="button button-primary" href="/marketplace/new" data-link>${t('marketplace.publish')}</a></div><div class="market-account-list">${listings.length ? listings.map((item) => accountListing(item, payments, settings.data || {})).join('') : `<div class="market-empty"><h2>${t('marketplace.accountEmpty')}</h2><p>${t('marketplace.accountEmptyBody')}</p></div>`}</div>`;
       return;
     }
     if (catalog.error || !(catalog.data?.categories?.length)) { root.querySelector('.route-loading').outerHTML = `<div class="market-empty" role="status"><p>${t('marketplace.errors.load')}</p></div>`; return; }
@@ -109,15 +111,27 @@ export function bind({ path, authService, navigate }) {
       const result = target.dataset.listingId ? await service.update(target.dataset.listingId, payload) : await service.publishFree(payload, values.has('rules'));
       if (result.error) showToast(result.error, 'error');
       else if (!target.dataset.listingId && values.get('publication_plan') === 'featured') {
-        const order = await service.startFeaturedOrder(result.data, crypto.randomUUID());
-        const approval = trustedPayPalSandboxApprovalUrl(order.data?.url);
-        if (order.error || !approval) { showToast(order.error || t('marketplace.errors.paymentStart'), 'error'); navigate('/account/marketplace'); }
-        else window.location.assign(approval);
+        const order = await startFeaturedCheckout(result.data, service);
+        if (!order.ok) { showToast(order.error, 'error'); navigate('/account/marketplace'); }
       } else { showToast(target.dataset.listingId ? t('marketplace.saved') : t('marketplace.published')); navigate('/account/marketplace'); }
     } finally { if (button.isConnected) { button.disabled = false; button.textContent = original; } }
   });
 
   root.addEventListener('click', async (event) => {
+    const checkout = event.target.closest('[data-featured-checkout]');
+    if (checkout) {
+      if (checkout.disabled) return;
+      checkout.disabled = true;
+      const original = checkout.textContent;
+      checkout.textContent = t('common.loading');
+      try {
+        const order = await startFeaturedCheckout(checkout.dataset.featuredCheckout, service);
+        if (!order.ok) showToast(order.error, 'error');
+      } finally {
+        if (checkout.isConnected) { checkout.disabled = false; checkout.textContent = original; }
+      }
+      return;
+    }
     const read = event.target.closest('[data-market-read]');
     if (read) {
       read.disabled = true;

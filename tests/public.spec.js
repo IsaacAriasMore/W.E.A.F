@@ -159,6 +159,14 @@ test('marketplace is public while publishing remains protected', async ({ page }
   await expect(page).toHaveURL(/\/login\?next=%2Fmarketplace%2Fnew/);
 });
 
+test('marketplace payment cancellation explains the safe retry path without a mutation', async ({ page }) => {
+  await page.goto('/marketplace/payment/cancel');
+  await expect(page.getByRole('heading', { name: 'Pago cancelado.' })).toBeVisible();
+  await expect(page.getByText('Puedes reintentarlo desde Mi Marketplace.')).toBeVisible();
+  await expect(page.locator('.route-loading')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Mi Marketplace' })).toHaveAttribute('href', '/account/marketplace');
+});
+
 test('ASA marketplace stays contained at mobile and tablet widths', async ({ page }) => {
   for (const width of [390, 768]) {
     await page.setViewportSize({ width, height: 900 });
