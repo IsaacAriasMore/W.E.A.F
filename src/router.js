@@ -78,7 +78,7 @@ function normalizePath(pathname) {
 const guestOnlyRoutes = new Set(['/login', '/register']);
 const protectedRoutes = new Set([
   '/onboarding', '/profile', '/app', '/app/breeds', '/app/mutations', '/app/tribe-settings',
-  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/marketplace/new', '/account/marketplace', '/marketplace/payment/success', '/marketplace/payment/cancel', '/admin',
+  '/servers/publish', '/servers/success', '/servers/cancel', '/account/billing', '/marketplace/new', '/account/marketplace', '/marketplace/payment/success', '/admin',
 ]);
 
 function resolveLoader(path) {

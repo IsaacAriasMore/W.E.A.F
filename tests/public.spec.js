@@ -160,11 +160,17 @@ test('marketplace is public while publishing remains protected', async ({ page }
 });
 
 test('marketplace payment cancellation explains the safe retry path without a mutation', async ({ page }) => {
-  await page.goto('/marketplace/payment/cancel');
+  const mutations = [];
+  page.on('request', (request) => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method())) mutations.push(request.url());
+  });
+  await page.goto('/marketplace/payment/cancel?lang=es');
+  await expect(page).toHaveURL(/\/marketplace\/payment\/cancel\?lang=es$/);
   await expect(page.getByRole('heading', { name: 'Pago cancelado.' })).toBeVisible();
   await expect(page.getByText('Puedes reintentarlo desde Mi Marketplace.')).toBeVisible();
   await expect(page.locator('.route-loading')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Mi Marketplace' })).toHaveAttribute('href', '/account/marketplace');
+  expect(mutations).toEqual([]);
 });
 
 test('ASA marketplace stays contained at mobile and tablet widths', async ({ page }) => {
