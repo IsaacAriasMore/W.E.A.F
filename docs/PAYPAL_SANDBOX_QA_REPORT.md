@@ -92,3 +92,65 @@ terminal, and unrelated failed events remain idempotent. No remote deployment,
 webhook resend, payment operation, or switch activation has occurred. The real
 refund remains unreconciled and the featured benefit remains active pending a
 future post-deployment resend of that original event.
+
+## Final Sandbox closure — 2026-08-09
+
+The remediation was subsequently merged to `main`
+(`358003ebd7a6f2af67af8aa000db23f1e4e9d828`) and applied through the
+reviewed migration and deployment gates.
+
+### Fresh recovery point
+
+A separate, new PostgreSQL 17 custom-format backup was created outside the
+repository before the final migration. Both archives were non-empty and passed
+`pg_restore --list` validation.
+
+| Archive | Path | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| Schema | `E:\\W.E.A.F_backups\\20260809T203538Z\\schema.dump` | 669,845 | `D87AEB4A452784C7E1F9D9B9B2CDE2CB147FB107A3D9AFA51F98B0AB56BEB637` |
+| Data | `E:\\W.E.A.F_backups\\20260809T203538Z\\data.dump` | 67,997 | `63158250F26E9A9C05590717F081A21D9F3EF2F6CD696AF79EA6094E769F02FF` |
+
+### Applied scope
+
+- Applied only `20260809193432_marketplace_refund_original_capture_resolution.sql`.
+- Confirmed Supabase history at **51 local / 51 remote** with no dry-run
+  pending migrations.
+- Deployed only `paypal-webhook`, which is active and keeps the intentional
+  `verify_jwt=false` setting because it verifies the PayPal webhook signature
+  inside the function.
+- No secret, webhook URL, or PayPal configuration was changed.
+
+### Real-event reconciliation result
+
+One existing, signed PayPal Sandbox `PAYMENT.CAPTURE.REFUNDED` event was
+identified from its prior sanitized reconciliation failure and resent exactly
+once through the PayPal Developer Dashboard. The dashboard reported a
+successful delivery. W.E.A.F accepted and processed the original event, which
+is evidence that its in-function PayPal signature verification passed.
+
+- The original capture was resolved through the validated Sandbox refund
+  relationship; no new order, payment, capture, or refund was created.
+- Marketplace payments remain **3**: two historical records unchanged and one
+  QA record now `refunded`.
+- QA captures remain **1** and QA refunds remain **1**, both for **USD 3.00**.
+- Billing events remain **6**; the existing refund event was reconciled in
+  place, with its processing error cleared and no duplicate event created.
+- The featured benefit was revoked automatically. The QA listing is no longer
+  featured and was then hidden through the supported Admin Marketplace UI for
+  audit retention.
+- `paypal_payments=false`, Marketplace `payments_enabled=false`, and both
+  PayPal and Marketplace remain in `sandbox`.
+
+### Final gate
+
+- **PAYPAL-WEBHOOK DEPLOY: PASS**
+- **ORIGINAL REFUND EVENT RESEND: PASS**
+- **REFUND RECONCILIATION: PASS**
+- **FEATURED BENEFIT REVOKED: PASS**
+- **HISTORICAL PAYMENTS: INTACT**
+- **MARKETPLACE SANDBOX QA: COMPLETE**
+
+This closes the Sandbox regression. It is not authorization to enable
+payments, use PayPal Live, or change the separate QA-table RLS hardening work.
+The report intentionally omits credentials, personal data, tokens, and PayPal
+identifiers.
