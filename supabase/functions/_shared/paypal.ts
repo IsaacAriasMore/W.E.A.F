@@ -156,6 +156,94 @@ export async function verifyPayPalWebhook(req: Request, event: unknown) {
   return result.verification_status === "SUCCESS"
 }
 
+type PayPalLink = {
+  rel?: unknown
+  method?: unknown
+  href?: unknown
+}
+
+type PayPalResource = {
+  id?: unknown
+  supplementary_data?: {
+    related_ids?: {
+      capture_id?: unknown
+    }
+  }
+  links?: unknown
+}
+
+const PAYPAL_SANDBOX_API_HOSTS = new Set([
+  "api.sandbox.paypal.com",
+  "api-m.sandbox.paypal.com",
+])
+
+const PAYPAL_RESOURCE_ID = /^[A-Za-z0-9-]{8,128}$/
+
+const paypalResourceId = (value: unknown): string | null =>
+  typeof value === "string" && PAYPAL_RESOURCE_ID.test(value)
+    ? value
+    : null
+
+const captureIdFromLinks = (value: unknown): string | null => {
+  if (!Array.isArray(value)) return null
+
+  for (const item of value as PayPalLink[]) {
+    if (item?.rel !== "up" || (item.method !== undefined && item.method !== "GET")) continue
+    if (typeof item.href !== "string" || item.href.length > 2048) continue
+
+    let url: URL
+    try {
+      url = new URL(item.href)
+    } catch {
+      continue
+    }
+
+    if (
+      url.protocol !== "https:"
+      || !PAYPAL_SANDBOX_API_HOSTS.has(url.hostname)
+      || url.port !== ""
+      || url.username !== ""
+      || url.password !== ""
+      || url.search !== ""
+      || url.hash !== ""
+    ) continue
+
+    const match = url.pathname.match(/^\/v2\/payments\/captures\/([A-Za-z0-9-]{8,128})$/)
+    if (match) return match[1]
+  }
+
+  return null
+}
+
+export async function resolveMarketplaceCaptureId(
+  eventType: string,
+  resource: PayPalResource,
+  getRefund?: (refundId: string) => Promise<unknown>,
+): Promise<string | null> {
+  const resourceId = paypalResourceId(resource?.id)
+
+  if (eventType !== "PAYMENT.CAPTURE.REFUNDED") {
+    return eventType.startsWith("PAYMENT.CAPTURE.")
+      ? resourceId
+      : null
+  }
+
+  const relatedCaptureId = paypalResourceId(
+    resource?.supplementary_data?.related_ids?.capture_id,
+  )
+  if (relatedCaptureId) return relatedCaptureId
+
+  const payloadCaptureId = captureIdFromLinks(resource?.links)
+  if (payloadCaptureId) return payloadCaptureId
+
+  if (!resourceId || !getRefund) return null
+
+  const refund = await getRefund(resourceId)
+  if (!refund || typeof refund !== "object") return null
+
+  return captureIdFromLinks((refund as PayPalResource).links)
+}
+
 const APPROVAL_HOSTS = new Set([
   "www.sandbox.paypal.com",
   "sandbox.paypal.com",

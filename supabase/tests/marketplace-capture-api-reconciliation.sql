@@ -28,8 +28,9 @@ values
   ('f4000000-0000-0000-0000-0000000000f4', 'capture-other@test.local', 'capture_other')
 on conflict (id) do nothing;
 
--- One fixture uses game='evolved'; the ASA-only check (NOT VALID) would block it.
-alter table public.marketplace_listings drop constraint marketplace_new_writes_asa_only;
+-- One fixture uses game='evolved'. The production ASA-only trigger is disabled
+-- only inside this transaction and is restored by the final rollback.
+alter table public.marketplace_listings disable trigger enforce_marketplace_asa_game;
 
 insert into public.marketplace_listings (id, owner_user_id, category_id, slug, listing_type, title, description, game, resource_name, quantity, trade_terms, server_name, region, platform, language, discord_invite_url, rules_accepted_at, status, published_at, expires_at, is_featured)
 select
@@ -460,6 +461,7 @@ declare
   expires_at_before timestamptz;
   expires_at_after timestamptz;
   audit_fa integer;
+  processed boolean;
 begin
   real_payload := jsonb_build_object(
     'id', event_key,
@@ -514,6 +516,22 @@ begin
   end if;
   if audited_payload is distinct from real_payload then raise exception 'FAIL: real payload not preserved'; end if;
 
+  -- A verified resend of this same event may retry only after the persisted
+  -- reconciliation failure. The corrected identifier is processed once and
+  -- clears the prior error without creating another billing event.
+  processed := public.process_marketplace_paypal_event(
+    event_key, 'PAYMENT.CAPTURE.COMPLETED',
+    jsonb_build_object('order_id','PAYIDAPI0016','capture_id','CAPIDAPI0016','amount_minor',300,'currency','USD','event_time',now()::text),
+    real_payload
+  );
+  if processed is distinct from true then raise exception 'FAIL: audited reconciliation failure did not retry'; end if;
+  if (select processing_error from private.billing_events where event_id = event_key) is not null then
+    raise exception 'FAIL: successful retry did not clear processing_error';
+  end if;
+  if (select count(*) from private.billing_events where event_id = event_key) <> 1 then
+    raise exception 'FAIL: successful retry duplicated billing event';
+  end if;
+
   -- The payment is still captured with its original capture id and paid_at.
   select status, paypal_capture_id, paid_at
   into pay_status, pay_capture, pay_paid
@@ -537,7 +555,7 @@ begin
   where payment_id = 'f0000000-0000-0000-0000-00000000c016' and action = 'featured_activated';
   if audit_fa <> 0 then raise exception 'FAIL: failed reconciliation granted the benefit'; end if;
 
-  raise notice 'PASS: failure persisted via audit RPC; payment and benefit untouched';
+  raise notice 'PASS: failure persisted via audit RPC; same event retries once after reconciliation fix';
 end;
 $$;
 
@@ -721,7 +739,54 @@ begin
 end;
 $$;
 
+-- =============================================================================
+-- 27. A prior refund failure may be retried once with the same provider event id
+--     after the original capture is resolved; it revokes only that benefit.
+-- =============================================================================
+do $$
+declare
+  event_key text := 'WEBH-27-REFUND-RETRY';
+  payload jsonb := jsonb_build_object('id', 'WEBH-27-REFUND-RETRY', 'event_type', 'PAYMENT.CAPTURE.REFUNDED');
+  processed boolean;
+begin
+  begin
+    perform public.process_marketplace_paypal_event(
+      event_key, 'PAYMENT.CAPTURE.REFUNDED',
+      jsonb_build_object('order_id', 'PAYIDAPI0001', 'capture_id', 'CAPIDAPI9999', 'amount_minor', 300, 'currency', 'USD', 'event_time', now()::text),
+      payload
+    );
+    raise exception 'FAIL: expected refund capture mismatch';
+  exception when others then
+    if sqlerrm not like '%marketplace_capture_reconciliation_failed%' then raise exception 'UNEXPECTED: %', sqlerrm; end if;
+  end;
+
+  perform public.record_marketplace_paypal_event_failure(
+    event_key, 'PAYMENT.CAPTURE.REFUNDED', 'PAYIDAPI0001', payload, now(), 'marketplace_capture_reconciliation_failed'
+  );
+
+  processed := public.process_marketplace_paypal_event(
+    event_key, 'PAYMENT.CAPTURE.REFUNDED',
+    jsonb_build_object('order_id', 'PAYIDAPI0001', 'capture_id', 'CAPIDAPI0001', 'amount_minor', 300, 'currency', 'USD', 'event_time', now()::text),
+    payload
+  );
+  if processed is distinct from true then raise exception 'FAIL: refund resend did not process'; end if;
+  if (select status from public.marketplace_payments where id = 'f0000000-0000-0000-0000-00000000c001') <> 'refunded' then
+    raise exception 'FAIL: refund resend did not change payment status';
+  end if;
+  if (select is_featured from public.marketplace_listings where id = 'f0000000-0000-0000-0000-000000000001') is distinct from false then
+    raise exception 'FAIL: refund resend did not revoke the matching benefit';
+  end if;
+  if (select processing_error from private.billing_events where event_id = event_key) is not null then
+    raise exception 'FAIL: refund resend did not clear prior failure';
+  end if;
+  if (select count(*) from private.billing_events where event_id = event_key) <> 1 then
+    raise exception 'FAIL: refund resend duplicated billing event';
+  end if;
+  raise notice 'PASS: same refund event retries once, revokes only its benefit, and stays auditable';
+end;
+$$;
+
 \echo ''
-\echo '=== CAPTURE API RECONCILIATION VALIDATION COMPLETE (26 cases) ==='
+\echo '=== CAPTURE API RECONCILIATION VALIDATION COMPLETE (27 cases) ==='
 
 rollback;
