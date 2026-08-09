@@ -242,10 +242,11 @@ begin
   values (seller_a_id, true, seller_a_id)
   on conflict (user_id) do nothing;
 
-  -- Execute prepare using seller-a who owns listing a0000000-...-0001
+  -- Use an organic seed listing. The featured seed listing is deliberately
+  -- ineligible for a new order under the payment-retry safety invariant.
   v_payment_id := (public.prepare_marketplace_paypal_order(
     seller_a_id,
-    'a0000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000003',
     'a0000000-0000-0000-0000-000000000011'
   )->>'payment_id')::uuid;
 
