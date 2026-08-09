@@ -15,7 +15,8 @@ async function fingerprint(value) {
 }
 
 function routeOnly() {
-  return window.location.pathname.replace(/[^/A-Za-z0-9_.-]/g, '').slice(0, 180) || '/';
+  return String(window.location?.pathname || '/').split(/[?#]/, 1)[0]
+    .replace(/[^/A-Za-z0-9_.-]/g, '').slice(0, 180) || '/';
 }
 
 export function initializeFrontendErrorMonitor(client, { sampleRate = 0.25 } = {}) {
@@ -28,18 +29,23 @@ export function initializeFrontendErrorMonitor(client, { sampleRate = 0.25 } = {
     if (sent.has(key)) return;
     sent.add(key);
     if (sent.size > 100) sent.delete(sent.values().next().value);
-    await client.rpc('record_frontend_error', {
-      p_fingerprint: key,
-      p_kind: kind,
-      p_route: routeOnly(),
-      p_message: message,
-      p_metadata: {
-        code: String(metadata.code || '').slice(0, 80),
-        source: String(metadata.source || '').slice(0, 80),
-        online: navigator.onLine,
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-      },
-    }).catch(() => {});
+    try {
+      const { error } = await client.rpc('record_frontend_error', {
+        p_fingerprint: key,
+        p_kind: kind,
+        p_route: routeOnly(),
+        p_message: message,
+        p_metadata: {
+          code: String(metadata.code || '').slice(0, 80),
+          source: String(metadata.source || '').slice(0, 80),
+          online: navigator.onLine,
+          viewport: `${window.innerWidth}x${window.innerHeight}`,
+        },
+      });
+      if (error) return;
+    } catch {
+      // Observability must never surface a second error to application users.
+    }
   };
   const onError = (event) => record('window_error', event.error || event.message, { source: 'window' });
   const onRejection = (event) => record('unhandled_rejection', event.reason, { source: 'promise' });
