@@ -1,6 +1,11 @@
 // @ts-ignore
 import { withSupabase } from "@supabase/server"
-import { PayPalError, verifyPayPalWebhook } from "../_shared/paypal.ts"
+import {
+  PayPalError,
+  paypalRequest,
+  resolveMarketplaceCaptureId,
+  verifyPayPalWebhook,
+} from "../_shared/paypal.ts"
 
 type RuntimeDeno = {
   env: {
@@ -202,13 +207,44 @@ const handler = withSupabase(
 
     if (marketplaceEventTypes.has(eventType)) {
       const marketplaceAmount = resource.amount || resource.purchase_units?.[0]?.amount || {}
+      const marketplaceEventTime = event.create_time || resource.update_time || resource.create_time || new Date().toISOString()
+      const refundId = eventType === "PAYMENT.CAPTURE.REFUNDED" && typeof resource.id === "string"
+        ? resource.id
+        : null
+      let captureId: string | null
+      try {
+        captureId = await resolveMarketplaceCaptureId(
+          eventType,
+          resource,
+          async (id) => paypalRequest(`/v2/payments/refunds/${encodeURIComponent(id)}`),
+        )
+      } catch (error) {
+        console.error(
+          "paypal_marketplace_refund_resolution_failed",
+          eventType,
+          error instanceof PayPalError ? error.code : "paypal_refund_resolution_failed",
+        )
+        const { error: auditError } = await ctx.supabaseAdmin.rpc("record_marketplace_paypal_event_failure", {
+          p_event_id: event.id,
+          p_event_type: eventType,
+          p_resource_id: refundId || resource.custom_id || null,
+          p_payload: event,
+          p_event_time: marketplaceEventTime,
+          p_processing_error: "marketplace_processing_failed",
+        })
+        if (auditError) {
+          console.error("paypal_marketplace_event_failure_audit_failed", eventType, auditError.code || "database_error")
+        }
+        return json({ error: "paypal_marketplace_event_failed" }, 500)
+      }
       const marketplaceData = {
         order_id: eventType === "CHECKOUT.ORDER.APPROVED" ? resource.id : (related.order_id || null),
-        capture_id: eventType.startsWith("PAYMENT.CAPTURE.") ? (resource.id || null) : null,
+        capture_id: captureId,
+        refund_id: refundId,
         custom_id: resource.custom_id || resource.purchase_units?.[0]?.custom_id || null,
         amount_minor: minor(marketplaceAmount.value),
         currency: marketplaceAmount.currency_code || null,
-        event_time: event.create_time || resource.update_time || resource.create_time || new Date().toISOString(),
+        event_time: marketplaceEventTime,
       }
       const { data: processed, error } = await ctx.supabaseAdmin.rpc("process_marketplace_paypal_event", {
         p_event_id: event.id, p_event_type: eventType, p_data: marketplaceData, p_payload: event,
@@ -218,7 +254,7 @@ const handler = withSupabase(
         const { error: auditError } = await ctx.supabaseAdmin.rpc("record_marketplace_paypal_event_failure", {
           p_event_id: event.id,
           p_event_type: eventType,
-          p_resource_id: marketplaceData.order_id || marketplaceData.capture_id || marketplaceData.custom_id,
+          p_resource_id: marketplaceData.order_id || marketplaceData.capture_id || marketplaceData.refund_id || marketplaceData.custom_id,
           p_payload: event,
           p_event_time: marketplaceData.event_time,
           p_processing_error: marketplaceFailureCode(error.message),
