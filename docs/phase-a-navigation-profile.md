@@ -19,7 +19,7 @@
 
 ## Storage preparation
 
-`supabase/migrations/20260810120000_profile_avatar_storage.sql` creates a public `avatars` bucket with a 5 MiB raster-only allowlist and owner-only insert, update, and delete policies. It is intentionally not applied remotely.
+`supabase/migrations/20260810120000_profile_avatar_storage.sql` creates a public `avatars` bucket with a 5 MiB raster-only allowlist and owner-only select, insert, update, and delete policies. The select policy is required for the fixed-path Storage upsert used when an avatar is replaced. It is intentionally not applied remotely.
 
 ## Remote authorization required
 
