@@ -583,6 +583,14 @@ body[data-route-kind='auth'] main {
 
 .profile-form-grid label { display: grid; align-content: start; }
 .profile-form-grid small { margin-top: 0.4rem; color: var(--subtle); }
+.profile-avatar-field { display: grid; gap: 0.55rem; align-content: start; }
+.profile-avatar-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; min-height: 3.2rem; padding: 0.7rem; border: 1px dashed var(--line); border-radius: var(--radius-control); background: color-mix(in oklab, var(--surface-strong) 75%, transparent); }
+.profile-avatar-upload input { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.profile-avatar-upload p { flex-basis: 100%; margin: 0; color: var(--subtle); font-size: 0.8rem; }
+.profile-avatar-remove { border: 0; background: none; color: var(--danger, #c54a4a); cursor: pointer; font: inherit; }
+.profile-avatar-url { color: var(--subtle); font-size: 0.85rem; }
+.profile-avatar-url summary { cursor: pointer; }
+.profile-avatar-url label { display: grid; gap: 0.4rem; margin-top: 0.65rem; }
 .profile-game-mode { grid-column: 1 / -1; }
 .profile-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; }
 

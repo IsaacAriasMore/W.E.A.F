@@ -137,7 +137,7 @@ export function createRouter({ outlet, onRouteChange, getContext, waitForAuth = 
     if (guestOnlyRoutes.has(path) && context.state.session) {
       const destination = destinationFromSearch(window.location.search, null);
       replace(context.state.profile?.onboarding_completed
-        ? destination || '/app'
+        ? destination || '/'
         : pathWithNext('/onboarding', destination));
       return;
     }

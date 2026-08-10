@@ -7,7 +7,7 @@ export default {
   },
   profile: {
     eyebrow: 'W.E.A.F account', title: 'Your profile, in one place.', body: 'Update how your tribe recognizes you without changing sensitive permissions.',
-    avatarAlt: 'Profile avatar', email: 'Email', emailHelp: 'Your sign-in email cannot be changed from this form.', displayName: 'Display name', discord: 'Discord username', avatarUrl: 'Avatar URL', gameMode: 'Default game',
+    avatarAlt: 'Profile avatar', email: 'Email', emailHelp: 'Your sign-in email cannot be changed from this form.', displayName: 'Display name', discord: 'Discord username', avatar: 'Avatar', chooseAvatar: 'Choose image', avatarHelp: 'JPG, PNG, or WebP · 5 MiB maximum.', removeAvatar: 'Remove avatar', avatarUrlOption: 'Use an external URL', avatarUrl: 'Avatar URL', avatarUrlInvalid: 'Use a valid HTTPS URL for the avatar.', gameMode: 'Default game',
     backToTribe: 'Back to my tribe', accountSummary: 'Account summary', memberSince: 'Member since', activeTribe: 'Active tribe', globalRole: 'Global role', roleAdmin: 'Global administrator', roleUser: 'User', noActiveTribe: 'No active tribe', securityNote: 'Your global role, email, and security status are read-only.', saved: 'Profile updated successfully.',
   },
   nav: { home: 'Home', inis: 'INIs', mapsBosses: 'Maps & Bosses', creatures: 'Creatures', servers: 'Servers', marketplace: 'Market', menuOpen: 'Open menu', menuClose: 'Close menu' },

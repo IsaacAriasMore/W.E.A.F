@@ -7,7 +7,7 @@ export default {
   },
   profile: {
     eyebrow: 'Cuenta W.E.A.F', title: 'Tu perfil, en un solo lugar.', body: 'Actualiza cómo te reconoce tu tribu sin alterar permisos sensibles.',
-    avatarAlt: 'Avatar del perfil', email: 'Correo', emailHelp: 'El correo de acceso no se modifica desde este formulario.', displayName: 'Nombre visible', discord: 'Usuario de Discord', avatarUrl: 'URL del avatar', gameMode: 'Juego predeterminado',
+    avatarAlt: 'Avatar del perfil', email: 'Correo', emailHelp: 'El correo de acceso no se modifica desde este formulario.', displayName: 'Nombre visible', discord: 'Usuario de Discord', avatar: 'Avatar', chooseAvatar: 'Elegir imagen', avatarHelp: 'JPG, PNG o WebP · máximo 5 MiB.', removeAvatar: 'Quitar avatar', avatarUrlOption: 'Usar una URL externa', avatarUrl: 'URL del avatar', avatarUrlInvalid: 'Usa una URL HTTPS válida para el avatar.', gameMode: 'Juego predeterminado',
     backToTribe: 'Volver a mi tribu', accountSummary: 'Resumen de la cuenta', memberSince: 'Miembro desde', activeTribe: 'Tribu activa', globalRole: 'Rol global', roleAdmin: 'Administrador global', roleUser: 'Usuario', noActiveTribe: 'Sin tribu activa', securityNote: 'Tu rol global, correo y estado de seguridad son de solo lectura.', saved: 'Perfil actualizado correctamente.',
   },
   nav: { home: 'Inicio', inis: 'INIs', mapsBosses: 'Mapas & Bosses', creatures: 'Criaturas', servers: 'Servidores', marketplace: 'Mercado', menuOpen: 'Abrir menú', menuClose: 'Cerrar menú' },

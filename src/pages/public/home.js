@@ -56,7 +56,7 @@ export function render({ state }) {
   </section>
 
   <section class="home-featured home-section">
-    <div class="container"><div class="home-heading reveal-up"><h2>${t('home.servers.title')}</h2><p>${t('home.servers.body')}</p></div><div class="home-server-rail">${createSponsoredServerSlot('home_featured_servers', { label: t('ads.plusServer'), variant: 'rail', maxItems: 3, emptyMarkup: `<div class="home-server-empty"><strong>${t('home.featuredEmpty.title')}</strong><p>${t('home.featuredEmpty.body')}</p><a class="text-link" href="/servers/owners" data-link>${t('home.servers.publish')} →</a></div>` })}</div><div class="home-server-actions reveal-up"><a class="button button-primary" href="/servers" data-link>${t('home.servers.view')}</a><a class="button button-secondary" href="/servers/owners" data-link>${t('home.servers.publish')}</a></div></div>
+    <div class="container"><div class="home-heading reveal-up"><h2>${t('home.servers.title')}</h2></div><div class="home-server-rail">${createSponsoredServerSlot('home_featured_servers', { label: t('ads.plusServer'), variant: 'rail', maxItems: 3, emptyMarkup: `<div class="home-server-empty"><strong>${t('home.featuredEmpty.title')}</strong><p>${t('home.featuredEmpty.body')}</p><a class="text-link" href="/servers/owners" data-link>${t('home.servers.publish')} →</a></div>` })}</div><div class="home-server-actions reveal-up"><a class="button button-primary" href="/servers" data-link>${t('home.servers.view')}</a><a class="button button-secondary" href="/servers/owners" data-link>${t('home.servers.publish')}</a></div></div>
   </section>
   <div class="container sponsored-break reveal">${createSponsoredServerSlot('home_hero_secondary', { label: t('ads.communityPick'), variant: 'compact' })}</div>
 

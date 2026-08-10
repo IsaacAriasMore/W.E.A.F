@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { safeInternalDestination } from '../src/utils/navigation.js';
+import { destinationFromSearch, safeInternalDestination } from '../src/utils/navigation.js';
 import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -9,6 +9,11 @@ test('internal destinations preserve invite queries and reject external redirect
   assert.equal(safeInternalDestination('/app?invite=one-time-token'), '/app?invite=one-time-token');
   assert.equal(safeInternalDestination('//attacker.example', '/app'), '/app');
   assert.equal(safeInternalDestination('/\\attacker.example', '/app'), '/app');
+});
+
+test('direct login can opt into Home while protected destinations remain intact', () => {
+  assert.equal(destinationFromSearch('', '/'), '/');
+  assert.equal(destinationFromSearch('?next=%2Fapp%3Finvite%3Done-time-token', '/'), '/app?invite=one-time-token');
 });
 
 test('SPA navigation preserves hashes and scrolls after rendering', () => {

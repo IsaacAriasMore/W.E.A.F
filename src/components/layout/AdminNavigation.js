@@ -22,7 +22,7 @@ export function createAdminNavigation(profile, activeSection) {
         <a href="/admin?section=${key}" data-admin-section="${key}" ${activeSection === key ? 'aria-current="page"' : ''}><small>${index}</small>${label}
           ${key === 'overview' ? '<i aria-hidden="true"></i>' : ''}
         </a>`).join('')}</nav>
-      <a class="admin-exit" href="/app" data-link>Volver a mi tribu <span aria-hidden="true">↗</span></a>
+      <a class="admin-exit" href="/" data-link>Volver al menú <span aria-hidden="true">↗</span></a>
     </aside>
   `;
 }
