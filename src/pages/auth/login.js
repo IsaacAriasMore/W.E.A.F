@@ -113,7 +113,8 @@ export function bind({ authService, navigate }) {
 
     loginCaptcha.reset();
     loginLock.release();
-    const destination = destinationFromSearch();
+    // Keep an explicit protected-route destination, but make a direct login land on Home.
+    const destination = destinationFromSearch(window.location.search, '/');
     if (data?.session) {
       navigate(destination);
       return;

@@ -7,7 +7,7 @@ export default {
   },
   profile: {
     eyebrow: 'Cuenta W.E.A.F', title: 'Tu perfil, en un solo lugar.', body: 'Actualiza cómo te reconoce tu tribu sin alterar permisos sensibles.',
-    avatarAlt: 'Avatar del perfil', email: 'Correo', emailHelp: 'El correo de acceso no se modifica desde este formulario.', displayName: 'Nombre visible', discord: 'Usuario de Discord', avatarUrl: 'URL del avatar', gameMode: 'Juego predeterminado',
+    avatarAlt: 'Avatar del perfil', email: 'Correo', emailHelp: 'El correo de acceso no se modifica desde este formulario.', displayName: 'Nombre visible', discord: 'Usuario de Discord', avatar: 'Avatar', chooseAvatar: 'Elegir imagen', avatarHelp: 'JPG, PNG o WebP · máximo 5 MiB.', removeAvatar: 'Quitar avatar', avatarUrlOption: 'Usar una URL externa', avatarUrl: 'URL del avatar', avatarUrlInvalid: 'Usa una URL HTTPS válida para el avatar.', gameMode: 'Juego predeterminado',
     backToTribe: 'Volver a mi tribu', accountSummary: 'Resumen de la cuenta', memberSince: 'Miembro desde', activeTribe: 'Tribu activa', globalRole: 'Rol global', roleAdmin: 'Administrador global', roleUser: 'Usuario', noActiveTribe: 'Sin tribu activa', securityNote: 'Tu rol global, correo y estado de seguridad son de solo lectura.', saved: 'Perfil actualizado correctamente.',
   },
   nav: { home: 'Inicio', inis: 'INIs', mapsBosses: 'Mapas & Bosses', creatures: 'Criaturas', servers: 'Servidores', marketplace: 'Mercado', menuOpen: 'Abrir menú', menuClose: 'Cerrar menú' },
@@ -49,12 +49,12 @@ export default {
       imageAlt: 'Criaturas prehistóricas en el entorno original de W.E.A.F', propagators: 'Con propagadores', cooldown: 'Cooldown configurable', vanilla: 'Breeding vanilla', multipliers: 'Multiplicador y tiempos reales',
     },
     servers: { title: 'Servidores destacados por la comunidad.', body: 'Compara mapas, plataformas, rates y mods antes de entrar.', view: 'Ver servidores', publish: 'Publicar mi servidor' },
-    steps: { title: 'De la cuenta al primer breed.', account: 'Crea tu cuenta', tribe: 'Crea o únete a una tribu', config: 'Configura juego y Discord', breeds: 'Organiza tus breeds', alerts: 'Recibe alertas y comparte progreso' },
+    steps: { title: 'Mejora tus breeds con W.E.A.F.', account: 'Crea tu cuenta', tribe: 'Crea o únete a una tribu', config: 'Configura juego y Discord', breeds: 'Organiza tus breeds', alerts: 'Recibe alertas y comparte progreso' },
     community: { title: 'Diseñado para comunidades.', body: 'W.E.A.F es una herramienta independiente para tribus, breeders y propietarios de servidores.', independent: 'No es una app oficial.', independentBody: 'La independencia está documentada y visible en cada página.' },
     faq: {
       title: 'Preguntas frecuentes',
       q1: '¿Necesito cuenta para usar INIs?', a1: 'No. Las herramientas públicas se pueden consultar sin iniciar sesión.',
-      q2: '¿Los breeds son públicos?', a2: 'No. Los breeds, mutaciones y actividad pertenecen al espacio privado de cada tribu.',
+      q2: '¿Las tribus son públicas?', a2: 'No. Las tribus, los breeds, las mutaciones y la actividad pertenecen al espacio privado de cada tribu. Solo pueden acceder las personas invitadas o autorizadas por el owner.',
       q3: '¿Puedo usarlo para ASA?', a3: 'Sí. W.E.A.F separa contenido compatible con ASE, ASA o ambos.',
       q4: '¿El webhook de Discord es privado?', a4: 'Sí. La URL se guarda para la tribu y no se muestra en páginas públicas.',
       q5: '¿Puedo publicar mi servidor?', a5: 'Sí. Puedes elegir Normal, Plus o una oferta vigente y aprobar la suscripción en PayPal.',
@@ -112,12 +112,12 @@ export default {
   },
   inis: {
     eyebrow: 'Biblioteca pública', title: 'INIs que puedes revisar antes de copiar.', body: 'Presets separados por juego, archivo y nivel de verificación. Haz una copia antes de aplicar cualquier cambio.', aria: 'Presets INI', filters: 'Filtrar por categoría', chooseGame: 'Seleccionar juego',
-    categories: { all: 'Todas', general: 'General', fps: 'FPS', pvp: 'PvP', farming: 'Farmeo', breeding: 'Breeding', visibility: 'Visibilidad', clean: 'Clean', server: 'Servidor', client: 'Cliente' },
+    categories: { all: 'Todas', general: 'General', pvp: 'PvP', farming: 'Farmeo', other: 'Otros' },
     one: '{count} preset disponible', many: '{count} presets disponibles', preview: 'Vista previa de {title}', copy: 'Copiar', view: 'Ver INI', download: 'Descargar', close: 'Cerrar', copyDialog: 'Copiar INI', copied: 'INI copiada al portapapeles.', copyError: 'No se pudo copiar. Selecciona el contenido manualmente.', downloadReady: 'Descarga preparada.',
     warningTitle: 'Aplica cambios con respaldo.', warningBody: 'Una actualización, un mod o la plataforma pueden cambiar el resultado. Guarda una copia del archivo y prueba una variable a la vez.',
     fileTarget: 'Archivo destino', reviewed: 'Revisado', pendingDate: 'Pendiente', statusLabel: 'Estado', risk: 'Riesgo', rollback: 'Cómo revertir', riskFallback: 'Revisa el impacto en un entorno de prueba.', rollbackFallback: 'Restaura la copia de seguridad del archivo.',
     empty: 'No hay presets para este filtro.', emptyBody: 'Cambia de juego o categoría. El catálogo editorial seguirá creciendo.',
-    advanced: 'Filtros avanzados', moreCategories: 'Más categorías', contributeTitle: '¿Quieres aportar tu INI personalizado a W.E.A.F?', contributeBody: 'Envíanos tu configuración con una imagen de cómo se ve o qué mejora aporta.', reviewNotice: 'Cada aporte se revisa antes de publicarse. No envíes contraseñas, tokens ni archivos privados.', copyEmail: 'Copiar correo', copyDiscord: 'Copiar Discord', contactCopied: 'Canal de contacto copiado.',
+    contributeTitle: '¿Quieres aportar tu INI personalizado a W.E.A.F?', contributeBody: 'Envíanos tu configuración con una imagen de cómo se ve o qué mejora aporta.', reviewNotice: 'Cada aporte se revisa antes de publicarse. No envíes contraseñas, tokens ni archivos privados.', copyEmail: 'Copiar correo', copyDiscord: 'Copiar Discord', contactCopied: 'Canal de contacto copiado.',
     status: { verified: 'Verificado', pending: 'Pendiente', experimental: 'Experimental' },
   },
   creatures: {

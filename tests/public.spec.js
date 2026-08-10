@@ -17,18 +17,33 @@ test('home loads without errors and renders its primary actions', async ({ page 
   await page.screenshot({ path: 'artifacts/browser-qa/home-desktop.png', fullPage: true });
 });
 
-test('INI filters, preview and download work', async ({ page }) => {
+test('INI filters keep ASE and ASA presets reachable with simplified categories', async ({ page }) => {
   await page.goto('/inis');
+  await expect(page.locator('[data-category]')).toHaveText(['Todas', 'General', 'PvP', 'Farmeo', 'Otros']);
+  await expect(page.locator('[data-advanced-category]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Breeding', exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-preset-card]')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Otros', exact: true }).click();
+  await expect(page.locator('[data-preset-card]')).toHaveCount(2);
+  for (const category of ['General', 'PvP', 'Farmeo']) {
+    await page.getByRole('button', { name: category, exact: true }).click();
+    await expect(page.locator('.ini-empty')).toBeVisible();
+  }
+  await page.getByRole('button', { name: 'Todas', exact: true }).click();
+  await expect(page.locator('[data-preset-card]')).toHaveCount(2);
+
   await page.getByRole('button', { name: 'ARK: Survival Ascended' }).click();
-  await page.locator('[data-advanced-category]').selectOption('fps');
-  await expect(page.locator('[data-preset-card]')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Ver INI' }).click();
+  await expect(page.locator('[data-preset-card]')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Otros', exact: true }).click();
+  await expect(page.locator('[data-preset-card]')).toHaveCount(3);
+  const asaFpsCard = page.locator('[data-preset-card]').filter({ hasText: 'FPS equilibrado ASA' });
+  await asaFpsCard.getByRole('button', { name: 'Ver INI' }).click();
   await expect(page.locator('[data-ini-dialog]')).toHaveJSProperty('open', true);
   await expect(page.locator('[data-dialog-content]')).toContainText('r.Lumen.Reflections.Allow');
   await page.getByRole('button', { name: 'Cerrar' }).click();
 
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Descargar' }).click();
+  await asaFpsCard.getByRole('button', { name: 'Descargar' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('weaf-asa-fps-balanced.ini');
 });
@@ -119,8 +134,8 @@ test('no public anchor lacks a valid href', async ({ page }) => {
 test('INI dialog source link is created only when source_url exists', async ({ page }) => {
   await page.goto('/inis');
   await page.getByRole('button', { name: 'ARK: Survival Ascended' }).click();
-  await page.locator('[data-advanced-category]').selectOption('fps');
-  const view = page.getByRole('button', { name: 'Ver INI' });
+  await page.getByRole('button', { name: 'Otros', exact: true }).click();
+  const view = page.locator('[data-preset-card]').filter({ hasText: 'FPS equilibrado ASA' }).getByRole('button', { name: 'Ver INI' });
   await view.click();
   await expect(page.locator('[data-ini-dialog]')).toHaveJSProperty('open', true);
   const sourceLink = page.locator('[data-dialog-source-container] a');
@@ -129,6 +144,14 @@ test('INI dialog source link is created only when source_url exists', async ({ p
   await expect(sourceLink).toHaveAttribute('target', '_blank');
   await expect(sourceLink).toHaveAttribute('rel', 'noreferrer');
   await expect(page.locator('[data-dialog-source-container] a[href="#"]')).toHaveCount(0);
+});
+
+test('INI category controls stay contained on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/inis');
+  await expect(page.locator('[data-category]')).toHaveText(['Todas', 'General', 'PvP', 'Farmeo', 'Otros']);
+  const dimensions = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: window.innerWidth }));
+  expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport);
 });
 
 test('ARK Survival Ascended hub loads and links to every public tool', async ({ page }) => {

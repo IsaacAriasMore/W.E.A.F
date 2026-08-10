@@ -47,7 +47,8 @@ test('public Phase 11 labels and INI contribution contact match the polished exp
   const en = read('src/i18n/en.js');
   assert.match(inis, /SUPPORT_EMAIL/);
   assert.match(inis, /OFFICIAL_DISCORD/);
-  assert.match(inis, /data-advanced-category/);
+  assert.match(inis, /INI_VISIBLE_CATEGORIES/);
+  assert.doesNotMatch(inis, /data-advanced-category/);
   assert.match(es, /ARK: Survival Evolved/);
   assert.match(es, /ARK: Survival Ascended/);
   assert.match(en, /Want to contribute your custom INI/);
