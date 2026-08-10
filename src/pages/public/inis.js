@@ -6,11 +6,20 @@ import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerS
 import { getLanguage, t } from '../../i18n/index.js';
 import { OFFICIAL_DISCORD, SUPPORT_EMAIL } from '../../config/contact.js';
 
-const mainCategories = ['all', 'general', 'pvp', 'farming', 'breeding', 'visibility'];
-const advancedCategories = ['fps', 'clean', 'server', 'client'];
+export const INI_VISIBLE_CATEGORIES = ['all', 'general', 'pvp', 'farming', 'other'];
+const storedCategories = new Set(INI_VISIBLE_CATEGORIES.slice(1));
 const categoryLabel = (category) => t(`inis.categories.${category}`);
 const supportsGame = (preset, game) => ['both', game].includes(preset.game_availability || preset.game);
 const copy = (row, field) => row?.[`${field}_${getLanguage()}`] || row?.[`${field}_es`] || row?.[`${field}_en`] || row?.[field] || '';
+
+export function normalizeIniCategory(category) {
+  return storedCategories.has(category) ? category : 'other';
+}
+
+export function filterIniPresets(presets, { game, category }) {
+  return presets.filter((preset) => supportsGame(preset, game)
+    && (category === 'all' || normalizeIniCategory(preset.category) === category));
+}
 
 export function iniFilename(preset) {
   const stem = String(preset.slug || preset.id || 'preset').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
@@ -29,7 +38,7 @@ function presetCard(preset) {
   const game = preset.game_availability || preset.game;
   return `<article class="ini-card premium-card-glow" data-preset-card="${escapeHtml(preset.id)}">
     <div class="ini-card-top"><span class="game-label">${game === 'both' ? 'ASE + ASA' : game === 'evolved' ? 'ASE' : 'ASA'}</span><span>${escapeHtml(preset.file_target || 'Engine.ini')}</span></div>
-    <div><div class="ini-card-badges"><span>${categoryLabel(preset.category)}</span><span data-status="${escapeHtml(preset.verification_status || 'pending')}">${verificationLabel(preset.verification_status)}</span></div><h2>${escapeHtml(preset.title)}</h2><p>${escapeHtml(preset.description || copy(preset, 'description'))}</p></div>
+    <div><div class="ini-card-badges"><span>${categoryLabel(normalizeIniCategory(preset.category))}</span><span data-status="${escapeHtml(preset.verification_status || 'pending')}">${verificationLabel(preset.verification_status)}</span></div><h2>${escapeHtml(preset.title)}</h2><p>${escapeHtml(preset.description || copy(preset, 'description'))}</p></div>
     <pre aria-label="${escapeHtml(t('inis.preview', { title: preset.title }))}"><code>${escapeHtml(preset.content.split('\n').slice(0, 4).join('\n'))}</code></pre>
     <dl class="ini-metadata"><div><dt>${t('inis.fileTarget')}</dt><dd>${escapeHtml(preset.file_target || 'Engine.ini')}</dd></div><div><dt>${t('inis.reviewed')}</dt><dd>${escapeHtml(preset.reviewed_at?.slice(0, 10) || t('inis.pendingDate'))}</dd></div></dl>
     <div class="ini-actions"><button class="button button-primary button-small" type="button" data-copy="${escapeHtml(preset.id)}">${t('inis.copy')}</button><button class="button button-quiet button-small" type="button" data-view="${escapeHtml(preset.id)}">${t('inis.view')}</button><button class="text-button" type="button" data-download="${escapeHtml(preset.id)}">${t('inis.download')}</button></div>
@@ -43,18 +52,13 @@ function filterControls(state) {
       <button type="button" data-ini-game="ascended" aria-pressed="${state.game === 'ascended'}">${t('bosses.ascended')}</button>
     </div>
     <div class="ini-category-controls">
-      <div class="filter-bar" role="group" aria-label="${t('inis.filters')}">${mainCategories.map((value) => `<button class="filter-chip" type="button" data-category="${value}" aria-pressed="${state.category === value}">${categoryLabel(value)}</button>`).join('')}</div>
-      <label class="ini-advanced-filter"><span>${t('inis.advanced')}</span><select data-advanced-category><option value="">${t('inis.moreCategories')}</option>${advancedCategories.map((value) => `<option value="${value}" ${state.category === value ? 'selected' : ''}>${categoryLabel(value)}</option>`).join('')}</select></label>
+      <div class="filter-bar" role="group" aria-label="${t('inis.filters')}">${INI_VISIBLE_CATEGORIES.map((value) => `<button class="filter-chip" type="button" data-category="${value}" aria-pressed="${state.category === value}">${categoryLabel(value)}</button>`).join('')}</div>
     </div>
   </div>`;
 }
 
-function filteredPresets(state) {
-  return state.presets.filter((preset) => supportsGame(preset, state.game) && (state.category === 'all' || preset.category === state.category));
-}
-
 function library(state) {
-  const presets = filteredPresets(state);
+  const presets = filterIniPresets(state.presets, state);
   return `<p class="results-summary" data-results-summary>${t(presets.length === 1 ? 'inis.one' : 'inis.many', { count: presets.length })}</p><div class="ini-grid" data-ini-grid>${presets.length ? presets.map(presetCard).join('') : `<div class="ini-empty"><h2>${t('inis.empty')}</h2><p>${t('inis.emptyBody')}</p></div>`}</div>`;
 }
 
@@ -108,7 +112,7 @@ export function bind({ authService }) {
   function openDialog(preset) {
     activePreset = preset;
     dialog.querySelector('[data-dialog-title]').textContent = preset.title;
-    dialog.querySelector('[data-dialog-category]').textContent = `${categoryLabel(preset.category)} · ${(preset.game_availability || preset.game) === 'both' ? 'ASE + ASA' : (preset.game_availability || preset.game) === 'evolved' ? 'ASE' : 'ASA'}`;
+    dialog.querySelector('[data-dialog-category]').textContent = `${categoryLabel(normalizeIniCategory(preset.category))} · ${(preset.game_availability || preset.game) === 'both' ? 'ASE + ASA' : (preset.game_availability || preset.game) === 'evolved' ? 'ASE' : 'ASA'}`;
     dialog.querySelector('[data-dialog-description]').textContent = preset.description || copy(preset, 'description');
     dialog.querySelector('[data-dialog-file]').textContent = preset.file_target || 'Engine.ini';
     dialog.querySelector('[data-dialog-status]').textContent = verificationLabel(preset.verification_status);
@@ -132,11 +136,6 @@ export function bind({ authService }) {
     const game = event.target.closest('[data-ini-game]')?.dataset.iniGame;
     if (game) { state.game = game; state.category = 'all'; draw(); return; }
     const category = event.target.closest('[data-category]')?.dataset.category;
-    if (category) { state.category = category; draw(); }
-  }, { signal });
-
-  controls.addEventListener('change', (event) => {
-    const category = event.target.closest('[data-advanced-category]')?.value;
     if (category) { state.category = category; draw(); }
   }, { signal });
 

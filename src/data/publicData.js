@@ -227,7 +227,7 @@ export const mapBosses = [
 export const iniPresets = [
   {
     id: 'clean-visibility', slug: 'clean-visibility', title: 'Visibilidad limpia', title_es: 'Visibilidad limpia', title_en: 'Clean visibility',
-    category: 'visibility', game: 'both', game_availability: 'both', file_target: 'Engine.ini',
+    category: 'other', game: 'both', game_availability: 'both', file_target: 'Engine.ini',
     description_es: 'Reduce desenfoque, bloom y profundidad de campo para una lectura más estable.',
     description_en: 'Reduces blur, bloom, and depth of field for steadier visual reading.',
     content: '[SystemSettings]\nr.MotionBlurQuality=0\nr.DepthOfFieldQuality=0\nr.BloomQuality=0',
@@ -239,7 +239,7 @@ export const iniPresets = [
   },
   {
     id: 'asa-fps-balanced', slug: 'asa-fps-balanced', title: 'FPS equilibrado ASA', title_es: 'FPS equilibrado ASA', title_en: 'Balanced ASA FPS',
-    category: 'fps', game: 'ascended', game_availability: 'ascended', file_target: 'Engine.ini',
+    category: 'other', game: 'ascended', game_availability: 'ascended', file_target: 'Engine.ini',
     description_es: 'Punto de partida conservador para reducir efectos costosos sin ocultar toda la escena.',
     description_en: 'A conservative starting point that reduces expensive effects without stripping the whole scene.',
     content: '[SystemSettings]\nr.MotionBlurQuality=0\nr.Lumen.Reflections.Allow=0\nr.Nanite.MaxPixelsPerEdge=4',
@@ -250,7 +250,7 @@ export const iniPresets = [
   },
   {
     id: 'breeding-starter-server', slug: 'breeding-starter-server', title: 'Breeding inicial de servidor', title_es: 'Breeding inicial de servidor', title_en: 'Starter server breeding',
-    category: 'breeding', game: 'both', game_availability: 'both', file_target: 'Game.ini',
+    category: 'other', game: 'both', game_availability: 'both', file_target: 'Game.ini',
     description_es: 'Ejemplo moderado para pruebas privadas de crianza; no es una recomendación competitiva.',
     description_en: 'Moderate example for private breeding tests; not a competitive recommendation.',
     content: '[/script/shootergame.shootergamemode]\nMatingIntervalMultiplier=0.5\nEggHatchSpeedMultiplier=5.0\nBabyMatureSpeedMultiplier=5.0',
