@@ -19,6 +19,7 @@ const copy = (row, field) => row?.[`${field}_${getLanguage()}`] || row?.[`${fiel
 const supportsGame = (row, game) => ['both', game].includes(row.game_availability || row.game);
 const mapOrder = (map, game) => Number(map[`release_order_${game}`] ?? map.release_order ?? 999);
 const difficultyKey = (game, mapSlug, bossSlug) => `${game}:${mapSlug}:${bossSlug}`;
+const bossCountLabel = (count) => t(count === 1 ? 'bosses.bossCountOne' : 'bosses.bossCountOther', { count });
 
 function gameLabel(game) {
   return t(game === 'evolved' ? 'bosses.evolved' : 'bosses.ascended');
@@ -34,7 +35,7 @@ function mapSelector(maps, selectedSlug, game) {
     const bossCount = (map.bosses || []).filter((boss) => supportsGame(boss, game)).length;
     return `<button class="map-select-card" type="button" data-map-slug="${escapeHtml(map.slug)}" aria-pressed="${map.slug === selectedSlug}">
       <span class="map-select-index">${String(mapOrder(map, game)).padStart(2, '0')}</span>
-      <span><strong>${escapeHtml(map.name)}</strong><small>${t('bosses.bossCount', { count: bossCount })}</small></span>
+      <span class="map-select-label"><strong>${escapeHtml(map.name)}</strong><small>${bossCountLabel(bossCount)}</small></span>
     </button>`;
   }).join('');
 }
@@ -113,7 +114,7 @@ function workspace(state) {
     <div class="map-selector" data-map-selector>${mapSelector(maps, selectedMap.slug, state.game)}</div>
     <article class="selected-map-banner media-frame-glow">
       <img src="${escapeHtml(resolveMapImage(selectedMap))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.mapImageAlt', { map: selectedMap.name }))}" loading="lazy" width="1536" height="1024">
-      <div><div class="selected-map-badges">${statusBadge(selectedMap)}<span class="content-badge">${gameLabel(state.game)}</span>${selectedMap.is_canonical ? '<span class="content-badge">Canon</span>' : ''}</div><h2>${escapeHtml(selectedMap.name)}</h2><p>${escapeHtml(selectedMap.description || copy(selectedMap, 'description'))}</p><strong>${t('bosses.bossCount', { count: bosses.length })}</strong></div>
+      <div><div class="selected-map-badges">${statusBadge(selectedMap)}<span class="content-badge">${gameLabel(state.game)}</span>${selectedMap.is_canonical ? '<span class="content-badge">Canon</span>' : ''}</div><h2>${escapeHtml(selectedMap.name)}</h2><p>${escapeHtml(selectedMap.description || copy(selectedMap, 'description'))}</p><strong>${bossCountLabel(bosses.length)}</strong></div>
     </article>
     <div class="boss-list" data-boss-list>
       ${bosses.length ? bosses.map((boss) => bossCard(boss, selectedMap, state.game, state.difficulties[difficultyKey(state.game, selectedMap.slug, boss.slug)], state.checklist)).join('') : `<div class="boss-empty-state"><h2>${t('bosses.pendingMap')}</h2><p>${t('bosses.pendingMapBody')}</p><a class="button button-secondary" href="/report-content" data-link>${t('bosses.reportData')}</a></div>`}

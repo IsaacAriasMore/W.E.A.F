@@ -125,7 +125,7 @@ export default {
   },
   bosses: {
     storageError: 'The browser could not save the checklist.', eyebrow: 'Preparation room', title: 'Maps, bosses, and every tribute under control.', body: 'Switch between ASE and ASA, choose a map, and prepare each difficulty with traceable editorial data.', local: 'Saved locally', localBody: 'Progress stays in this browser and never mixes games, maps, or difficulties.',
-    evolved: 'ARK: Survival Evolved', ascended: 'ARK: Survival Ascended', chooseGame: 'Select game', chooseMap: 'Choose a map', mapCount: '{count} maps available', bossCount: '{count} bosses',
+    evolved: 'ARK: Survival Evolved', ascended: 'ARK: Survival Ascended', chooseGame: 'Select game', chooseMap: 'Choose a map', mapCount: '{count} maps available', bossCountOne: '{count} boss', bossCountOther: '{count} bosses',
     difficulty: 'Difficulty', gamma: 'Gamma', beta: 'Beta', alpha: 'Alpha', artifacts: 'Artifacts', tributes: 'Tributes', progress: 'Progress', progressPercent: 'Progress: {percent} percent', reset: 'Reset checklist', cleared: 'Checklist reset.',
     minimumLevel: 'Minimum level {level}', noMinimumLevel: 'No published minimum level', maxPlayers: 'Up to {count} players', reviewed: 'Reviewed {date}', pendingVerification: 'Pending verification', quantity: 'Quantity {count}',
     noArtifacts: 'No artifacts are required at this difficulty.', noTributes: 'No tributes are required at this difficulty.', pendingBossBody: 'The encounter is confirmed, but its quantities do not yet have a published editorial review.', reportData: 'Report data', source: 'Source',
