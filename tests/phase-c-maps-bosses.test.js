@@ -417,6 +417,22 @@ test('Phase C migration requirement JSON literals are well-formed', () => {
   });
 });
 
+test('Phase C Thodes UPDATE keeps 5 values matched by 5 aliases', () => {
+  const migration = read('supabase/migrations/20260811000000_phase_c_maps_bosses_catalog.sql');
+  const block = migration.slice(migration.indexOf('update public.boss_requirements br'));
+  const rows = [...block.matchAll(/\(\s*'astraeos',\s*'thodes',\s*'(?:gamma|beta|alpha)'/g)];
+  assert.equal(rows.length, 3);
+  const alias = block.match(/as x\(([^)]*)\)/);
+  assert.ok(alias, 'Thodes derived table must declare aliases');
+  const aliases = alias[1].split(',').map((name) => name.trim()).filter(Boolean);
+  assert.equal(aliases.length, 5);
+  assert.equal(aliases.filter((name) => name === 'notes_es').length, 1);
+  assert.equal(aliases.filter((name) => name === 'notes_en').length, 1);
+  assert.equal(aliases.filter((name) => name === 'notes').length, 0);
+  assert.doesNotMatch(block, /set notes = x\.notes[,;\s]/);
+  assert.doesNotMatch(block, /x\.notes[^_e]/);
+});
+
 test('map and encounter images resolve to slug candidate paths and honor explicit URLs', () => {
   assert.equal(mapImageCandidate('lost-island'), '/assets/ark/maps/lost-island.webp');
   assert.equal(bossImageCandidate('dinopithecus-king'), '/assets/ark/bosses/dinopithecus-king.webp');

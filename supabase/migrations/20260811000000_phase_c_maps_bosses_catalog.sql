@@ -454,7 +454,7 @@ on conflict (boss_id, difficulty) do update set
 -- min_player_level queda null (arriba) y las notas genéricas se sustituyen por la
 -- aclaración del dato desconocido; artefactos y tributos verificados se conservan.
 update public.boss_requirements br
-set notes = x.notes, notes_es = x.notes_es, notes_en = x.notes_en, updated_at = now()
+set notes = x.notes_es, notes_es = x.notes_es, notes_en = x.notes_en, updated_at = now()
 from (values
   ('astraeos','thodes','gamma',
     'Nivel de jugador no publicado por la fuente (marcado como "?"); artefactos y tributos verificados.',
@@ -465,7 +465,7 @@ from (values
   ('astraeos','thodes','alpha',
     'Nivel de jugador no publicado por la fuente (marcado como "?"); artefactos y tributos verificados.',
     'Player level not published by the source (marked as "?"); artifacts and tributes verified.')
-) as x(map_slug, boss_slug, difficulty, notes, notes_es, notes_en)
+) as x(map_slug, boss_slug, difficulty, notes_es, notes_en)
 join public.bosses b on b.slug = x.boss_slug
 join public.maps m on m.id = b.map_id and m.slug = x.map_slug
 where br.boss_id = b.id and br.difficulty = x.difficulty;
