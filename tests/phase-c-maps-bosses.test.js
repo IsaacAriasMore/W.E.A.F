@@ -423,7 +423,18 @@ test('map and encounter images resolve to slug candidate paths and honor explici
   assert.equal(resolveMapImage({ slug: 'lost-island', image_url: null }), '/assets/ark/maps/lost-island.webp');
   assert.equal(resolveBossImage({ slug: 'dinopithecus-king', image_url: null }), '/assets/ark/bosses/dinopithecus-king.webp');
   assert.equal(resolveBossImage({ slug: 'natrix', image_url: 'https://cdn.example.com/natrix.webp' }), 'https://cdn.example.com/natrix.webp');
-  assert.equal(resolveMapImage({ slug: 'the-island', image_url: '/custom/slug.webp' }), '/custom/slug.webp');
+  assert.equal(resolveBossImage({ slug: 'natrix', image_url: 'http://example.com/test.webp' }), 'http://example.com/test.webp');
+  assert.equal(resolveBossImage({ slug: 'natrix', image_url: '  https://cdn.example.com/natrix.webp  ' }), 'https://cdn.example.com/natrix.webp');
+});
+
+test('non-HTTP/HTTPS or malformed explicit image URLs fall back to weaf-hero', () => {
+  const boss = { slug: 'natrix' };
+  assert.equal(resolveBossImage({ ...boss, image_url: '/custom/slug.webp' }), FALLBACK_IMAGE);
+  assert.equal(resolveBossImage({ ...boss, image_url: 'javascript:alert(1)' }), FALLBACK_IMAGE);
+  assert.equal(resolveBossImage({ ...boss, image_url: 'data:image/svg+xml,...' }), FALLBACK_IMAGE);
+  assert.equal(resolveBossImage({ ...boss, image_url: 'not-a-url' }), FALLBACK_IMAGE);
+  assert.equal(resolveBossImage({ ...boss, image_url: '   ' }), FALLBACK_IMAGE);
+  assert.equal(resolveMapImage({ slug: 'the-island', image_url: '/custom/slug.webp' }), FALLBACK_IMAGE);
 });
 
 test('missing local map and boss images fall back to weaf-hero without a loop', () => {

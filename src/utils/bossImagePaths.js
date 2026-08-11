@@ -4,8 +4,18 @@ export const mapImageCandidate = (slug) => `/assets/ark/maps/${encodeURIComponen
 export const bossImageCandidate = (slug) => `/assets/ark/bosses/${encodeURIComponent(slug)}.webp`;
 
 export function resolveImage(value, localCandidate) {
-  if (value) return value;
-  return localCandidate || FALLBACK_IMAGE;
+  if (!value) return localCandidate || FALLBACK_IMAGE;
+
+  try {
+    const url = new URL(String(value).trim());
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return url.href;
+    }
+  } catch {
+    // invalid or non-absolute explicit URL
+  }
+
+  return FALLBACK_IMAGE;
 }
 
 export const resolveMapImage = (map) => resolveImage(map.image_url, mapImageCandidate(map.slug));
