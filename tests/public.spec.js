@@ -97,6 +97,21 @@ test('difficulty selection is independent per encounter on The Island', async ({
   await expect(megap.locator('.boss-mission-meta')).toContainText('Nivel mínimo 45');
 });
 
+test('map selector shows singular and plural boss counts separated from the map name', async ({ page }) => {
+  await page.goto('/maps-bosses');
+  const island = page.locator('[data-map-slug="the-island"]');
+  const center = page.locator('[data-map-slug="the-center"]');
+  const valguero = page.locator('[data-map-slug="valguero"]');
+  const aquatica = page.locator('[data-map-slug="aquatica"]');
+  await expect(island.locator('.map-select-label strong')).toHaveText('The Island');
+  await expect(island.locator('.map-select-label small')).toHaveText('4 bosses');
+  await expect(center.locator('.map-select-label small')).toHaveText('1 boss');
+  await expect(valguero.locator('.map-select-label small')).toHaveText('2 bosses');
+  await expect(aquatica.locator('.map-select-label small')).toHaveText('5 bosses');
+  await expect(page.getByText('1 bosses')).toHaveCount(0);
+  await expect(page.getByText('1 boss', { exact: true }).first()).toBeVisible();
+});
+
 test('map and boss image paths fall back to weaf-hero when the local slug asset is missing', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));

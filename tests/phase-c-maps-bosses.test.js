@@ -5,8 +5,11 @@ import { mapBosses } from '../src/data/publicData.js';
 import { availableDifficulties, currentDifficulty } from '../src/utils/bossDifficulties.js';
 import { FALLBACK_IMAGE, bossImageCandidate, mapImageCandidate, resolveBossImage, resolveMapImage } from '../src/utils/bossImagePaths.js';
 import { checklistItemKey } from '../src/utils/bossChecklist.js';
+import esDictionary from '../src/i18n/es.js';
+import enDictionary from '../src/i18n/en.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+const readDictionary = (language) => (language === 'en' ? enDictionary : esDictionary);
 const map = (slug) => mapBosses.find((item) => item.slug === slug);
 const inGame = (game) => mapBosses.filter((m) => ['both', game].includes(m.game_availability));
 const countBosses = (game) => inGame(game).reduce((sum, m) => sum + m.bosses.filter((b) => ['both', game].includes(b.game_availability)).length, 0);
@@ -460,4 +463,32 @@ test('missing local map and boss images fall back to weaf-hero without a loop', 
   assert.match(page, /resolveMapImage\(selectedMap\)/);
   assert.match(page, /resolveBossImage\(boss\)/);
   assert.match(page, /image && !image\.src\.endsWith\(FALLBACK_IMAGE\)/);
+});
+
+const countLabel = (count, dict) => (count === 1 ? dict.bosses.bossCountOne : dict.bosses.bossCountOther).replace('{count}', String(count));
+
+test('boss count label singularizes to one boss and pluralizes otherwise', () => {
+  const es = readDictionary('es');
+  const en = readDictionary('en');
+  assert.equal(es.bosses.bossCountOne.replace('{count}', '1'), '1 boss');
+  assert.equal(es.bosses.bossCountOther.replace('{count}', '2'), '2 bosses');
+  assert.equal(en.bosses.bossCountOne.replace('{count}', '1'), '1 boss');
+  assert.equal(en.bosses.bossCountOther.replace('{count}', '4'), '4 bosses');
+  [0, 2, 3, 4, 5].forEach((count) => assert.match(countLabel(count, es), /^[0-9]+ bosses$/));
+  assert.doesNotMatch(countLabel(1, es), /1 bosses/);
+});
+
+test('map selector count labels derive from catalog data per game', () => {
+  const bossCountFor = (slug, game) => (map(slug).bosses || []).filter((boss) => ['both', game].includes(boss.game_availability)).length;
+  assert.equal(countLabel(bossCountFor('the-island', 'evolved'), readDictionary('es')), '4 bosses');
+  assert.equal(countLabel(bossCountFor('the-center', 'evolved'), readDictionary('es')), '1 boss');
+  assert.equal(countLabel(bossCountFor('valguero', 'evolved'), readDictionary('es')), '2 bosses');
+  assert.equal(countLabel(bossCountFor('aquatica', 'evolved'), readDictionary('es')), '5 bosses');
+  const page = read('src/pages/public/mapsBosses.js');
+  assert.match(page, /bossCountLabel\(bossCount\)/);
+  assert.match(page, /bossCountLabel\(bosses\.length\)/);
+  assert.match(page, /bosses\.bossCountOne/);
+  assert.match(page, /bosses\.bossCountOther/);
+  assert.doesNotMatch(page, /bosses\.bossCount['"]/);
+  assert.match(page, /class="map-select-label"/);
 });

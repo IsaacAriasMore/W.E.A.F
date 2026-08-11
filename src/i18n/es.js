@@ -125,7 +125,7 @@ export default {
   },
   bosses: {
     storageError: 'El navegador no permitió guardar el checklist.', eyebrow: 'Sala de preparación', title: 'Mapas, bosses y cada tributo bajo control.', body: 'Cambia entre ASE y ASA, elige un mapa y prepara cada dificultad con datos editoriales verificables.', local: 'Guardado local', localBody: 'Tu progreso permanece en este navegador y no se mezcla entre juegos, mapas ni dificultades.',
-    evolved: 'ARK: Survival Evolved', ascended: 'ARK: Survival Ascended', chooseGame: 'Seleccionar juego', chooseMap: 'Elige un mapa', mapCount: '{count} mapas disponibles', bossCount: '{count} bosses',
+    evolved: 'ARK: Survival Evolved', ascended: 'ARK: Survival Ascended', chooseGame: 'Seleccionar juego', chooseMap: 'Elige un mapa', mapCount: '{count} mapas disponibles', bossCountOne: '{count} boss', bossCountOther: '{count} bosses',
     difficulty: 'Dificultad', gamma: 'Gamma', beta: 'Beta', alpha: 'Alpha', artifacts: 'Artefactos', tributes: 'Tributos', progress: 'Progreso', progressPercent: 'Progreso: {percent} por ciento', reset: 'Reiniciar checklist', cleared: 'Checklist reiniciado.',
     minimumLevel: 'Nivel mínimo {level}', noMinimumLevel: 'Sin nivel mínimo publicado', maxPlayers: 'Hasta {count} jugadores', reviewed: 'Revisado {date}', pendingVerification: 'Pendiente de verificación', quantity: 'Cantidad {count}',
     noArtifacts: 'No requiere artefactos en esta dificultad.', noTributes: 'No requiere tributos en esta dificultad.', pendingBossBody: 'El encuentro está confirmado, pero sus cantidades todavía no tienen una revisión editorial publicada.', reportData: 'Reportar dato', source: 'Fuente',
