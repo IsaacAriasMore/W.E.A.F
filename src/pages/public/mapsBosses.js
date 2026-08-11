@@ -1,6 +1,7 @@
 import { mapBosses as fallbackMaps } from '../../data/publicData.js';
 import { createPublicContentService } from '../../services/publicContentService.js';
 import { availableDifficulties, currentDifficulty } from '../../utils/bossDifficulties.js';
+import { FALLBACK_IMAGE, resolveBossImage, resolveMapImage } from '../../utils/bossImagePaths.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import {
@@ -14,21 +15,10 @@ import {
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 import { getLanguage, t } from '../../i18n/index.js';
 
-const FALLBACK_IMAGE = '/assets/weaf-hero.webp';
-
 const copy = (row, field) => row?.[`${field}_${getLanguage()}`] || row?.[`${field}_es`] || row?.[`${field}_en`] || row?.[field] || '';
 const supportsGame = (row, game) => ['both', game].includes(row.game_availability || row.game);
 const mapOrder = (map, game) => Number(map[`release_order_${game}`] ?? map.release_order ?? 999);
-
-function imageUrl(value) {
-  if (!value) return FALLBACK_IMAGE;
-  try {
-    const url = new URL(value, window.location.origin);
-    return ['http:', 'https:'].includes(url.protocol) ? url.href : FALLBACK_IMAGE;
-  } catch {
-    return FALLBACK_IMAGE;
-  }
-}
+const difficultyKey = (game, mapSlug, bossSlug) => `${game}:${mapSlug}:${bossSlug}`;
 
 function gameLabel(game) {
   return t(game === 'evolved' ? 'bosses.evolved' : 'bosses.ascended');
@@ -81,7 +71,7 @@ function bossCard(boss, map, game, preferredDifficulty, checklist) {
 
   return `<article class="boss-battle-card premium-card-glow" data-boss-card="${escapeHtml(boss.slug)}">
     <div class="boss-portrait">
-      <img src="${escapeHtml(imageUrl(boss.image_url))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.bossImageAlt', { boss: boss.name }))}" loading="lazy" width="1536" height="1024">
+      <img src="${escapeHtml(resolveBossImage(boss))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.bossImageAlt', { boss: boss.name }))}" loading="lazy" width="1536" height="1024">
       <span>${escapeHtml(t(`bosses.bossTypes.${boss.boss_type || 'other'}`))}</span>
     </div>
     <div class="boss-briefing">
@@ -122,11 +112,11 @@ function workspace(state) {
     <div class="map-selector-head"><div><strong>${gameLabel(state.game)}</strong><span>${t('bosses.chooseMap')}</span></div><span>${t('bosses.mapCount', { count: maps.length })}</span></div>
     <div class="map-selector" data-map-selector>${mapSelector(maps, selectedMap.slug, state.game)}</div>
     <article class="selected-map-banner media-frame-glow">
-      <img src="${escapeHtml(imageUrl(selectedMap.image_url))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.mapImageAlt', { map: selectedMap.name }))}" loading="lazy" width="1536" height="1024">
+      <img src="${escapeHtml(resolveMapImage(selectedMap))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.mapImageAlt', { map: selectedMap.name }))}" loading="lazy" width="1536" height="1024">
       <div><div class="selected-map-badges">${statusBadge(selectedMap)}<span class="content-badge">${gameLabel(state.game)}</span>${selectedMap.is_canonical ? '<span class="content-badge">Canon</span>' : ''}</div><h2>${escapeHtml(selectedMap.name)}</h2><p>${escapeHtml(selectedMap.description || copy(selectedMap, 'description'))}</p><strong>${t('bosses.bossCount', { count: bosses.length })}</strong></div>
     </article>
     <div class="boss-list" data-boss-list>
-      ${bosses.length ? bosses.map((boss) => bossCard(boss, selectedMap, state.game, state.difficulty, state.checklist)).join('') : `<div class="boss-empty-state"><h2>${t('bosses.pendingMap')}</h2><p>${t('bosses.pendingMapBody')}</p><a class="button button-secondary" href="/report-content" data-link>${t('bosses.reportData')}</a></div>`}
+      ${bosses.length ? bosses.map((boss) => bossCard(boss, selectedMap, state.game, state.difficulties[difficultyKey(state.game, selectedMap.slug, boss.slug)], state.checklist)).join('') : `<div class="boss-empty-state"><h2>${t('bosses.pendingMap')}</h2><p>${t('bosses.pendingMapBody')}</p><a class="button button-secondary" href="/report-content" data-link>${t('bosses.reportData')}</a></div>`}
     </div>`;
 }
 
@@ -152,7 +142,7 @@ export function bind({ authService }) {
   const { signal } = controller;
   const root = document.querySelector('[data-boss-workspace]');
   const command = document.querySelector('.boss-command');
-  const state = { maps: fallbackMaps, game: 'evolved', mapSlug: 'the-island', difficulty: 'gamma', checklist: readBossChecklist() };
+  const state = { maps: fallbackMaps, game: 'evolved', mapSlug: 'the-island', difficulties: {}, checklist: readBossChecklist() };
 
   const draw = () => {
     root.innerHTML = workspace(state);
@@ -169,7 +159,12 @@ export function bind({ authService }) {
     const mapSlug = event.target.closest('[data-map-slug]')?.dataset.mapSlug;
     if (mapSlug && mapSlug !== state.mapSlug) { state.mapSlug = mapSlug; draw(); return; }
     const difficulty = event.target.closest('[data-boss-difficulty]')?.dataset.bossDifficulty;
-    if (difficulty && difficulty !== state.difficulty) { state.difficulty = difficulty; draw(); return; }
+    if (difficulty) {
+      const bossSlug = event.target.closest('[data-boss-card]')?.dataset.bossCard;
+      const key = difficultyKey(state.game, state.mapSlug, bossSlug);
+      if (state.difficulties[key] !== difficulty) { state.difficulties[key] = difficulty; draw(); }
+      return;
+    }
     const resetButton = event.target.closest('[data-reset-boss]');
     if (resetButton) {
       state.checklist = resetBossChecklist(state.checklist, { game: state.game, mapSlug: state.mapSlug, bossSlug: resetButton.dataset.resetBoss, difficulty: resetButton.dataset.resetDifficulty });

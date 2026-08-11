@@ -43,8 +43,9 @@ on conflict (slug) do update set
 -- (ASE only), the Iceworm Queen and the Spirit Direwolf & Dire Bear (both ASE and ASA),
 -- none of which have portal requirements. The Center Guardians remains 'both' because
 -- The Center Ascended retains the Broodmother Lysrix + Megapithecus fight.
--- Astraeos (ASA) adds its three guardian bosses (Natrix 30/50/70, Thodes 45/65/85,
--- Hydraskos 90/90/90, wiki-verified) plus Minotarchos and Erymanthian & Kalydonios
+-- Astraeos (ASA) adds its three guardian bosses (Natrix 30/50/70, Hydraskos 90/90/90,
+-- wiki-verified; Thodes has Gamma/Beta/Alpha variants with verified artifacts/tributes but
+-- its Player Level remains unpublished '?/?/?') plus Minotarchos and Erymanthian & Kalydonios
 -- (single-set summon tributes, wiki-verified) and Pulmonoscorpius Monarch, Thanatos and
 -- the Manticore without portal requirements.
 -- Aquatica (ASE) adds Cymathoa, Fractalis, Pygocentrus, Vulcanithys (full Gamma/Beta/Alpha

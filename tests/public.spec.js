@@ -83,6 +83,31 @@ test('difficulty variants are scoped per boss card and pending encounters show n
   await expect(controller).not.toContainText('Pendiente de verificación');
 });
 
+test('difficulty selection is independent per encounter on The Island', async ({ page }) => {
+  await page.goto('/maps-bosses');
+  const brood = page.locator('[data-boss-card="broodmother-lysrix"]');
+  const megap = page.locator('[data-boss-card="megapithecus"]');
+  const dragon = page.locator('[data-boss-card="dragon"]');
+  await brood.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect(brood.locator('.boss-mission-meta')).toContainText('Nivel mínimo 70');
+  await expect(megap.locator('.boss-mission-meta')).toContainText('Nivel mínimo 45');
+  await dragon.getByRole('button', { name: 'Beta', exact: true }).click();
+  await expect(dragon.locator('.boss-mission-meta')).toContainText('Nivel mínimo 75');
+  await expect(brood.locator('.boss-mission-meta')).toContainText('Nivel mínimo 70');
+  await expect(megap.locator('.boss-mission-meta')).toContainText('Nivel mínimo 45');
+});
+
+test('map and boss image paths fall back to weaf-hero when the local slug asset is missing', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/maps-bosses');
+  const banner = page.locator('.selected-map-banner img');
+  const cardImage = page.locator('[data-boss-card="broodmother-lysrix"] img');
+  await expect.poll(() => cardImage.getAttribute('src')).toMatch(/weaf-hero\.webp$/);
+  await expect.poll(() => banner.getAttribute('src')).toMatch(/weaf-hero\.webp$/);
+  expect(errors).toEqual([]);
+});
+
 test('Valguero and Astraeos respect per-game rosters', async ({ page }) => {
   await page.goto('/maps-bosses');
   await page.getByRole('button', { name: 'Valguero' }).click();

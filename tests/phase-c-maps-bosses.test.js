@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { mapBosses } from '../src/data/publicData.js';
 import { availableDifficulties, currentDifficulty } from '../src/utils/bossDifficulties.js';
+import { FALLBACK_IMAGE, bossImageCandidate, mapImageCandidate, resolveBossImage, resolveMapImage } from '../src/utils/bossImagePaths.js';
 import { checklistItemKey } from '../src/utils/bossChecklist.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -414,4 +415,22 @@ test('Phase C migration requirement JSON literals are well-formed', () => {
       assert.ok(Number.isInteger(item.quantity) && item.quantity > 0);
     });
   });
+});
+
+test('map and encounter images resolve to slug candidate paths and honor explicit URLs', () => {
+  assert.equal(mapImageCandidate('lost-island'), '/assets/ark/maps/lost-island.webp');
+  assert.equal(bossImageCandidate('dinopithecus-king'), '/assets/ark/bosses/dinopithecus-king.webp');
+  assert.equal(resolveMapImage({ slug: 'lost-island', image_url: null }), '/assets/ark/maps/lost-island.webp');
+  assert.equal(resolveBossImage({ slug: 'dinopithecus-king', image_url: null }), '/assets/ark/bosses/dinopithecus-king.webp');
+  assert.equal(resolveBossImage({ slug: 'natrix', image_url: 'https://cdn.example.com/natrix.webp' }), 'https://cdn.example.com/natrix.webp');
+  assert.equal(resolveMapImage({ slug: 'the-island', image_url: '/custom/slug.webp' }), '/custom/slug.webp');
+});
+
+test('missing local map and boss images fall back to weaf-hero without a loop', () => {
+  assert.equal(FALLBACK_IMAGE, '/assets/weaf-hero.webp');
+  assert.equal(resolveBossImage({ slug: 'natrix', image_url: null }), '/assets/ark/bosses/natrix.webp');
+  const page = read('src/pages/public/mapsBosses.js');
+  assert.match(page, /resolveMapImage\(selectedMap\)/);
+  assert.match(page, /resolveBossImage\(boss\)/);
+  assert.match(page, /image && !image\.src\.endsWith\(FALLBACK_IMAGE\)/);
 });
