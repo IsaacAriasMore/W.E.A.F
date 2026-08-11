@@ -57,6 +57,54 @@ test('boss checklist persists in local storage', async ({ page }) => {
   await expect(firstItem.locator('input')).toBeChecked();
 });
 
+test('difficulty variants are scoped per boss card and pending encounters show no fake tabs', async ({ page }) => {
+  await page.goto('/maps-bosses');
+  const firstCard = page.locator('[data-boss-card="broodmother-lysrix"]');
+  await expect(firstCard.getByRole('group', { name: 'Dificultad' }).getByRole('button')).toHaveCount(3);
+  await expect(firstCard.locator('.boss-mission-meta')).toContainText('Nivel mínimo 30');
+  await firstCard.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect(firstCard.locator('.boss-mission-meta')).toContainText('Nivel mínimo 70');
+  await page.getByRole('button', { name: 'Genesis: Part 1' }).click();
+  const moeder = page.locator('[data-boss-card="moeder"]');
+  await expect(moeder).toBeVisible();
+  await expect(moeder.getByRole('group', { name: 'Dificultad' })).toHaveCount(0);
+  await expect(moeder).toContainText('Pendiente de verificación');
+  await expect(moeder.locator('[data-reset-boss]')).toBeDisabled();
+  const controller = page.locator('[data-boss-card="corrupted-master-controller"]');
+  await expect(controller).toBeVisible();
+  await expect(controller.getByRole('group', { name: 'Dificultad' }).getByRole('button')).toHaveCount(3);
+  await controller.getByRole('button', { name: 'Gamma', exact: true }).click();
+  await expect(controller.locator('.boss-notes').first()).toContainText('58 misiones');
+  await controller.getByRole('button', { name: 'Beta', exact: true }).click();
+  await expect(controller.locator('.boss-notes').first()).toContainText('116 misiones');
+  await controller.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect(controller.locator('.boss-notes').first()).toContainText('168 misiones');
+  await expect(controller.locator('.boss-mission-meta')).toContainText('Sin nivel mínimo publicado');
+  await expect(controller).not.toContainText('Pendiente de verificación');
+});
+
+test('Valguero and Astraeos respect per-game rosters', async ({ page }) => {
+  await page.goto('/maps-bosses');
+  await page.getByRole('button', { name: 'Valguero' }).click();
+  await expect(page.locator('[data-boss-card]')).toHaveCount(2);
+  await expect(page.locator('[data-boss-card="grendel-valguero"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'ARK: Survival Ascended' }).click();
+  await page.getByRole('button', { name: 'Valguero' }).click();
+  await expect(page.locator('[data-boss-card]')).toHaveCount(1);
+  await expect(page.locator('[data-boss-card="grendel-valguero"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Astraeos' }).click();
+  await expect(page.locator('[data-boss-card]')).toHaveCount(8);
+  await expect(page.locator('[data-boss-card="natrix"]')).toBeVisible();
+  await expect(page.locator('[data-boss-card="minotarchos"]')).toContainText('Sin nivel mínimo publicado');
+});
+
+test('Lost Colony appears as the newest ASA map with its Red-Handed encounter', async ({ page }) => {
+  await page.goto('/maps-bosses');
+  await page.getByRole('button', { name: 'ARK: Survival Ascended' }).click();
+  await page.getByRole('button', { name: 'Lost Colony' }).click();
+  await expect(page.locator('[data-boss-card="red-handed"]')).toBeVisible();
+});
+
 test('creature filters show a matching result and an empty state', async ({ page }) => {
   await page.goto('/creatures');
   await page.getByLabel('Buscar criatura').fill('Rex');

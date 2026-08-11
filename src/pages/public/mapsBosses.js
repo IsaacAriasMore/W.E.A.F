@@ -1,5 +1,6 @@
 import { mapBosses as fallbackMaps } from '../../data/publicData.js';
 import { createPublicContentService } from '../../services/publicContentService.js';
+import { availableDifficulties, currentDifficulty } from '../../utils/bossDifficulties.js';
 import { escapeHtml } from '../../utils/sanitize.js';
 import { showToast } from '../../utils/feedback.js';
 import {
@@ -13,7 +14,6 @@ import {
 import { createSponsoredServerSlot } from '../../components/ads/SponsoredServerSlot.js';
 import { getLanguage, t } from '../../i18n/index.js';
 
-const DIFFICULTIES = ['gamma', 'beta', 'alpha'];
 const FALLBACK_IMAGE = '/assets/weaf-hero.webp';
 
 const copy = (row, field) => row?.[`${field}_${getLanguage()}`] || row?.[`${field}_es`] || row?.[`${field}_en`] || row?.[field] || '';
@@ -63,8 +63,17 @@ function requirementRows(items, context, type, checklist) {
   }).join('');
 }
 
-function bossCard(boss, map, game, difficulty, checklist) {
-  const requirements = boss.requirements?.[difficulty];
+function difficultyTabs(boss, active) {
+  const variants = availableDifficulties(boss);
+  if (variants.length < 2) return '';
+  return `<div class="difficulty-switch boss-difficulty-switch" role="group" aria-label="${t('bosses.difficulty')}">
+    ${variants.map((value) => `<button type="button" data-boss-difficulty="${escapeHtml(value)}" aria-pressed="${value === active}">${t(`bosses.${value}`)}</button>`).join('')}
+  </div>`;
+}
+
+function bossCard(boss, map, game, preferredDifficulty, checklist) {
+  const difficulty = currentDifficulty(boss, preferredDifficulty);
+  const requirements = difficulty ? boss.requirements?.[difficulty] : null;
   const context = { game, mapSlug: map.slug, bossSlug: boss.slug, difficulty };
   const progress = bossChecklistProgress(checklist, context, requirements);
   const source = requirements?.source_url || boss.source_url;
@@ -78,8 +87,9 @@ function bossCard(boss, map, game, difficulty, checklist) {
     <div class="boss-briefing">
       <header class="boss-briefing-header">
         <div><h2>${escapeHtml(boss.name)}</h2><p>${escapeHtml(description)}</p></div>
-        <button class="text-button" type="button" data-reset-boss="${escapeHtml(boss.slug)}" ${requirements ? '' : 'disabled'}>${t('bosses.reset')}</button>
+        <button class="text-button" type="button" data-reset-boss="${escapeHtml(boss.slug)}" data-reset-difficulty="${escapeHtml(difficulty || '')}" ${requirements ? '' : 'disabled'}>${t('bosses.reset')}</button>
       </header>
+      ${difficultyTabs(boss, difficulty)}
       ${requirements ? `
         <div class="boss-mission-meta">
           <span>${requirements.min_player_level ? t('bosses.minimumLevel', { level: requirements.min_player_level }) : t('bosses.noMinimumLevel')}</span>
@@ -115,9 +125,6 @@ function workspace(state) {
       <img src="${escapeHtml(imageUrl(selectedMap.image_url))}" data-fallback-image="${FALLBACK_IMAGE}" alt="${escapeHtml(t('bosses.mapImageAlt', { map: selectedMap.name }))}" loading="lazy" width="1536" height="1024">
       <div><div class="selected-map-badges">${statusBadge(selectedMap)}<span class="content-badge">${gameLabel(state.game)}</span>${selectedMap.is_canonical ? '<span class="content-badge">Canon</span>' : ''}</div><h2>${escapeHtml(selectedMap.name)}</h2><p>${escapeHtml(selectedMap.description || copy(selectedMap, 'description'))}</p><strong>${t('bosses.bossCount', { count: bosses.length })}</strong></div>
     </article>
-    <div class="difficulty-switch" role="group" aria-label="${t('bosses.difficulty')}">
-      ${DIFFICULTIES.map((value) => `<button type="button" data-difficulty="${value}" aria-pressed="${state.difficulty === value}">${t(`bosses.${value}`)}</button>`).join('')}
-    </div>
     <div class="boss-list" data-boss-list>
       ${bosses.length ? bosses.map((boss) => bossCard(boss, selectedMap, state.game, state.difficulty, state.checklist)).join('') : `<div class="boss-empty-state"><h2>${t('bosses.pendingMap')}</h2><p>${t('bosses.pendingMapBody')}</p><a class="button button-secondary" href="/report-content" data-link>${t('bosses.reportData')}</a></div>`}
     </div>`;
@@ -161,11 +168,11 @@ export function bind({ authService }) {
     if (game && game !== state.game) { state.game = game; state.mapSlug = ''; draw(); return; }
     const mapSlug = event.target.closest('[data-map-slug]')?.dataset.mapSlug;
     if (mapSlug && mapSlug !== state.mapSlug) { state.mapSlug = mapSlug; draw(); return; }
-    const difficulty = event.target.closest('[data-difficulty]')?.dataset.difficulty;
+    const difficulty = event.target.closest('[data-boss-difficulty]')?.dataset.bossDifficulty;
     if (difficulty && difficulty !== state.difficulty) { state.difficulty = difficulty; draw(); return; }
-    const bossSlug = event.target.closest('[data-reset-boss]')?.dataset.resetBoss;
-    if (bossSlug) {
-      state.checklist = resetBossChecklist(state.checklist, { game: state.game, mapSlug: state.mapSlug, bossSlug, difficulty: state.difficulty });
+    const resetButton = event.target.closest('[data-reset-boss]');
+    if (resetButton) {
+      state.checklist = resetBossChecklist(state.checklist, { game: state.game, mapSlug: state.mapSlug, bossSlug: resetButton.dataset.resetBoss, difficulty: resetButton.dataset.resetDifficulty });
       save(); draw(); showToast(t('bosses.cleared'));
     }
   }, { signal });
