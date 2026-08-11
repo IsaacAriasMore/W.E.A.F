@@ -17,7 +17,8 @@ test('map catalog separates current ASE and ASA availability', () => {
   const ase = mapBosses.filter((map) => ['both', 'evolved'].includes(map.game_availability));
   const asa = mapBosses.filter((map) => ['both', 'ascended'].includes(map.game_availability));
   assert.equal(ase.at(-1).slug, 'aquatica');
-  assert.equal(asa.at(-1).slug, 'astraeos');
+  assert.equal(asa.at(-1).slug, 'lost-colony');
+  assert.ok(asa.some((map) => map.slug === 'astraeos'));
   assert.ok(asa.some((map) => map.slug === 'genesis-part-1'));
   assert.ok(!asa.some((map) => map.slug === 'genesis-part-2'));
   assert.ok(mapBosses.every((map) => map.source_url && map.reviewed_at));
